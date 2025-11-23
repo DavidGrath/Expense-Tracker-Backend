@@ -1,0 +1,13 @@
+{
+	"basePackage": "com.davidgrath.expensetracker.generatedapi",
+	"apiPackage": "com.davidgrath.expensetracker.generatedapi.api",
+	"modelPackage": "com.davidgrath.expensetracker.generatedapi.model",
+	"generateConstructorWithAllArgs": true,
+	"hideGenerationTimestamp": true,
+	"interfaceOnly": true,
+	"skipDefaultInterface": true,
+	"sourceFolder": ".",
+	"unhandledException": true,
+	"useSpringBoot3": true,
+	"useTags": false
+}

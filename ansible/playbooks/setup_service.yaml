@@ -1,0 +1,4 @@
+# host test_server
+# Download Java-Agent to /opt/opentelemetry
+# Create /opt/expense-tracker
+# Render template to systemD unit file

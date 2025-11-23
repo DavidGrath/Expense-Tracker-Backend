@@ -1,0 +1,1 @@
+flyway migrate -environment=staging -user=%FLYWAY_USR% -password=%FLYWAY_PSW%

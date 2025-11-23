@@ -1,0 +1,9 @@
+set /p APP_VERSION=<..\..\app-version
+set OTEL_SDK_DISABLED=false
+set OTEL_SERVICE_NAME=expense_tracker_backend
+set JAVA_TOOL_OPTIONS="%OTEL_JAVA_AGENT_LOCATION%/opentelemetry-javaagent.jar"
+set SPRING_PROFILES_ACTIVE=production
+set OTEL_EXPORTER_OTLP_ENDPOINT=http://telemetry.davidgrath.com:4318
+set OTEL_RESOURCE_ATTRIBUTES=deployment.environment.name=production,deployment.environment=production,service.version=%APP_VERSION%
+set OTEL_METRIC_EXPORT_INTERVAL=10000
+java -jar "C:\ServerApps\Expense Tracker\expense-tracker-backend.jar"

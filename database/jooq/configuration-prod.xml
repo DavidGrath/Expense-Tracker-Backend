@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-model href="https://www.jooq.org/xsd/jooq-codegen-3.19.8.xsd" type="application/xml" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<configuration xmlns="http://www.jooq.org/xsd/jooq-codegen-3.19.8.xsd">
+    <jdbc>
+        <driver>com.mysql.jdbc.Driver</driver>
+        <url>jdbc:mysql://localhost:3306/expense_tracker_database</url>
+        <user></user>
+        <password></password>
+        <properties></properties>
+    </jdbc>
+    <generator>
+        <database>
+            <name>org.jooq.meta.mysql.MySQLDatabase</name>
+            <inputSchema>expense_tracker_database_dev</inputSchema>
+            <outputSchemaToDefault>true</outputSchemaToDefault>
+            <forcedTypes>
+                <forcedType>
+                    <userType>com.davidgrath.expensetrackerbackend.entities.TransactionMode</userType>
+                    <converter>com.davidgrath.expensetrackerbackend.entities.TransactionModeConverter</converter>
+                    <includeExpression>.*transaction\.mode.*</includeExpression>
+                </forcedType>
+            </forcedTypes>
+        </database>
+        <target>
+            <packageName>com.davidgrath.expensetrackerbackend.generated.jooq</packageName>
+            <directory>../../app/build/generated/jooq/main</directory>
+        </target>
+        <generate>
+            <!-- <daos>true</daos> -->
+        </generate>
+    </generator>
+</configuration>

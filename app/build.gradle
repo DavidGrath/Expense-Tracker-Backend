@@ -1,0 +1,166 @@
+plugins {
+    id 'application'
+    id 'org.springframework.boot' version '3.3.3'
+    id 'io.spring.dependency-management' version '1.1.6'
+    id "com.diffplug.spotless" version "6.25.0"
+    id "org.openapi.generator" version "7.15.0"
+    id 'org.jetbrains.kotlin.jvm' version '1.7.21'
+}
+
+repositories {
+    
+    mavenCentral()
+}
+
+configurations {
+    jooqConfig
+}
+
+dependencies {
+    
+    testImplementation libs.junit
+    implementation libs.guava
+
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-jooq'
+    implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+    implementation 'org.openapitools:jackson-databind-nullable:0.2.6'
+    implementation 'jakarta.validation:jakarta.validation-api:3.1.0'
+    implementation 'jakarta.annotation:jakarta.annotation-api:3.0.0'
+    implementation 'org.springdoc:springdoc-openapi-ui:1.8.0'
+    implementation 'com.google.code.gson:gson:2.11.0'
+    implementation 'com.mysql:mysql-connector-j:9.0.0'
+    implementation 'org.jooq:jooq:3.19.11'
+
+    implementation 'ch.qos.logback:logback-classic:1.5.8'
+    implementation 'ch.qos.logback:logback-core:1.5.8'
+    implementation 'org.slf4j:slf4j-api:2.0.16'
+
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+    implementation 'org.hibernate.validator:hibernate-validator:8.0.2.Final'
+    compileOnly 'org.projectlombok:lombok:1.18.36'
+    annotationProcessor "org.projectlombok:lombok:1.18.38"
+    testImplementation 'org.mockito:mockito-core:3.12.4'
+
+//    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    jooqConfig 'jakarta.xml.bind:jakarta.xml.bind-api:4.0.2'
+    jooqConfig 'org.jooq:jooq:3.19.11'
+    jooqConfig 'org.jooq:jooq-codegen:3.19.11'
+    jooqConfig 'org.jooq:jooq-meta:3.19.11'
+    jooqConfig 'com.mysql:mysql-connector-j:9.0.0'
+    jooqConfig 'io.r2dbc:r2dbc-spi:1.0.0.RELEASE'
+    jooqConfig 'org.reactivestreams:reactive-streams:1.0.4'
+    jooqConfig 'org.jooq:jooq-meta-extensions:3.19.11'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+}
+
+group="com.davidgrath"
+version=//Fetch from artifact, append, "dev" maybe
+
+base {
+    archivesName = "expense-tracker-backend"
+}
+// Apply a specific Java toolchain to ease working on different environments.
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+application {
+    // Define the main class for the application.
+    mainClass = 'com.davidgrath.expensetrackerbackend.App'
+}
+
+
+sourceSets {
+    main {
+        java {
+            srcDirs += "$buildDir/generated/openapi/main"
+            srcDirs += "$buildDir/generated/jooq/main"
+        }
+    }
+}
+
+tasks.register('jooqCodeGenCopy', Copy) {
+    from configurations.jooqConfig
+    into "${rootDir}/database/jooq"
+    onlyIf {
+            def allFilesExist = true
+            def fileList = [
+                "jakarta.xml.bind-api-4.0.2.jar",
+                "jooq-3.19.11.jar",
+                "jooq-codegen-3.19.11.jar",
+                "jooq-meta-3.19.11.jar",
+                "mysql-connector-j-9.0.0.jar",
+                "r2dbc-spi-1.0.0.RELEASE.jar",
+                "reactive-streams-1.0.4.jar",
+                "jooq-meta-extensions-3.19.11.jar",
+            ]
+            for (filename in fileList) {
+                def f = new File("${rootDir}/database/jooq/${filename}")
+                if(!f.exists()) {
+                    allFilesExist = false
+                    break
+                }
+            }
+            return !allFilesExist
+        }
+}
+
+tasks.register('jooqCodeGenDev', Exec) {
+    dependsOn jooqCodeGenCopy
+    
+    workingDir "${rootDir}/database/jooq"
+    commandLine "java", "-cp", "*", "org.jooq.codegen.GenerationTool", "configuration-dev.xml"
+    
+}
+
+
+tasks.register('jooqCodeGenStaging', Exec) {
+    dependsOn jooqCodeGenCopy
+    
+    workingDir "${rootDir}/database/jooq"
+    commandLine "java", "-cp", "*", "org.jooq.codegen.GenerationTool", "configuration-staging.xml"
+}
+
+tasks.register('jooqCodeGenProd', Exec) {
+    dependsOn jooqCodeGenCopy
+    
+    workingDir "${rootDir}/database/jooq"
+    commandLine "java", "-cp", "*", "org.jooq.codegen.GenerationTool", "configuration-prod.xml"
+}
+
+spotless {
+    java {
+        removeUnusedImports()
+        googleJavaFormat()
+    }
+}
+
+tasks.named('compileJava') {
+    dependsOn spotlessApply
+}
+
+tasks.named("openApiGenerate") {
+    configFile = "${rootDir}/openapi/config-spring.json"
+    generatorName = "spring"
+    inputSpec = "${rootDir}/openapi/openapi.json"
+    outputDir = "${layout.buildDirectory.getAsFile().get()}/generated/openapi/main"
+}
+//compileKotlin {
+//    kotlinOptions {
+//        jvmTarget = "1.8"
+//    }
+//}
+compileTestKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}

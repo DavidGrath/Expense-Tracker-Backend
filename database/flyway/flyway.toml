@@ -1,0 +1,23 @@
+[flyway]
+locations = ["filesystem:./schemas"]
+
+[environments.dev]
+url = "jdbc:mysql://localhost:3306/expense_tracker_database_dev"
+schemas = ["expense_tracker_database_dev"]
+user = "expense_tracker"
+password = "password"
+driver = "com.mysql.jdbc.Driver"
+
+[environments.staging]
+url = "jdbc:mysql://localhost:3306/expense_tracker_database"
+schemas = ["expense_tracker_database"]
+user = ""
+password = ""
+driver = "com.mysql.jdbc.Driver"
+
+[environments.prod]
+url = "jdbc:mysql://localhost:3306/expense_tracker_database"
+schemas = ["expense_tracker_database"]
+user = ""
+password = ""
+driver = "com.mysql.jdbc.Driver"
