@@ -33,6 +33,12 @@ class CategoryRepository {
         return selectStep.fetchOne()?.into(CategoryPojo::class.java)
     }
 
+    fun getAllByProfileId(profileId: Long): List<CategoryPojo> {
+        val selectStep = dslContext.selectFrom(CATEGORY)
+            .where(CATEGORY.PROFILE_ID.eq(profileId))
+        return selectStep.fetch().into(CategoryPojo::class.java)
+    }
+
     fun deleteAllForTesting(): Int {
         val delete = dslContext.deleteFrom(CATEGORY).where("true")
         return delete.execute()

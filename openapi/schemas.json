@@ -444,6 +444,10 @@
                     },
                     "password": {
                         "type": "string"
+                    },
+                    "languageTag": {
+                        "type": "string",
+                        "description": "A BCP-47 language tag. Used to create the default account"
                     }
                 }
             }

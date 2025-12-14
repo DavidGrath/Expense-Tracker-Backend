@@ -1,7 +1,7 @@
 package com.davidgrath.expensetrackerbackend.testutils
 
 import com.davidgrath.expensetrackerbackend.CORE_CATEGORIES
-import com.davidgrath.expensetrackerbackend.configuration.TimeAndLocaleHandler
+import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.AccountPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.CategoryPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ProfilePojo
@@ -16,7 +16,6 @@ import java.math.BigDecimal
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
 import java.util.*
 
 private val LOGGER = LoggerFactory.getLogger("com.davidgrath.expensetrackerbackend.testutils.TestUtils")
@@ -37,43 +36,45 @@ fun file(file: File, vararg segments: String): File {
     return File(file, fullPath)
 }
 
-fun getDefaultAccountId(profileRepository: ProfileRepository, accountRepository: AccountRepository): Long {
-    val profile = profileRepository.findByStringId(Constants.DEFAULT_PROFILE_ID)!!
+fun getDefaultAccountId(userRepository: UserRepository, profileRepository: ProfileRepository, accountRepository: AccountRepository): Long {
+
+    val user = userRepository.findByUuid(Constants.DEFAULT_USER_ID)!!
+    val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
     val accountId = accountRepository.getAllByProfileId(profile.id!!).firstOrNull()!!.id
     return accountId!!
 }
 
-fun tempInit(userRepository: UserRepository, profileRepository: ProfileRepository, accountRepository: AccountRepository, categoryRepository: CategoryRepository, timeAndLocaleHandler: TimeAndLocaleHandler): Unit {
-    val user = UserPojo(null, Constants.DEFAULT_USER_ID, "user", "bcrypt:1234", "", LocalDateTime.now(timeAndLocaleHandler.getClock()))
+fun tempInit(userRepository: UserRepository, profileRepository: ProfileRepository, accountRepository: AccountRepository, categoryRepository: CategoryRepository, timeHandler: TimeHandler): Unit {
+    val user = UserPojo(null, Constants.DEFAULT_USER_ID, "user", "{noop}1234", "", LocalDateTime.now(timeHandler.getClock()))
     val id = userRepository.insertUser(user)
     val userDb = userRepository.findById(id)!!
-    val profile = profileRepository.findByStringId(Constants.DEFAULT_PROFILE_ID)
+    val profile = profileRepository.findByStringId(userDb.id!!, Constants.DEFAULT_PROFILE_ID)
         if(profile == null) {
-            val defaultProfile = tempCreateDefaultProfile(userDb, profileRepository, timeAndLocaleHandler)
-            tempInitProfile(defaultProfile, accountRepository, timeAndLocaleHandler)
-            tempInitDefaultCategories(defaultProfile.id!!, categoryRepository, timeAndLocaleHandler)
+            val defaultProfile = tempCreateDefaultProfile(userDb, profileRepository, timeHandler)
+            tempInitProfile(defaultProfile, accountRepository, timeHandler)
+            tempInitDefaultCategories(defaultProfile.id!!, categoryRepository, timeHandler)
         }
 }
 
-fun tempCreateDefaultProfile(user: UserPojo, profileRepository: ProfileRepository, timeAndLocaleHandler: TimeAndLocaleHandler): ProfilePojo {
-    val clock = timeAndLocaleHandler.getClock()
+fun tempCreateDefaultProfile(user: UserPojo, profileRepository: ProfileRepository, timeHandler: TimeHandler): ProfilePojo {
+    val clock = timeHandler.getClock()
     val date = ZonedDateTime.now(clock)
     val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
     val profile = ProfilePojo(null, user.id!!, "Default", Constants.DEFAULT_PROFILE_ID, utcDate)
     val id = profileRepository.insertProfile(profile)
-    return profileRepository.findByStringId(Constants.DEFAULT_PROFILE_ID)!!
+    return profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 }
 
-fun tempInitProfile(profile: ProfilePojo, accountRepository: AccountRepository, timeAndLocaleHandler: TimeAndLocaleHandler): Long {
+fun tempInitProfile(profile: ProfilePojo, accountRepository: AccountRepository, timeHandler: TimeHandler): Long {
     LOGGER.debug("tempInitProfile")
 
         val accounts = accountRepository.getAllByProfileId(profile.id!!)
         var defaultAccount = accounts.firstOrNull()
-        val locale = timeAndLocaleHandler.getLocale()
+        val locale = Locale.US
         val currency = Currency.getInstance(locale)?.currencyCode ?: "USD"
 
         LOGGER.info("Picked default locale and currency: {}, {}", locale, currency)
-        val clock = timeAndLocaleHandler.getClock()
+        val clock = timeHandler.getClock()
         val date = ZonedDateTime.now(clock)
         val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
 
@@ -95,10 +96,10 @@ fun tempInitProfile(profile: ProfilePojo, accountRepository: AccountRepository, 
         return profile.id!!
 
 }
-fun tempInitDefaultCategories(profileId: Long, categoryRepository: CategoryRepository, timeAndLocaleHandler: TimeAndLocaleHandler): Unit {
+fun tempInitDefaultCategories(profileId: Long, categoryRepository: CategoryRepository, timeHandler: TimeHandler): Unit {
     LOGGER.debug("tempInitDefaultCategories")
 
-        val clock = timeAndLocaleHandler.getClock()
+        val clock = timeHandler.getClock()
         val date = ZonedDateTime.now(clock)
         val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
 

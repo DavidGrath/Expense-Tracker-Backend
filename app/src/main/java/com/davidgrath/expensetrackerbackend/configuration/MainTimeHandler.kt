@@ -4,7 +4,7 @@ import java.time.Clock
 import java.time.ZoneId
 import java.util.*
 
-class MainTimeAndLocaleHandler: TimeAndLocaleHandler {
+class MainTimeHandler: TimeHandler {
 
     override fun getClock(): Clock {
         return Clock.systemDefaultZone()
@@ -14,9 +14,6 @@ class MainTimeAndLocaleHandler: TimeAndLocaleHandler {
         return ZoneId.systemDefault()
     }
 
-    override fun getLocale(): Locale {
-        return Locale.getDefault()
-    }
 
     override fun changeClock(clock: Clock) {
         //Do Nothing
@@ -26,7 +23,4 @@ class MainTimeAndLocaleHandler: TimeAndLocaleHandler {
         //Do Nothing
     }
 
-    override fun changeLocale(locale: Locale) {
-        //Do Nothing
-    }
 }

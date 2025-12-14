@@ -29,6 +29,18 @@ class UserRepository {
         return selectStep.fetchOne()?.into(UserPojo::class.java)
     }
 
+    fun findByUuid(uuid: String): UserPojo? {
+        val selectStep = dslContext.selectFrom(USER)
+            .where(USER.UUID.eq(uuid))
+        return selectStep.fetchOne()?.into(UserPojo::class.java)
+    }
+
+    fun findByUsername(username: String): UserPojo? {
+        val selectStep = dslContext.selectFrom(USER)
+            .where(USER.USERNAME.eq(username))
+        return selectStep.fetchOne()?.into(UserPojo::class.java)
+    }
+
     fun deleteAllForTesting(): Int {
         val delete = dslContext.deleteFrom(USER).where("true")
         return delete.execute()

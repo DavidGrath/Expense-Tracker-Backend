@@ -25,9 +25,10 @@ class ProfileRepository {
         return profileDb.id!!
     }
 
-    fun findByStringId(stringId: String): ProfilePojo? {
+    fun findByStringId(userId: Long, stringId: String): ProfilePojo? {
         val selectStep = dslContext.selectFrom(PROFILE)
-            .where(PROFILE.STRING_ID.eq(stringId))
+            .where(PROFILE.USER_ID.eq(userId))
+            .and(PROFILE.STRING_ID.eq(stringId))
         return selectStep.fetchOne()?.into(ProfilePojo::class.java)
     }
 

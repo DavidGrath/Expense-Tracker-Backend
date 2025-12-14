@@ -1,9 +1,7 @@
 package com.davidgrath.expensetrackerbackend.testutils
 
-import com.davidgrath.expensetrackerbackend.configuration.TimeAndLocaleHandler
+import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.Image
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.TransactionItemImages
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.AccountPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ImagePojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ProfilePojo
@@ -18,34 +16,33 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import java.time.format.DateTimeFormatter
 
-class DataBuilder(private val root: File, private val timeAndLocaleHandler: TimeAndLocaleHandler, private val userUuid: String, private val profileUuid: String,
+class DataBuilder(private val root: File, private val timeHandler: TimeHandler, private val userUuid: String, private val profileUuid: String,
                   private val transactionRepository: TransactionRepository,
                   private val categoryRepository: CategoryRepository, private val profileRepository: ProfileRepository,
                   private val accountRepository: AccountRepository,
                   private val transactionItemRepository: TransactionItemRepository,
                   private val imagesRepository: ImageRepository,
-                  private val itemImagesRepository: ItemImagesRepository
+                  private val itemImagesRepository: ItemImagesRepository, private val userRepository: UserRepository
     ) {
     fun createTransaction(): TransactionBuilder {
-        val transactionBuilder = TransactionBuilderImpl(root, timeAndLocaleHandler, userUuid, profileUuid, transactionRepository, categoryRepository, profileRepository, accountRepository, transactionItemRepository, imagesRepository, itemImagesRepository)
+        val transactionBuilder = TransactionBuilderImpl(root, timeHandler, userUuid, profileUuid, transactionRepository, categoryRepository, profileRepository, accountRepository, transactionItemRepository, imagesRepository, itemImagesRepository, userRepository)
         return transactionBuilder
     }
 
     fun createBasicTransaction(description: String, category: String, amount: BigDecimal): Long {
-        val transactionBuilder = TransactionBuilderImpl(root, timeAndLocaleHandler, userUuid, profileUuid, transactionRepository, categoryRepository, profileRepository, accountRepository, transactionItemRepository, imagesRepository, itemImagesRepository)
+        val transactionBuilder = TransactionBuilderImpl(root, timeHandler, userUuid, profileUuid, transactionRepository, categoryRepository, profileRepository, accountRepository, transactionItemRepository, imagesRepository, itemImagesRepository, userRepository)
             .withItem(description, category, amount)
         val id = transactionBuilder.commit().first()
         return id
     }
 
-    private class TransactionBuilderImpl(private val root: File, private val timeAndLocaleHandler: TimeAndLocaleHandler, private val userUuid: String, private val profileUuid: String, private val transactionRepository: TransactionRepository,
+    private class TransactionBuilderImpl(private val root: File, private val timeHandler: TimeHandler, private val userUuid: String, private val profileUuid: String, private val transactionRepository: TransactionRepository,
                                          private val categoryRepository: CategoryRepository, private val profileRepository: ProfileRepository,
                                          private val accountRepository: AccountRepository,
                                          private val transactionItemRepository: TransactionItemRepository,
                                          private val imagesRepository: ImageRepository,
-                                         private val itemImagesRepository: ItemImagesRepository
+                                         private val itemImagesRepository: ItemImagesRepository, private val userRepository: UserRepository
         ): TransactionBuilder {
         private val items = arrayListOf<TransactionItemPojo>()
         private var account: AccountPojo
@@ -65,7 +62,8 @@ class DataBuilder(private val root: File, private val timeAndLocaleHandler: Time
         private val profile: ProfilePojo
 
         init {
-            profile = profileRepository.findByStringId(Constants.DEFAULT_PROFILE_ID)!!
+            val user = userRepository.findByUuid(Constants.DEFAULT_USER_ID)!!
+            profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
             account = accountRepository.getAllByProfileId(profile.id!!).first()
         }
 
@@ -94,7 +92,7 @@ class DataBuilder(private val root: File, private val timeAndLocaleHandler: Time
             if(newAccount != null) {
                 throw IllegalStateException("New account already added")
             }
-            val dateTime = LocalDateTime.now(timeAndLocaleHandler.getClock())
+            val dateTime = LocalDateTime.now(timeHandler.getClock())
             val xAccount = AccountPojo(null, profile.id!!, currencyCode, null, "", accountName, dateTime)
             val accountId = accountRepository.insertAccount(xAccount)
             newAccount = AccountPojo(accountId, profile.id!!, currencyCode, null, "", accountName, dateTime)
@@ -143,13 +141,13 @@ class DataBuilder(private val root: File, private val timeAndLocaleHandler: Time
             }
             val sum = items.map { it.amount }.reduce { acc, bigDecimal -> acc!!.plus(bigDecimal!!) }
             val account = newAccount?: account
-            val firstDate = this.date?: LocalDate.now(timeAndLocaleHandler.getClock())
+            val firstDate = this.date?: LocalDate.now(timeHandler.getClock())
             val time = if(timeSet) {
-                this.time?: LocalTime.now(timeAndLocaleHandler.getClock())
+                this.time?: LocalTime.now(timeHandler.getClock())
             } else {
                 this.time
             }
-            var dateTime = LocalDateTime.now(timeAndLocaleHandler.getClock())
+            var dateTime = LocalDateTime.now(timeHandler.getClock())
 
             val repeats = listOf(firstDate) + repeatDates
             val sha256Map = mutableMapOf<String, Long>()

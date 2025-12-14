@@ -1,6 +1,6 @@
 package com.davidgrath.expensetrackerbackend.service
 
-import com.davidgrath.expensetrackerbackend.configuration.TimeAndLocaleHandler
+import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import com.davidgrath.expensetrackerbackend.entities.views.DateAmountSummary
 import com.davidgrath.expensetrackerbackend.repository.TransactionRepository
@@ -16,7 +16,7 @@ class TransactionService {
     @Autowired
     lateinit var transactionRepository: TransactionRepository
     @Autowired
-    lateinit var timeAndLocaleHandler: TimeAndLocaleHandler
+    lateinit var timeHandler: TimeHandler
 
     fun getTotalAmountByDate(
         profileId: Long, debitOrCredit: Boolean, fromDate: LocalDate?, toDate: LocalDate? = null,
@@ -30,12 +30,12 @@ class TransactionService {
 
         var zeroCount = 0
         val start = if (fromDate == null) {
-            LocalDate.now(timeAndLocaleHandler.getClock())
+            LocalDate.now(timeHandler.getClock())
         } else {
             fromDate
         }
         val end = if (toDate == null) {
-            LocalDate.now(timeAndLocaleHandler.getClock())
+            LocalDate.now(timeHandler.getClock())
         } else {
             toDate
         }

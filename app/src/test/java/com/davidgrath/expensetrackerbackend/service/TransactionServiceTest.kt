@@ -1,6 +1,7 @@
 package com.davidgrath.expensetrackerbackend.service
 
-import com.davidgrath.expensetrackerbackend.configuration.TimeAndLocaleHandler
+import com.davidgrath.expensetrackerbackend.configuration.TestConfiguration
+import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.repository.*
 import com.davidgrath.expensetrackerbackend.testutils.*
 import com.davidgrath.expensetrackerbackend.utils.Constants
@@ -10,7 +11,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.context.annotation.ComponentScan
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.junit4.SpringRunner
@@ -33,7 +33,7 @@ class TransactionServiceTest {
     @Autowired
     lateinit var transactionService: TransactionService
     @Autowired
-    lateinit var timeAndLocaleHandler: TimeAndLocaleHandler
+    lateinit var timeHandler: TimeHandler
     @Autowired
     lateinit var profileRepository: ProfileRepository
     @Autowired
@@ -54,7 +54,7 @@ class TransactionServiceTest {
 
     @Before
     fun setUp() {
-        tempInit(userRepository, profileRepository, accountRepository, categoryRepository, timeAndLocaleHandler)
+        tempInit(userRepository, profileRepository, accountRepository, categoryRepository, timeHandler)
     }
 
     @After
@@ -66,8 +66,10 @@ class TransactionServiceTest {
     fun givenTransactionRangeDoesNotHaveDatesInIntervalWhenFetchTotalThenDatesIntervalHaveZeroes() {
         val folder = Files.createTempDirectory("temp").toFile()
         folder.deleteOnExit()
-        val dataBuilder = DataBuilder(folder, timeAndLocaleHandler, "", Constants.DEFAULT_PROFILE_ID, transactionRepository, categoryRepository, profileRepository, accountRepository, itemRepository, imageRepository, itemImagesRepository)
-        val profile = profileRepository.findByStringId(Constants.DEFAULT_PROFILE_ID)!!
+        val dataBuilder = DataBuilder(folder, timeHandler, "", Constants.DEFAULT_PROFILE_ID, transactionRepository, categoryRepository, profileRepository, accountRepository, itemRepository, imageRepository, itemImagesRepository, userRepository)
+
+        val user = userRepository.findByUuid(Constants.DEFAULT_USER_ID)!!
+        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val profileId = profile.id!!
         val time = LocalTime.of(8, 0, 0)
         val firstTransactionDate = LocalDate.parse("2025-01-02")
@@ -77,7 +79,7 @@ class TransactionServiceTest {
 //        val fifthTransactionDate = LocalDate.parse("2025-01-11")
         val fifthTransactionDate = LocalDate.parse("2025-07-11")
 
-        val accountId = getDefaultAccountId(profileRepository, accountRepository)
+        val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
         //Empty Set
         var transactionSumByDates = transactionService.getTotalAmountByDate(profileId, true, LocalDate.parse("2025-07-01"), null, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
         assertEquals(0, transactionSumByDates.size)
