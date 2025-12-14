@@ -32,6 +32,12 @@ class ProfileRepository {
         return selectStep.fetchOne()?.into(ProfilePojo::class.java)
     }
 
+    fun findAllByUserId(userId: Long): List<ProfilePojo> {
+        val selectStep = dslContext.selectFrom(PROFILE)
+            .where(PROFILE.USER_ID.eq(userId))
+        return selectStep.fetch().into(ProfilePojo::class.java)
+    }
+
     fun deleteAllForTesting(): Int {
         val delete = dslContext.deleteFrom(PROFILE).where("true")
         return delete.execute()

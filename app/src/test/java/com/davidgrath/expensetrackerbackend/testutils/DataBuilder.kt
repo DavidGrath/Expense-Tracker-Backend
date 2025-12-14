@@ -1,8 +1,11 @@
 package com.davidgrath.expensetrackerbackend.testutils
 
+import com.davidgrath.expensetracker.generatedapi.model.DocumentType
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
+import com.davidgrath.expensetrackerbackend.file
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.AccountPojo
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.DocumentPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ImagePojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ProfilePojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionItemImagesPojo
@@ -23,15 +26,15 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
                   private val accountRepository: AccountRepository,
                   private val transactionItemRepository: TransactionItemRepository,
                   private val imagesRepository: ImageRepository,
-                  private val itemImagesRepository: ItemImagesRepository, private val userRepository: UserRepository
+                  private val itemImagesRepository: ItemImagesRepository, private val userRepository: UserRepository, val documentRepository: DocumentRepository
     ) {
     fun createTransaction(): TransactionBuilder {
-        val transactionBuilder = TransactionBuilderImpl(root, timeHandler, userUuid, profileUuid, transactionRepository, categoryRepository, profileRepository, accountRepository, transactionItemRepository, imagesRepository, itemImagesRepository, userRepository)
+        val transactionBuilder = TransactionBuilderImpl(root, timeHandler, userUuid, profileUuid, transactionRepository, categoryRepository, profileRepository, accountRepository, transactionItemRepository, imagesRepository, itemImagesRepository, userRepository, documentRepository)
         return transactionBuilder
     }
 
     fun createBasicTransaction(description: String, category: String, amount: BigDecimal): Long {
-        val transactionBuilder = TransactionBuilderImpl(root, timeHandler, userUuid, profileUuid, transactionRepository, categoryRepository, profileRepository, accountRepository, transactionItemRepository, imagesRepository, itemImagesRepository, userRepository)
+        val transactionBuilder = TransactionBuilderImpl(root, timeHandler, userUuid, profileUuid, transactionRepository, categoryRepository, profileRepository, accountRepository, transactionItemRepository, imagesRepository, itemImagesRepository, userRepository, documentRepository)
             .withItem(description, category, amount)
         val id = transactionBuilder.commit().first()
         return id
@@ -42,7 +45,7 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
                                          private val accountRepository: AccountRepository,
                                          private val transactionItemRepository: TransactionItemRepository,
                                          private val imagesRepository: ImageRepository,
-                                         private val itemImagesRepository: ItemImagesRepository, private val userRepository: UserRepository
+                                         private val itemImagesRepository: ItemImagesRepository, private val userRepository: UserRepository, val documentRepository: DocumentRepository
         ): TransactionBuilder {
         private val items = arrayListOf<TransactionItemPojo>()
         private var account: AccountPojo
@@ -58,6 +61,7 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
 
         private var hasCommitted = false
         private var imagesMap = mutableMapOf<Int, List<TestData.Resource>>()
+        private var documents = arrayListOf<TestData.Resource>()
 
         private val profile: ProfilePojo
 
@@ -151,8 +155,22 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
 
             val repeats = listOf(firstDate) + repeatDates
             val sha256Map = mutableMapOf<String, Long>()
-            val mainImagesFolder = file(root, Constants.FOLDER_NAME_USERS, userUuid, Constants.FOLDER_NAME_PROFILES, profileUuid, Constants.FOLDER_NAME_DATA, Constants.SUBFOLDER_NAME_IMAGES)
             val classLoader = TransactionItemBuilderImpl::class.java.classLoader
+            val mainImagesFolder = file(root, Constants.FOLDER_NAME_USERS, userUuid, Constants.FOLDER_NAME_PROFILES, profileUuid, Constants.FOLDER_NAME_DATA, Constants.SUBFOLDER_NAME_IMAGES)
+            val mainDocumentsFolder = file(root, Constants.FOLDER_NAME_USERS, userUuid, Constants.FOLDER_NAME_PROFILES, profileUuid, Constants.FOLDER_NAME_DATA, Constants.SUBFOLDER_NAME_DOCUMENTS)
+            documents.forEach { doc ->
+                val resourceInputStream = classLoader.getResourceAsStream(doc.resourceName)
+                val file = File(mainDocumentsFolder, doc.fileName)
+                val outputStream = file.outputStream()
+                val copied = resourceInputStream.copyTo(outputStream)
+                resourceInputStream.close()
+                outputStream.close()
+                val documentDb = DocumentPojo(null, profile.id!!, DocumentType.OTHER.toString(), file.length(), doc.sha256, "image/jpeg", "", "", LocalDateTime.now()) //TODO date time
+                val documentId = documentRepository.insertDocument(documentDb)
+//                sha256Map[doc.sha256] = imageId
+//                imageId
+            }
+
             val ids = repeats.map { repeatDate ->
                 if(useDatesAsCreationDates) {
                     dateTime = repeatDate.atTime(LocalTime.parse("08:00:00"))
@@ -219,6 +237,11 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
             this.items.add(transactionItemDb)
             val index = this.items.size - 1
             imagesMap[index] = images
+        }
+
+        override fun withDocument(resource: TestData.Resource): TransactionBuilder {
+            this.documents.add(resource)
+            return this
         }
     }
 

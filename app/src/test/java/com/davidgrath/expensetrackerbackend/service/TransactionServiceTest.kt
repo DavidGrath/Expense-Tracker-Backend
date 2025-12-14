@@ -51,6 +51,10 @@ class TransactionServiceTest {
     lateinit var itemImagesRepository: ItemImagesRepository
     @Autowired
     lateinit var userRepository: UserRepository
+    @Autowired
+    lateinit var testUtilComponent: TestUtilComponent
+    @Autowired
+    lateinit var documentRepository: DocumentRepository
 
     @Before
     fun setUp() {
@@ -59,14 +63,14 @@ class TransactionServiceTest {
 
     @After
     fun tearDown() {
-        deleteAll(itemImagesRepository, itemRepository, imageRepository, categoryRepository, transactionRepository, accountRepository, profileRepository, userRepository)
+        testUtilComponent.deleteAll()
     }
 
     @Test
     fun givenTransactionRangeDoesNotHaveDatesInIntervalWhenFetchTotalThenDatesIntervalHaveZeroes() {
         val folder = Files.createTempDirectory("temp").toFile()
         folder.deleteOnExit()
-        val dataBuilder = DataBuilder(folder, timeHandler, "", Constants.DEFAULT_PROFILE_ID, transactionRepository, categoryRepository, profileRepository, accountRepository, itemRepository, imageRepository, itemImagesRepository, userRepository)
+        val dataBuilder = DataBuilder(folder, timeHandler, "", Constants.DEFAULT_PROFILE_ID, transactionRepository, categoryRepository, profileRepository, accountRepository, itemRepository, imageRepository, itemImagesRepository, userRepository, documentRepository)
 
         val user = userRepository.findByUuid(Constants.DEFAULT_USER_ID)!!
         val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!

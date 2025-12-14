@@ -20,4 +20,5 @@ interface TransactionBuilder: Commit {
     fun atDate(date: LocalDate): TransactionBuilder
     fun atTime(time: LocalTime): TransactionBuilder
     fun useDatesAsCreationDates(b: Boolean): TransactionBuilder
+    fun withDocument(resource: TestData.Resource): TransactionBuilder
 }

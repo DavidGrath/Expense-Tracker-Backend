@@ -4,7 +4,7 @@ import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.UserPojo
 import com.davidgrath.expensetrackerbackend.repository.*
 import com.davidgrath.expensetrackerbackend.configuration.TestConfiguration
-import com.davidgrath.expensetrackerbackend.testutils.deleteAll
+import com.davidgrath.expensetrackerbackend.testutils.TestUtilComponent
 import com.davidgrath.expensetrackerbackend.testutils.tempInit
 import com.davidgrath.expensetrackerbackend.utils.Constants
 import org.junit.After
@@ -50,6 +50,8 @@ class UserServiceTest {
     lateinit var userRepository: UserRepository
     @Autowired
     lateinit var timeHandler: TimeHandler
+    @Autowired
+    lateinit var testUtilComponent: TestUtilComponent
 
     @Before
     fun setUp() {
@@ -58,7 +60,7 @@ class UserServiceTest {
 
     @After
     fun tearDown() {
-        deleteAll(itemImagesRepository, itemRepository, imageRepository, categoryRepository, transactionRepository, accountRepository, profileRepository, userRepository)
+        testUtilComponent.deleteAll()
     }
 
     @Test

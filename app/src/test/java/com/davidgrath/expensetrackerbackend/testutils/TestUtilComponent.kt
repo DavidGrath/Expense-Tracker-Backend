@@ -1,0 +1,49 @@
+package com.davidgrath.expensetrackerbackend.testutils
+
+import com.davidgrath.expensetrackerbackend.repository.AccountRepository
+import com.davidgrath.expensetrackerbackend.repository.CategoryRepository
+import com.davidgrath.expensetrackerbackend.repository.DocumentRepository
+import com.davidgrath.expensetrackerbackend.repository.ImageRepository
+import com.davidgrath.expensetrackerbackend.repository.ItemImagesRepository
+import com.davidgrath.expensetrackerbackend.repository.ProfileRepository
+import com.davidgrath.expensetrackerbackend.repository.TransactionItemRepository
+import com.davidgrath.expensetrackerbackend.repository.TransactionRepository
+import com.davidgrath.expensetrackerbackend.repository.UserRepository
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.TestComponent
+import org.springframework.stereotype.Component
+
+@TestComponent
+class TestUtilComponent {
+    @Autowired
+    lateinit var profileRepository: ProfileRepository
+    @Autowired
+    lateinit var transactionRepository: TransactionRepository
+
+    @Autowired
+    lateinit var categoryRepository: CategoryRepository
+    @Autowired
+    lateinit var accountRepository: AccountRepository
+    @Autowired
+    lateinit var itemRepository: TransactionItemRepository
+    @Autowired
+    lateinit var imageRepository: ImageRepository
+    @Autowired
+    lateinit var itemImagesRepository: ItemImagesRepository
+    @Autowired
+    lateinit var userRepository: UserRepository
+    @Autowired
+    lateinit var documentRepository: DocumentRepository
+
+    fun deleteAll() {
+        itemImagesRepository.deleteAllForTesting()
+        documentRepository.deleteAllForTesting()
+        itemRepository.deleteAllForTesting()
+        imageRepository.deleteAllForTesting()
+        categoryRepository.deleteAllForTesting()
+        transactionRepository.deleteAllForTesting()
+        accountRepository.deleteAllForTesting()
+        profileRepository.deleteAllForTesting()
+        userRepository.deleteAllForTesting()
+    }
+}

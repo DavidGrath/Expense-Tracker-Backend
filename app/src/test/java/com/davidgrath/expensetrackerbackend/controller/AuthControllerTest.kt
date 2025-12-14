@@ -3,15 +3,11 @@ package com.davidgrath.expensetrackerbackend.controller
 import com.davidgrath.expensetracker.generatedapi.model.SignUpRequest
 import com.davidgrath.expensetrackerbackend.configuration.SecurityConfiguration
 import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
-import com.davidgrath.expensetrackerbackend.repository.*
-import com.davidgrath.expensetrackerbackend.service.TransactionService
 import com.davidgrath.expensetrackerbackend.configuration.TestConfiguration
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.controller.exception.ExceptionResponseHandler
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.UserPojo
 import com.davidgrath.expensetrackerbackend.service.UserService
-import com.davidgrath.expensetrackerbackend.testutils.deleteAll
-import com.davidgrath.expensetrackerbackend.testutils.tempInit
+import com.davidgrath.expensetrackerbackend.testutils.TestUtilComponent
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.ObjectWriter
 import io.jsonwebtoken.Jwts
@@ -29,14 +25,12 @@ import org.springframework.http.MediaType
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.ContextConfiguration
-import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers
 import java.time.LocalDateTime
 import java.time.ZoneId
-import java.time.temporal.ChronoUnit
 import java.util.*
 import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
@@ -47,7 +41,7 @@ import javax.crypto.spec.SecretKeySpec
 @WebMvcTest(AuthController::class)
 @ContextConfiguration(
     classes = [
-        AuthController::class, SecurityConfiguration::class, TestConfiguration::class, TestAuthController::class, ExceptionResponseHandler::class
+        AuthController::class, SecurityConfiguration::class, TestConfiguration::class, TestAuthController::class, ExceptionResponseHandler::class, TestUtilComponent::class
     ])
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 //@TestPropertySource(
@@ -57,22 +51,7 @@ class AuthControllerTest {
     @Autowired
     lateinit var mockMvc: MockMvc
     @Autowired
-    lateinit var profileRepository: ProfileRepository
-    @Autowired
-    lateinit var transactionRepository: TransactionRepository
-
-    @Autowired
-    lateinit var categoryRepository: CategoryRepository
-    @Autowired
-    lateinit var accountRepository: AccountRepository
-    @Autowired
-    lateinit var itemRepository: TransactionItemRepository
-    @Autowired
-    lateinit var imageRepository: ImageRepository
-    @Autowired
-    lateinit var itemImagesRepository: ItemImagesRepository
-    @Autowired
-    lateinit var userRepository: UserRepository
+    lateinit var testUtilComponent: TestUtilComponent
     @Autowired
     lateinit var timeHandler: TimeHandler
     @Autowired
@@ -86,7 +65,7 @@ class AuthControllerTest {
 
     @After
     fun tearDown() {
-        deleteAll(itemImagesRepository, itemRepository, imageRepository, categoryRepository, transactionRepository, accountRepository, profileRepository, userRepository)
+        testUtilComponent.deleteAll()
     }
 
     @Test

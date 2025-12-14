@@ -30,12 +30,6 @@ fun file(vararg segments: String): File {
     return File(fullPath)
 }
 
-fun file(file: File, vararg segments: String): File {
-    val sep = File.separator
-    val fullPath = segments.joinToString(sep)
-    return File(file, fullPath)
-}
-
 fun getDefaultAccountId(userRepository: UserRepository, profileRepository: ProfileRepository, accountRepository: AccountRepository): Long {
 
     val user = userRepository.findByUuid(Constants.DEFAULT_USER_ID)!!
@@ -124,15 +118,4 @@ fun tempInitDefaultCategories(profileId: Long, categoryRepository: CategoryRepos
             LOGGER.info("Created default categories")
         }
 
-}
-
-fun deleteAll(itemImagesRepository: ItemImagesRepository, itemRepository: TransactionItemRepository, imageRepository: ImageRepository, categoryRepository: CategoryRepository, transactionRepository: TransactionRepository, accountRepository: AccountRepository, profileRepository: ProfileRepository, userRepository: UserRepository) {
-    itemImagesRepository.deleteAllForTesting()
-    itemRepository.deleteAllForTesting()
-    imageRepository.deleteAllForTesting()
-    categoryRepository.deleteAllForTesting()
-    transactionRepository.deleteAllForTesting()
-    accountRepository.deleteAllForTesting()
-    profileRepository.deleteAllForTesting()
-    userRepository.deleteAllForTesting()
 }
