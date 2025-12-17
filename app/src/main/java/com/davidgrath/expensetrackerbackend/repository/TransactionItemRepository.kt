@@ -14,11 +14,11 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Repository
 
 @Repository
-class TransactionItemRepository {
+open class TransactionItemRepository {
 
     @Autowired
-    lateinit var dslContext: DSLContext
-    val TRANSACTION_ITEM: TransactionItem = TransactionItem.TRANSACTION_ITEM
+    open lateinit var dslContext: DSLContext
+    open var TRANSACTION_ITEM: TransactionItem = TransactionItem.TRANSACTION_ITEM
 
     fun insertTransactionItem(item: TransactionItemPojo): Long {
         val itemDb = dslContext.newRecord(TRANSACTION_ITEM, item)

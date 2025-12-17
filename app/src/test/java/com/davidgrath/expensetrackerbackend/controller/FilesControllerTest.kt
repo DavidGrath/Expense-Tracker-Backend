@@ -11,8 +11,10 @@ import com.davidgrath.expensetrackerbackend.repository.ProfileRepository
 import com.davidgrath.expensetrackerbackend.service.UserService
 import com.davidgrath.expensetrackerbackend.testutils.TestData
 import com.davidgrath.expensetrackerbackend.testutils.TestUtilComponent
+import com.davidgrath.expensetrackerbackend.testutils.createBearerToken
 import com.davidgrath.expensetrackerbackend.testutils.file
 import com.davidgrath.expensetrackerbackend.utils.Constants
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.JWT_ALG
 import org.hamcrest.Matchers
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -20,6 +22,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.http.MediaType
 import org.springframework.test.annotation.DirtiesContext
@@ -57,6 +60,8 @@ class FilesControllerTest {
     lateinit var profileRepository: ProfileRepository
     @Autowired
     lateinit var timeHandler: TimeHandler
+    @Value("\${jwt.signingkey}")
+    private val jwtSigningKey: String? = null
 
     @Before
     fun setUp() {
@@ -91,18 +96,16 @@ class FilesControllerTest {
 
         val outputStream = document.outputStream()
         resourceInputStream.copyTo(outputStream)
-        val bytes = classLoader.getResourceAsStream(resource.resourceName).readBytes()
         val path = document.path
         val uriPath = "/files/$filePath"
         val defaultUriBuilderFactory = DefaultUriBuilderFactory()
         defaultUriBuilderFactory.encodingMode = DefaultUriBuilderFactory.EncodingMode.TEMPLATE_AND_VALUES
         val p = defaultUriBuilderFactory.uriString(uriPath).build()
-        val encoder = Base64.getEncoder()
-        val basic = encoder.encodeToString("user2:password".toByteArray())
+        val jws = createBearerToken("user2", jwtSigningKey!!, JWT_ALG, timeHandler)
         val pathResult = mockMvc
             .perform(
                 MockMvcRequestBuilders.get(p)
-                    .header("Authorization", "Basic ${basic}")
+                    .header("Authorization", "Bearer ${jws}")
             )
             .andExpectAll(
                 MockMvcResultMatchers.status().isNotFound(),
@@ -143,12 +146,11 @@ class FilesControllerTest {
         val defaultUriBuilderFactory = DefaultUriBuilderFactory()
         defaultUriBuilderFactory.encodingMode = DefaultUriBuilderFactory.EncodingMode.TEMPLATE_AND_VALUES
         val p = defaultUriBuilderFactory.uriString(uriPath).build()
-        val encoder = Base64.getEncoder()
-        val basic = encoder.encodeToString("username:password".toByteArray())
+        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
         val pathResult = mockMvc
             .perform(
                 MockMvcRequestBuilders.get(p)
-                    .header("Authorization", "Basic ${basic}")
+                    .header("Authorization", "Bearer ${jws}")
             )
             .andExpectAll(
                 MockMvcResultMatchers.status().isOk()

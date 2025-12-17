@@ -13,11 +13,11 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Repository
 
 @Repository
-class ProfileRepository {
+open class ProfileRepository {
 
     @Autowired
-    lateinit var dslContext: DSLContext
-    val PROFILE: Profile = Profile.PROFILE
+    open lateinit var dslContext: DSLContext
+    open var PROFILE: Profile = Profile.PROFILE
 
     fun insertProfile(profile: ProfilePojo): Long {
         val profileDb = dslContext.newRecord(PROFILE, profile)

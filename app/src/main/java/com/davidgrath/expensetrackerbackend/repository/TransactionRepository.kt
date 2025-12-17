@@ -17,13 +17,13 @@ import java.math.BigDecimal
 import java.time.LocalDate
 
 @Repository
-class TransactionRepository {
+open class TransactionRepository {
 
     @Autowired
-    lateinit var dslContext: DSLContext
-    val TRANSACTION: Transaction = Transaction.TRANSACTION
-    val ACCOUNT: Account = Account.ACCOUNT
-    val TRANSACTION_ITEM: TransactionItem = TransactionItem.TRANSACTION_ITEM
+    open lateinit var dslContext: DSLContext
+    open var TRANSACTION: Transaction = Transaction.TRANSACTION
+    open var ACCOUNT: Account = Account.ACCOUNT
+    open var TRANSACTION_ITEM: TransactionItem = TransactionItem.TRANSACTION_ITEM
 
     fun insertTransaction(transaction: TransactionPojo): Long {
         val transactionDb = dslContext.newRecord(TRANSACTION, transaction)

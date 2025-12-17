@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.annotation.Order
 import org.springframework.security.config.Customizer
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
@@ -20,16 +21,37 @@ open class SecurityConfiguration {
 
 
     @Bean
+    @Order(1)
     open fun securityFilterChain(httpSecurity: HttpSecurity): SecurityFilterChain {
+        httpSecurity
+            .securityMatcher("/auth/signUp")
+            .csrf().disable()
+            .authorizeHttpRequests { c ->
+                c.anyRequest().permitAll()
+            }
+
+        return httpSecurity.build()
+    }
+
+    @Bean
+    @Order(2)
+    open fun basicAuthFilterChain(httpSecurity: HttpSecurity): SecurityFilterChain {
+        httpSecurity
+            .securityMatcher("/auth/login")
+            .csrf().disable()
+            .authorizeHttpRequests { c ->
+                c.anyRequest().authenticated()
+            }.httpBasic(Customizer.withDefaults())
+        return httpSecurity.build()
+    }
+
+    @Bean
+    @Order(3)
+    open fun bearerAuthFilterChain(httpSecurity: HttpSecurity): SecurityFilterChain {
         httpSecurity
             .csrf().disable()
             .authorizeHttpRequests { c ->
-                c.requestMatchers("/auth/login").authenticated()
-            }.httpBasic(Customizer.withDefaults())
-            .authorizeHttpRequests { c ->
-            c
-                .requestMatchers("/auth/signUp").permitAll()
-                .anyRequest().authenticated()
+                c.anyRequest().authenticated()
             }
             .oauth2ResourceServer { oauth2 ->
                 oauth2.jwt(Customizer.withDefaults())

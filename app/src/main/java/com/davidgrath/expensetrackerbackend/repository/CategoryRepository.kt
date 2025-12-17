@@ -13,11 +13,11 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Repository
 
 @Repository
-class CategoryRepository {
+open class CategoryRepository {
 
     @Autowired
-    lateinit var dslContext: DSLContext
-    val CATEGORY: Category = Category.CATEGORY
+    open lateinit var dslContext: DSLContext
+    open var CATEGORY: Category = Category.CATEGORY
 
     fun insertCategory(category: CategoryPojo): Long {
         val categoryDb = dslContext.newRecord(CATEGORY, category)
@@ -30,6 +30,13 @@ class CategoryRepository {
         val selectStep = dslContext.selectFrom(CATEGORY)
             .where(CATEGORY.PROFILE_ID.eq(profileId))
             .and(CATEGORY.STRING_ID.eq(stringId))
+        return selectStep.fetchOne()?.into(CategoryPojo::class.java)
+    }
+
+    fun findByProfileIdAndId(profileId: Long, id: Long): CategoryPojo? {
+        val selectStep = dslContext.selectFrom(CATEGORY)
+            .where(CATEGORY.PROFILE_ID.eq(profileId))
+            .and(CATEGORY.ID.eq(id))
         return selectStep.fetchOne()?.into(CategoryPojo::class.java)
     }
 

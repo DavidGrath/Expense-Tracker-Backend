@@ -1,7 +1,6 @@
 package com.davidgrath.expensetrackerbackend.service
 
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.UserPojo
 import com.davidgrath.expensetrackerbackend.repository.*
 import com.davidgrath.expensetrackerbackend.configuration.TestConfiguration
 import com.davidgrath.expensetrackerbackend.testutils.TestUtilComponent
@@ -55,7 +54,7 @@ class UserServiceTest {
 
     @Before
     fun setUp() {
-        tempInit(userRepository, profileRepository, accountRepository, categoryRepository, timeHandler)
+        tempInit(testUtilComponent, timeHandler)
     }
 
     @After
@@ -66,7 +65,7 @@ class UserServiceTest {
     @Test
     fun basicUserSignUpTest() {
         val locale = Locale("en", "GB")
-        val userId = userService.createUser("username", "password", locale)
+        val userId = userService.createUser("user2", "password", locale)
         val profile = profileRepository.findByStringId(userId, Constants.DEFAULT_PROFILE_ID)
         assertNotNull(profile)
         //Assert default account exists

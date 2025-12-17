@@ -9,7 +9,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 
 
 @Configuration
-class WebMvcConfiguration : WebMvcConfigurer {
+open class WebMvcConfiguration : WebMvcConfigurer {
 
 
     override fun addFormatters(registry: FormatterRegistry) {

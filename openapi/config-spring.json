@@ -9,5 +9,6 @@
 	"sourceFolder": ".",
 	"unhandledException": true,
 	"useSpringBoot3": true,
-	"useTags": false
+	"useTags": false,
+    "openApiNullable": false
 }

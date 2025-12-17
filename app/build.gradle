@@ -5,6 +5,7 @@ plugins {
     id "com.diffplug.spotless" version "6.25.0"
     id "org.openapi.generator" version "7.15.0"
     id 'org.jetbrains.kotlin.jvm' version '1.7.21'
+    id "org.jetbrains.kotlin.plugin.spring" version "1.7.21"
 }
 
 repositories {
@@ -65,6 +66,7 @@ dependencies {
     jooqConfig 'org.reactivestreams:reactive-streams:1.0.4'
     jooqConfig 'org.jooq:jooq-meta-extensions:3.19.11'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    implementation("org.jspecify:jspecify:1.0.0")
 }
 
 group="com.davidgrath"
@@ -160,6 +162,10 @@ tasks.named("openApiGenerate") {
     generatorName = "spring"
     inputSpec = "${rootDir}/openapi/openapi.json"
     outputDir = "${layout.buildDirectory.getAsFile().get()}/generated/openapi/main"
+    // Mainly to use codepoint length
+    // https://github.com/OpenAPITools/openapi-generator/blob/a9f439f1c62a3b90a12a05f1b1ecdacfebbc80d3/modules/openapi-generator/src/main/resources/JavaSpring/beanValidationCore.mustache
+    templateDir = "${rootDir}/openapi/templates"
+    importMappings = ["Nullable": "org.jspecify.annotations.Nullable"]
 }
 compileKotlin {
     kotlinOptions {

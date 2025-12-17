@@ -9,6 +9,7 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.UserPojo
 import com.davidgrath.expensetrackerbackend.repository.*
 import com.davidgrath.expensetrackerbackend.toByte
 import com.davidgrath.expensetrackerbackend.utils.Constants
+import io.jsonwebtoken.Jwts
 import org.junit.Assert
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -17,6 +18,8 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.util.*
+import javax.crypto.SecretKey
+import javax.crypto.spec.SecretKeySpec
 
 private val LOGGER = LoggerFactory.getLogger("com.davidgrath.expensetrackerbackend.testutils.TestUtils")
 
@@ -38,8 +41,25 @@ fun getDefaultAccountId(userRepository: UserRepository, profileRepository: Profi
     return accountId!!
 }
 
-fun tempInit(userRepository: UserRepository, profileRepository: ProfileRepository, accountRepository: AccountRepository, categoryRepository: CategoryRepository, timeHandler: TimeHandler): Unit {
-    val user = UserPojo(null, Constants.DEFAULT_USER_ID, "user", "{noop}1234", "", LocalDateTime.now(timeHandler.getClock()))
+fun createBearerToken(username: String, signingKey: String, algorithm: String, timeHandler: TimeHandler): String {
+    val key: SecretKey = SecretKeySpec(signingKey!!.toByteArray(), algorithm)
+    val localDateTime = LocalDateTime.now(timeHandler.getClock())
+//        val expiry = localDateTime.plus(60, ChronoUnit.MINUTES)
+    val jws = Jwts.builder()
+        .subject(username)
+        .signWith(key)
+        .issuedAt(Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant()))
+        .id(UUID.randomUUID().toString())
+        .compact()
+    return jws
+}
+
+fun tempInit(component: TestUtilComponent, timeHandler: TimeHandler): Unit {
+    val userRepository = component.userRepository
+    val profileRepository = component.profileRepository
+    val accountRepository = component.accountRepository
+    val categoryRepository = component.categoryRepository
+    val user = UserPojo(null, Constants.DEFAULT_USER_ID, "username", "password", "", LocalDateTime.now(timeHandler.getClock()))
     val id = userRepository.insertUser(user)
     val userDb = userRepository.findById(id)!!
     val profile = profileRepository.findByStringId(userDb.id!!, Constants.DEFAULT_PROFILE_ID)

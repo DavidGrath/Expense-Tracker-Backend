@@ -17,6 +17,14 @@
             "TransactionDetails": {
                 "type": "object",
                 "properties": {
+
+                    "id": {
+                      "type": "integer",
+                      "format": "int64"
+                    },
+                    "total": {
+                      "type": "number"
+                    },
                     "account": {
                         "$ref": "#/components/schemas/Account"
                     },
@@ -66,9 +74,8 @@
                     "description": {
                         "type": "string"
                     },
-                    "categoryId": {
-                        "type": "integer",
-                        "format": "int64"
+                    "category": {
+                      "$ref": "#/components/schemas/Category"
                     },
                     "isReduction": {
                         "type": "boolean"
@@ -121,7 +128,20 @@
                 }
             },
             "Profile": {
-                "description": "A named group of accounts"
+                "description": "A named group of accounts",
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "format": "int64"
+                },
+                "stringId": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              }
             },
             "Account": {
                 "description": "A named set of transactions in a specific currency",
@@ -131,6 +151,11 @@
                         "type": "integer",
                         "format": "int64"
                     },
+                  "profileId": {
+                      "type": "integer",
+                      "format": "int64"
+
+                  },
                     "currencyCode": {
                         "type": "string",
                         "description": "An ISO 4217 Currency Code"
@@ -155,12 +180,12 @@
                 "properties": {
                     "from": {
                         "type": "string",
-                        "format": "date-time",
+                        "format": "date",
                         "nullable": true
                     },
                     "to": {
                         "type": "string",
-                        "format": "date-time",
+                        "format": "date",
                         "nullable": true
                     },
                     "accounts": {
@@ -450,7 +475,38 @@
                         "description": "A BCP-47 language tag. Used to create the default account"
                     }
                 }
-            }
+            },
+          "BasicTransactionCreateRequest": {
+            "type": "object",
+            "properties": {
+              "accountId": {
+                "type": "integer",
+                "format": "int64",
+                "nullable": false
+              },
+              "debitOrCredit": {
+                "type": "boolean",
+                "nullable": false
+              },
+              "amount": {
+                "type": "number",
+                "nullable": false,
+                "minimum": 0.0,
+                "exclusiveMinimum": true
+              },
+              "description": {
+                "type": "string",
+                "nullable": false,
+                "maxLength": 500
+              },
+              "categoryId": {
+                "type": "integer",
+                "format": "int64",
+                "nullable": false
+              }
+            },
+            "required": ["accountId", "debitOrCredit", "amount", "description", "categoryId"]
+          }
         }
     }
 }

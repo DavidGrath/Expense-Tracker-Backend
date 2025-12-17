@@ -13,11 +13,11 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Repository
 
 @Repository
-class ItemImagesRepository {
+open class ItemImagesRepository {
 
     @Autowired
-    lateinit var dslContext: DSLContext
-    val TRANSACTION_ITEM_IMAGES: TransactionItemImages = TransactionItemImages.TRANSACTION_ITEM_IMAGES
+    open lateinit var dslContext: DSLContext
+    open var TRANSACTION_ITEM_IMAGES: TransactionItemImages = TransactionItemImages.TRANSACTION_ITEM_IMAGES
 
     fun insertItemImage(transactionItemImages: TransactionItemImagesPojo): Long {
         val itemImageDb = dslContext.newRecord(TRANSACTION_ITEM_IMAGES, transactionItemImages)

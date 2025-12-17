@@ -8,6 +8,8 @@ import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.controller.exception.ExceptionResponseHandler
 import com.davidgrath.expensetrackerbackend.service.UserService
 import com.davidgrath.expensetrackerbackend.testutils.TestUtilComponent
+import com.davidgrath.expensetrackerbackend.testutils.createBearerToken
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.JWT_ALG
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.ObjectWriter
 import io.jsonwebtoken.Jwts
@@ -56,8 +58,8 @@ class AuthControllerTest {
     lateinit var timeHandler: TimeHandler
     @Autowired
     lateinit var userService: UserService
-
-    private val JWT_ALG = "HmacSHA256"
+    @Value("\${jwt.signingkey}")
+    private val jwtSigningKey: String? = null
 
     @Before
     fun setUp() {
@@ -84,22 +86,35 @@ class AuthControllerTest {
         assertTrue(signUpResult.getResponse().getContentAsString().startsWith("eyJ")) //pretty much constant for every JSON Base64
     }
 
-    @Value("\${jwt.signingkey}")
-    private val jwtSigningKey: String? = null
+
     @Test
     fun bearerTokenTest() {
-        val key: SecretKey = SecretKeySpec(jwtSigningKey!!.toByteArray(), JWT_ALG)
-        val localDateTime = LocalDateTime.now(timeHandler.getClock())
-//        val expiry = localDateTime.plus(60, ChronoUnit.MINUTES)
-        val jws = Jwts.builder()
-            .subject("userx")
-            .signWith(key)
-            .issuedAt(Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant()))
-            .id(UUID.randomUUID().toString())
-            .compact()
+        val jws = createBearerToken("userx", jwtSigningKey!!, JWT_ALG, timeHandler)
         val testResult = mockMvc
             .perform(
                 MockMvcRequestBuilders.get("/test").header("Authorization", "Bearer $jws")
+            )
+            .andExpect(MockMvcResultMatchers.status().isOk())
+            .andReturn()
+    }
+
+    @Test
+    fun basicAuthTest() {
+        userService.createUser("username", "password", Locale.US)
+        val jws = createBearerToken("userx", jwtSigningKey!!, JWT_ALG, timeHandler)
+        var testResult = mockMvc
+            .perform(
+                MockMvcRequestBuilders.get("/test").header("Authorization", "Bearer $jws")
+            )
+            .andExpect(MockMvcResultMatchers.status().isOk())
+            .andReturn()
+
+        val encoder = Base64.getEncoder()
+        val basic = encoder.encodeToString("username:password".toByteArray())
+
+        testResult = mockMvc
+            .perform(
+                MockMvcRequestBuilders.post("/auth/login").header("Authorization", "Basic $basic")
             )
             .andExpect(MockMvcResultMatchers.status().isOk())
             .andReturn()

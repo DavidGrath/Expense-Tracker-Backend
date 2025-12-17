@@ -9,10 +9,10 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Repository
 
 @Repository
-class DocumentRepository {
+open class DocumentRepository {
     @Autowired
-    lateinit var dslContext: DSLContext
-    val DOCUMENT: Document = Document.DOCUMENT
+    open lateinit var dslContext: DSLContext
+    open var DOCUMENT: Document = Document.DOCUMENT
 
     fun insertDocument(document: DocumentPojo): Long {
         val documentDb = dslContext.newRecord(DOCUMENT, document)

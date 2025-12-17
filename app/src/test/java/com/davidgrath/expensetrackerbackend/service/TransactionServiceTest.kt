@@ -58,7 +58,7 @@ class TransactionServiceTest {
 
     @Before
     fun setUp() {
-        tempInit(userRepository, profileRepository, accountRepository, categoryRepository, timeHandler)
+        tempInit(testUtilComponent, timeHandler)
     }
 
     @After

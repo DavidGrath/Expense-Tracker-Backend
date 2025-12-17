@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.util.LinkedMultiValueMap
 import org.springframework.util.MultiValueMap
 import org.springframework.web.bind.annotation.GetMapping
@@ -32,13 +33,12 @@ class FilesController {
 
     @GetMapping("/files/profiles/{profileUuid}/{*path}", produces = [MediaType.APPLICATION_OCTET_STREAM_VALUE])
     fun getFile(@PathVariable("profileUuid") profileUuid: String, @PathVariable("path") path: String): FileSystemResource? {
-        val map = LinkedMultiValueMap<String, Any>()
         val root = timeHandler.getRoot()
 
         val authentication = SecurityContextHolder.getContext().authentication
-        val principal = authentication.principal as CustomUserDetails
-        LOGGER.info("Username: {}", principal.username)
-        val user = userService.getByUsername(principal.username!!)
+        val principal = authentication.principal as Jwt
+        LOGGER.info("Username: {}", principal.subject)
+        val user = userService.getByUsername(principal.subject!!)
         val userUuid = user!!.uuid!!
 
         val file = file(root, Constants.FOLDER_NAME_USERS, userUuid, Constants.FOLDER_NAME_PROFILES, profileUuid, path)
