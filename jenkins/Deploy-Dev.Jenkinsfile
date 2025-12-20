@@ -36,7 +36,7 @@ pipeline {
         }
         stage('Test') {
             environment {
-                SPRING_PROFILES_ACTIVE=ci
+                SPRING_PROFILES_ACTIVE='ci'
             }
             steps {
                 sh './gradlew test'
