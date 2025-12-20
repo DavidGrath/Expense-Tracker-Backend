@@ -41,6 +41,9 @@ pipeline {
                 SPRING_PROFILES_ACTIVE='ci'
             }
             steps {
+            withCredentials([file(credentialsId: 'expense-tracker-application-secrets', variable: 'expenseTrackerApplicationSecrets')]) {
+                sh 'cp $expenseTrackerApplicationSecrets app/src/main/resources/secrets-ci.properties'
+            }
                 sh './gradlew test'
             }
         }
@@ -58,5 +61,10 @@ pipeline {
                 sh 'sudo systemctl restart expense-tracker'
             }
         }
+    }
+    post {
+            always {
+                junit 'app/build/test-results/**/*.xml'
+            }
     }
 }
