@@ -50,9 +50,15 @@ pipeline {
             }
         }
         stage('Ansible setup') {
+            agent {
+                node {
+                    label 'Built-In Node'
+                }
+            }
             steps {
-                dir 'ansible'
-                sh 'ansible-playbook playbooks/setup_service.yaml'
+                dir ('ansible') {
+                    sh 'ansible-playbook playbooks/setup_service.yaml'
+                }
             }
         }
         stage('Deploy') {
