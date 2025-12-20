@@ -60,7 +60,7 @@ pipeline {
             }
             steps {
                 dir ('ansible') {
-                    sh 'ansible-playbook -i inventory/hosts.yaml playbooks/setup_service.yaml  --private-key ~/.ssh/jenkins_agent_key -e "ansible_become_password=\'$ANSIBLE_BECOME_PASS\'"'
+                    sh 'ansible-playbook -i inventory playbooks/setup_service.yaml  --private-key ~/.ssh/jenkins_agent_key -e "ansible_become_password=\'$ANSIBLE_BECOME_PASS\'"'
                 }
             }
         }

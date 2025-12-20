@@ -70,10 +70,14 @@ dependencies {
 }
 
 group="com.davidgrath"
-version=//Fetch from artifact, append, "dev" maybe
+version='0.1.0'//Fetch from artifact, append, "dev" maybe
 
 base {
     archivesName = "expense-tracker-backend"
+}
+
+bootJar {
+    archiveVersion = ''
 }
 // Apply a specific Java toolchain to ease working on different environments.
 java {
