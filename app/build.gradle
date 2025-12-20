@@ -127,7 +127,7 @@ tasks.register('jooqCodeGenCi', Exec) {
     dependsOn jooqCodeGenCopy
     
     workingDir "${rootDir}/database/jooq"
-    commandLine "java", "-Djooq.codegen.jdbc.username=${System.getenv("MYSQL_CREDS_USR")}", "-Djooq.codegen.jdbc.password=${System.getenv("MYSQL_CREDS_PSW")}", "-Djooq.codegen.propertyOverride=true", "-cp", "*", "org.jooq.codegen.GenerationTool", "configuration-ci.xml"
+    commandLine "java", "-Djooq.codegen.propertyOverride=true", "-Djooq.codegen.jdbc.driver=com.mysql.jdbc.Driver", "-Djooq.codegen.jdbc.url=jdbc:mysql://172.26.48.26:3306/expense_tracker_database_ci", "-Djooq.codegen.jdbc.username=${System.getenv("MYSQL_CREDS_USR")}", "-Djooq.codegen.jdbc.password=${System.getenv("MYSQL_CREDS_PSW")}", "-Djooq.codegen.propertyOverride=true", "-cp", "*", "org.jooq.codegen.GenerationTool", "configuration-ci.xml"
     
 }
 
@@ -135,7 +135,7 @@ tasks.register('jooqCodeGenDev', Exec) {
     dependsOn jooqCodeGenCopy
 
     workingDir "${rootDir}/database/jooq"
-    commandLine "java", "-Djooq.codegen.jdbc.username=${System.getenv("MYSQL_CREDS_USR")}", "-Djooq.codegen.jdbc.password=${System.getenv("MYSQL_CREDS_PSW")}", "-Djooq.codegen.propertyOverride=true", "-cp", "*", "org.jooq.codegen.GenerationTool", "configuration-dev.xml"
+    commandLine "java", "-Djooq.codegen.propertyOverride=true", "-Djooq.codegen.jdbc.driver=com.mysql.jdbc.Driver", "-Djooq.codegen.jdbc.url=jdbc:mysql://172.26.48.26:3306/expense_tracker_database_ci", "-Djooq.codegen.jdbc.username=${System.getenv("MYSQL_CREDS_USR")}", "-Djooq.codegen.jdbc.password=${System.getenv("MYSQL_CREDS_PSW")}", "-Djooq.codegen.propertyOverride=true", "-cp", "*", "org.jooq.codegen.GenerationTool", "configuration-dev.xml"
 
 }
 
