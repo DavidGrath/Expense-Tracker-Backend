@@ -41,6 +41,8 @@ pipeline {
                 SPRING_PROFILES_ACTIVE='ci'
             }
             steps {
+                sh 'rm -f app/src/main/resources/secrets-ci.properties'
+                sh 'chmod o+w -R app'
             withCredentials([file(credentialsId: 'expense-tracker-application-secrets', variable: 'expenseTrackerApplicationSecrets')]) {
                 sh 'cp $expenseTrackerApplicationSecrets app/src/main/resources/secrets-ci.properties'
             }
