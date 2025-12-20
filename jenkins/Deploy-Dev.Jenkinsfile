@@ -73,7 +73,7 @@ pipeline {
                 withCredentials([file(credentialsId: 'expense-tracker-backend-secrets-dev', variable: 'expenseTrackerApplicationSecrets')]) {
                     sh 'cp $expenseTrackerApplicationSecrets /opt/expense_tracker/secrets-dev.properties'
                     sh 'chmod 700 /opt/expense_tracker/secrets-dev.properties'
-                    sh 'chown root:root /opt/expense_tracker/secrets-dev.properties'
+                    sh 'sudo chown root:root /opt/expense_tracker/secrets-dev.properties'
                 }
                 sh 'sudo systemctl enable expense_tracker_backend'
                 sh 'sudo systemctl daemon-reload'
