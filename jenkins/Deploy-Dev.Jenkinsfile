@@ -14,6 +14,7 @@ pipeline {
         stage('Flyway') {
 
             steps {
+                sh 'chmod +x ./gradlew'
                 sh './gradlew setUpCIDb'
                 dir 'database/flyway'
                 sh 'flyway migrate -environment=dev  -user=$MYSQL_CREDS_USR -password=$MYSQL_CREDS_PSW'
