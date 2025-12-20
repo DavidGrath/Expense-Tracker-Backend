@@ -1,0 +1,1 @@
+flyway migrate -environment=production -user=%FLYWAY_USR% -password=%FLYWAY_PSW%

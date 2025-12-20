@@ -55,7 +55,7 @@ open class TransactionsController: TransactionsApi {
         if(accountService.isAccountInProfile(profile.id!!, basicTransactionCreateRequest!!.accountId)) {
             val transactionId = transactionService.addTransaction(basicTransactionCreateRequest.accountId, basicTransactionCreateRequest.debitOrCredit, basicTransactionCreateRequest.amount, basicTransactionCreateRequest.description, basicTransactionCreateRequest.categoryId)
             return ResponseEntity.ok(transactionId)
-        } else if(accountService.isAccountForUser(user!!.id!!, profile.id!!) || !categoryService.isCategoryForProfile(profile.id!!, basicTransactionCreateRequest.categoryId)) {
+        } else if(accountService.isAccountForUser(user!!.id!!, basicTransactionCreateRequest.accountId)) {// && !categoryService.isCategoryForProfile(profile.id!!, basicTransactionCreateRequest.categoryId)) {
             val exception = CustomHttpException(ErrorCode.ENTITY_NOT_IN_PROFILE, HttpStatus.BAD_REQUEST)
             LOGGER.error("Account not in profile", exception)
             throw exception

@@ -42,7 +42,6 @@ import java.math.BigDecimal
 import java.util.Base64
 import java.util.Locale
 
-@ActiveProfiles("dev")
 @RunWith(SpringRunner::class)
 @WebMvcTest(TransactionsController::class)
 @ContextConfiguration(
@@ -50,8 +49,6 @@ import java.util.Locale
         TransactionsController::class, SecurityConfiguration::class, TestConfiguration::class, ExceptionResponseHandler::class, TestUtilComponent::class
     ])
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
-//@TestPropertySource(
-//    locations = ["classpath:application-dev.properties", "classpath:secrets-dev.properties"])
 class TransactionsControllerTest {
 
     @Autowired

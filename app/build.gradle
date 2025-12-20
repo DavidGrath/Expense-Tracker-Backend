@@ -123,12 +123,20 @@ tasks.register('jooqCodeGenCopy', Copy) {
         }
 }
 
-tasks.register('jooqCodeGenDev', Exec) {
+tasks.register('jooqCodeGenCi', Exec) {
     dependsOn jooqCodeGenCopy
     
     workingDir "${rootDir}/database/jooq"
-    commandLine "java", "-cp", "*", "org.jooq.codegen.GenerationTool", "configuration-dev.xml"
+    commandLine "java", "-Djooq.codegen.jdbc.username=\$MYSQL_USR", "-Djooq.codegen.jdbc.password=\$MYSQL_PSW", "-cp", "*", "org.jooq.codegen.GenerationTool", "configuration-ci.xml"
     
+}
+
+tasks.register('jooqCodeGenDev', Exec) {
+    dependsOn jooqCodeGenCopy
+
+    workingDir "${rootDir}/database/jooq"
+    commandLine "java", "-Djooq.codegen.jdbc.username=\$MYSQL_USR", "-Djooq.codegen.jdbc.password=\$MYSQL_PSW", "-cp", "*", "org.jooq.codegen.GenerationTool", "configuration-dev.xml"
+
 }
 
 
@@ -146,6 +154,41 @@ tasks.register('jooqCodeGenProd', Exec) {
     commandLine "java", "-cp", "*", "org.jooq.codegen.GenerationTool", "configuration-prod.xml"
 }
 
+
+tasks.register('setUpTestDb') {
+    exec {
+        commandLine "mysql.exe", "-u", "expense_tracker", "-ppassword", "-e", "DROP DATABASE IF EXISTS `expense_tracker_database_testlocal`;"
+    }
+    exec {
+        commandLine "mysql.exe", "-u", "expense_tracker", "-ppassword", "-e", "CREATE DATABASE `expense_tracker_database_testlocal`;"
+    }
+    exec {
+        workingDir "${rootDir}/database/flyway"
+        if (System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows')) {
+            commandLine "flyway.cmd", "migrate", "-environment=testlocal"
+        } else {
+            commandLine "flyway", "migrate", "-environment=testlocal"
+        }
+    }
+}
+
+tasks.register('setUpCIDb') {
+    exec {
+        commandLine "mysql", "-u", "expense_tracker", "-h", "172.26.48.26", "-p\$MYSQL_PASSWORD", "-e", "DROP DATABASE IF EXISTS `expense_tracker_database_ci`;"
+    }
+    exec {
+        commandLine "mysql", "-u", "expense_tracker", "-h", "172.26.48.26", "-p\$MYSQL_PASSWORD", "-e", "CREATE DATABASE `expense_tracker_database_ci`;"
+    }
+    /*exec {
+        workingDir "${rootDir}/database/flyway"
+        if (System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows')) {
+            commandLine "flyway.cmd", "migrate", "-environment=ci"
+        } else {
+            commandLine "flyway", "migrate", "-environment=ci"
+        }
+    }*/
+}
+
 spotless {
     java {
         removeUnusedImports()
@@ -153,8 +196,17 @@ spotless {
     }
 }
 
-tasks.named('compileJava') {
-    dependsOn spotlessApply
+//tasks.named('compileJava') {
+//    dependsOn spotlessApply
+//}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+    dependsOn("openApiGenerate")
+//
+}
+tasks.withType(JavaCompile).configureEach {
+
+    dependsOn("openApiGenerate")
 }
 
 tasks.named("openApiGenerate") {

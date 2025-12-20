@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration>
+<configuration>
+    <import class="ch.qos.logback.classic.encoder.PatternLayoutEncoder" />
+    <import class="ch.qos.logback.core.ConsoleAppender" />
+    <import class="ch.qos.logback.core.rolling.RollingFileAppender" />
+    <import class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy" />
+
+    <include resource="org/springframework/boot/logging/logback/defaults.xml" />
+
+    <conversionRule conversionWord="customMethod"
+                    class="com.davidgrath.expensetrackerbackend.configuration.logback.CustomMethodConverter" />
+
+    <appender name="STDOUT" class="ConsoleAppender">
+        <encoder>
+            <!-- <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} -%kvp- %msg%n</pattern> -->
+            <!-- Modified CONSOLE_LOG_PATTERN from https://github.com/spring-projects/spring-boot/blob/3.3.x/spring-boot-project/spring-boot/src/main/resources/org/springframework/boot/logging/logback/defaults.xml -->
+            <pattern>%clr(%d{HH:mm:ss.SSSXXX}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint} %clr(%applicationName[%15.15t]){faint} %clr(${LOG_CORRELATION_PATTERN:-}){faint}%clr(%-55.55(%logger{39}%customMethod)){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}</pattern>
+            <outputPatternAsHeader>true</outputPatternAsHeader>
+        </encoder>
+    </appender>
+    <appender name="logfile" class="RollingFileAppender">
+        <!-- <file>logs/default_logs.log</file> -->
+        <rollingPolicy class="TimeBasedRollingPolicy">
+            <fileNamePattern>logs/default_logs.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSSXXX} [%thread] %-5level %logger{36}%customMethod -%kvp- %msg%n</pattern>
+            <outputPatternAsHeader>true</outputPatternAsHeader>
+        </encoder>
+    </appender>
+    <logger name="com.davidgrath" level="DEBUG" additivity="false">
+        <appender-ref ref="STDOUT" />
+        <appender-ref ref="logfile" />
+
+    </logger>
+    <root level="INFO">
+        <appender-ref ref="STDOUT" />
+        <appender-ref ref="logfile" />
+    </root>
+</configuration>

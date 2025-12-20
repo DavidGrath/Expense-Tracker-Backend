@@ -38,7 +38,6 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
 
 
-@ActiveProfiles("dev")
 @RunWith(SpringRunner::class)
 @WebMvcTest(AuthController::class)
 @ContextConfiguration(
@@ -46,8 +45,6 @@ import javax.crypto.spec.SecretKeySpec
         AuthController::class, SecurityConfiguration::class, TestConfiguration::class, TestAuthController::class, ExceptionResponseHandler::class, TestUtilComponent::class
     ])
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
-//@TestPropertySource(
-//    locations = ["classpath:application-dev.properties", "classpath:secrets-dev.properties"])
 class AuthControllerTest {
 
     @Autowired

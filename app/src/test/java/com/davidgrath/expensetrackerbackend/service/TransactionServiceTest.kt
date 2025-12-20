@@ -27,7 +27,7 @@ import java.time.LocalTime
         TransactionRepository::class
     ])
 @TestPropertySource(
-    locations = ["classpath:application-dev.properties", "classpath:secrets-dev.properties"])
+    locations = ["classpath:application-testlocal.properties", "classpath:secrets-testlocal.properties"])
 class TransactionServiceTest {
 
     @Autowired

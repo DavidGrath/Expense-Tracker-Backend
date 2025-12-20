@@ -3,7 +3,7 @@
 <configuration xmlns="http://www.jooq.org/xsd/jooq-codegen-3.19.8.xsd">
     <jdbc>
         <driver>com.mysql.jdbc.Driver</driver>
-        <url>jdbc:mysql://localhost:3306/expense_tracker_database</url>
+        <url>jdbc:mysql://172.26.48.26:3306/expense_tracker_database</url>
         <user></user>
         <password></password>
         <properties></properties>

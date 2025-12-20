@@ -1,0 +1,21 @@
+= Expense Tracker Backend
+
+== Environments/Profiles
+* devlocal - Developer's machine
+* testlocal - Automated tests on developer's machine
+* dev - General VM
+* ci - Automated tests on the general VM
+* staging - Mirrors production
+* production
+
+== Setting Up Locally
+
+* Have https://dev.mysql.com/downloads/installer/[MySQL 8.0] installed with the executable on your PATH
+* https://repo1.maven.org/maven2/org/flywaydb/flyway-commandline/10.22.0/[Flyway 10.22] on your PATH
+* Setting up  a user:
+[source,mysql-sql]
+----
+    CREATE USER 'expense_tracker' IDENTIFIED BY 'password';
+    GRANT ALL ON `expense_tracker_database_testlocal`.* TO 'expense_tracker'@'localhost';
+    GRANT ALL ON `expense_tracker_database_devlocal`.* TO 'expense_tracker'@'localhost';
+----

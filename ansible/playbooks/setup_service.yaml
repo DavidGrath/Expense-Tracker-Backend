@@ -1,4 +1,29 @@
-# host test_server
-# Download Java-Agent to /opt/opentelemetry
-# Create /opt/expense-tracker
-# Render template to systemD unit file
+- name: Set up Expense Tracker
+  hosts: test_server
+  tasks:
+    - name: Ensure OTel Directory exists
+      become: true
+      ansible.builtin.file:
+        path: /opt/opentelemetry
+        state: directory
+    - name: Download file
+      become: true
+      ansible.builtin.get_url:
+        url: https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v2.9.0/opentelemetry-javaagent.jar
+        dest: /opt/opentelemetry/opentelemetry-javaagent.jar
+        checksum: sha256:FA039F86082B559E53283A863E03DE5DF7DB4BDB4840C5CBB8BF38F292987D5B
+    - name: Ensure Backend Directory exists
+      become: true
+      ansible.builtin.file:
+        path: /opt/expense-tracker
+        state: directory
+    - name: Configure Service Startup
+      become: true
+      ansible.builtin.template:
+        src: templates/expense_tracker_service.sh.j2
+        dest: /opt/expense-tracker/startup.sh
+    - name: Configure Service
+      become: true
+      ansible.builtin.template:
+        src: templates/expense_tracker_backend.service.j2
+        dest: /etc/systemd/system/expense_tracker_backend.service

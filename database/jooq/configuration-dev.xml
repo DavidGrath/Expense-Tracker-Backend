@@ -4,10 +4,10 @@
     <logging>DEBUG</logging>
     <jdbc>
         <driver>com.mysql.jdbc.Driver</driver>
-        <url>jdbc:mysql://localhost:3306/expense_tracker_database_dev</url>
-        <user>expense_tracker</user>
-        <password>password</password>
-        <properties></properties>
+        <url>jdbc:mysql://172.26.48.26:3306/expense_tracker_database_dev</url>
+        <user></user>
+        <password></password>
+
     </jdbc>
     <generator>
         <name>org.jooq.codegen.KotlinGenerator</name>

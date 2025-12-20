@@ -31,7 +31,7 @@
             <outputPatternAsHeader>true</outputPatternAsHeader>
         </encoder>
     </appender>
-    <logger name="com.davidgrath" level="DEBUG" additivity="false">
+    <logger name="com.davidgrath" level="INFO" additivity="false">
         <appender-ref ref="STDOUT" />
         <appender-ref ref="logfile" />
 
