@@ -43,7 +43,7 @@ pipeline {
             steps {
                 sh 'rm -f app/src/main/resources/secrets-ci.properties'
                 sh 'chmod o+w -R app'
-            withCredentials([file(credentialsId: 'expense-tracker-application-secrets', variable: 'expenseTrackerApplicationSecrets')]) {
+            withCredentials([file(credentialsId: 'expense-tracker-backend-secrets-ci', variable: 'expenseTrackerApplicationSecrets')]) {
                 sh 'cp $expenseTrackerApplicationSecrets app/src/main/resources/secrets-ci.properties'
             }
                 sh './gradlew test'
@@ -68,6 +68,13 @@ pipeline {
             steps {
                 sh './gradlew bootJar'
                 sh 'cp "./app/build/libs/expense-tracker-backend-extension \'base\'.jar" /opt/expense-tracker/expense-tracker-backend.jar'
+                sh 'cp app-version /opt/expense-tracker/app-version'
+                sh 'chmod 777 /opt/expense-tracker/expense-tracker-backend.jar'
+                withCredentials([file(credentialsId: 'expense-tracker-backend-secrets-dev', variable: 'expenseTrackerApplicationSecrets')]) {
+                    sh 'cp $expenseTrackerApplicationSecrets /opt/expense-tracker/secrets-dev.properties'
+                    sh 'chmod 700 /opt/expense-tracker/secrets-dev.properties'
+                    sh 'chown root:root /opt/expense-tracker/secrets-dev.properties'
+                }
                 sh 'sudo systemctl enable expense-tracker'
                 sh 'sudo systemctl daemon-reload'
                 sh 'sudo systemctl restart expense-tracker'

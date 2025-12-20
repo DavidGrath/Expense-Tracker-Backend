@@ -15,7 +15,7 @@
     - name: Ensure Backend Directory exists
       become: true
       ansible.builtin.file:
-        path: /opt/expense-tracker
+        path: /opt/expense_tracker
         state: directory
         owner: jenkins
         mode: '760'
@@ -23,7 +23,9 @@
       become: true
       ansible.builtin.template:
         src: expense_tracker_service.sh.j2
-        dest: /opt/expense-tracker/startup.sh
+        dest: /opt/expense_tracker/startup.sh
+        owner: jenkins
+        mode: '751'
     - name: Configure Service
       become: true
       ansible.builtin.template:
