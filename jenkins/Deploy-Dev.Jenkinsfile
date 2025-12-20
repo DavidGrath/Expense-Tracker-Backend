@@ -52,19 +52,19 @@ pipeline {
         stage('Ansible setup') {
             agent {
                 node {
-                    label 'Built-In Node'
+                    label 'built-in'
                 }
             }
             steps {
                 dir ('ansible') {
-                    sh 'ansible-playbook playbooks/setup_service.yaml'
+                    sh 'ansible-playbook -i inventory/hosts.yaml playbooks/setup_service.yaml'
                 }
             }
         }
         stage('Deploy') {
             steps {
                 sh './gradlew bootJar'
-                sh 'scp ./app/build/libs/expense-tracker-backend.jar jenkins@172.26.48.26:/opt/expense-tracker/expense-tracker-backend.jar'
+                sh 'scp ./app/build/libs/expense-tracker-backend.jar jenkins@172.26.48.138:/opt/expense-tracker/expense-tracker-backend.jar'
                 sh 'sudo systemctl daemon-reload'
                 sh 'sudo systemctl restart expense-tracker'
             }
