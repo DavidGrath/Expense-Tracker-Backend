@@ -20,10 +20,10 @@
     - name: Configure Service Startup
       become: true
       ansible.builtin.template:
-        src: templates/expense_tracker_service.sh.j2
+        src: expense_tracker_service.sh.j2
         dest: /opt/expense-tracker/startup.sh
     - name: Configure Service
       become: true
       ansible.builtin.template:
-        src: templates/expense_tracker_backend.service.j2
+        src: expense_tracker_backend.service.j2
         dest: /etc/systemd/system/expense_tracker_backend.service
