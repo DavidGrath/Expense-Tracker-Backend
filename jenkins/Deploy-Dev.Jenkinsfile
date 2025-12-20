@@ -10,7 +10,7 @@ pipeline {
     }
     // Branch dev
     stages {
-
+        //TODO Gradle Clean
         stage('Flyway') {
 
             steps {
@@ -67,10 +67,11 @@ pipeline {
         stage('Deploy') {
             steps {
                 sh './gradlew bootJar'
-                sh 'cp "./app/build/libs/expense-tracker-backend-extension \'base\'.jar" /opt/expense_tracker/expense-tracker-backend.jar'
+                sh 'cp "./app/build/libs/expense-tracker-backend.jar" /opt/expense_tracker/expense-tracker-backend.jar'
                 sh 'cp app-version /opt/expense_tracker/app-version'
                 sh 'chmod 777 /opt/expense_tracker/expense-tracker-backend.jar'
                 withCredentials([file(credentialsId: 'expense-tracker-backend-secrets-dev', variable: 'expenseTrackerApplicationSecrets')]) {
+                    sh 'sudo rm -f /opt/expense_tracker/secrets-dev.properties'
                     sh 'cp $expenseTrackerApplicationSecrets /opt/expense_tracker/secrets-dev.properties'
                     sh 'chmod 700 /opt/expense_tracker/secrets-dev.properties'
                     sh 'sudo chown root:root /opt/expense_tracker/secrets-dev.properties'
