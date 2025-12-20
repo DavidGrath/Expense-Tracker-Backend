@@ -55,9 +55,12 @@ pipeline {
                     label 'built-in'
                 }
             }
+            environment {
+                ANSIBLE_BECOME_PASS = credentials('ansible-become-password')
+            }
             steps {
                 dir ('ansible') {
-                    sh 'ansible-playbook -i inventory/hosts.yaml playbooks/setup_service.yaml'
+                    sh 'ansible-playbook -i inventory/hosts.yaml playbooks/setup_service.yaml  --private-key ~/.ssh/jenkins_agent_key -e "ansible_become_password=\'$ANSIBLE_BECOME_PASS\'"'
                 }
             }
         }
