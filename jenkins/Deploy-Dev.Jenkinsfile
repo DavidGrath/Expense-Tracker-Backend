@@ -78,6 +78,7 @@ pipeline {
                 sh 'sudo systemctl enable expense_tracker_backend'
                 sh 'sudo systemctl daemon-reload'
                 sh 'sudo systemctl restart expense_tracker_backend'
+                sh 'sudo systemctl status expense_tracker_backend'
             }
         }
     }
