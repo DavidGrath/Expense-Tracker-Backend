@@ -174,13 +174,10 @@ tasks.register('setUpTestDb') {
 
 tasks.register('setUpCIDb') {
     exec {
-        commandLine "echo", '$MYSQL_CREDS_USR'
+        commandLine "mysql", "-u", "expense_tracker_dev", "-h", "172.26.48.26", "-p${System.getenv("MYSQL_CREDS_PSW")}", "-e", "DROP DATABASE IF EXISTS `expense_tracker_database_ci`;"
     }
     exec {
-        commandLine "mysql", "-u", "expense_tracker_dev", "-h", "172.26.48.26", "-p\$MYSQL_CREDS_PSW", "-e", "DROP DATABASE IF EXISTS `expense_tracker_database_ci`;"
-    }
-    exec {
-        commandLine "mysql", "-u", "expense_tracker_dev", "-h", "172.26.48.26", "-p\$MYSQL_CREDS_PSW", "-e", "CREATE DATABASE `expense_tracker_database_ci`;"
+        commandLine "mysql", "-u", "expense_tracker_dev", "-h", "172.26.48.26", "-p${System.getenv("MYSQL_CREDS_PSW")}", "-e", "CREATE DATABASE `expense_tracker_database_ci`;"
     }
 
     /*exec {
