@@ -67,7 +67,8 @@ pipeline {
         stage('Deploy') {
             steps {
                 sh './gradlew bootJar'
-                sh 'scp ./app/build/libs/expense-tracker-backend.jar jenkins@172.26.48.138:/opt/expense-tracker/expense-tracker-backend.jar'
+                sh 'cp "./app/build/libs/expense-tracker-backend-extension \'base\'.jar" /opt/expense-tracker/expense-tracker-backend.jar'
+                sh 'sudo systemctl enable expense-tracker'
                 sh 'sudo systemctl daemon-reload'
                 sh 'sudo systemctl restart expense-tracker'
             }

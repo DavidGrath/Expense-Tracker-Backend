@@ -17,6 +17,8 @@
       ansible.builtin.file:
         path: /opt/expense-tracker
         state: directory
+        owner: jenkins
+        mode: '760'
     - name: Configure Service Startup
       become: true
       ansible.builtin.template:
