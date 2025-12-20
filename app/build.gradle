@@ -174,10 +174,10 @@ tasks.register('setUpTestDb') {
 
 tasks.register('setUpCIDb') {
     exec {
-        commandLine "mysql", "-u", "expense_tracker", "-h", "172.26.48.26", "-p\$MYSQL_PASSWORD", "-e", "DROP DATABASE IF EXISTS `expense_tracker_database_ci`;"
+        commandLine "mysql", "-u", "expense_tracker_dev", "-h", "172.26.48.26", "-p\$MYSQL_PASSWORD", "-e", "DROP DATABASE IF EXISTS `expense_tracker_database_ci`;"
     }
     exec {
-        commandLine "mysql", "-u", "expense_tracker", "-h", "172.26.48.26", "-p\$MYSQL_PASSWORD", "-e", "CREATE DATABASE `expense_tracker_database_ci`;"
+        commandLine "mysql", "-u", "expense_tracker_dev", "-h", "172.26.48.26", "-p\$MYSQL_PASSWORD", "-e", "CREATE DATABASE `expense_tracker_database_ci`;"
     }
     /*exec {
         workingDir "${rootDir}/database/flyway"
