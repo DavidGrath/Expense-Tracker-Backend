@@ -49,6 +49,13 @@ pipeline {
                 sh './gradlew test'
             }
         }
+        stage('Flyway') {
+            steps {
+                dir ('database/flyway') {
+                    sh 'flyway migrate -environment=dev  -user=$MYSQL_CREDS_USR -password=$MYSQL_CREDS_PSW'
+                }
+            }
+        }
         stage('Ansible setup') {
             agent {
                 node {
@@ -60,7 +67,7 @@ pipeline {
             }
             steps {
                 dir ('ansible') {
-                    sh 'ansible-playbook -i inventory playbooks/setup_service.yaml  --private-key ~/.ssh/jenkins_agent_key -e "ansible_become_password=\'$ANSIBLE_BECOME_PASS\'"'
+                    sh 'ansible-playbook -i inventory playbooks/setup_service.yaml  --private-key ~/.ssh/jenkins_agent_key -e "ansible_become_password=\'$ANSIBLE_BECOME_PASS\'" -e "environment=\'dev\'"' // For some reason, the template keeps rendering empty square brackets instead of the environment, so I'll try this instead
                 }
             }
         }
