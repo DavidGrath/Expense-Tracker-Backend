@@ -2,7 +2,8 @@
 Description=Expense Tracker Backend
 
 [Service]
-ExecStart=/opt/expense_tracker/startup.sh
+WorkingDirectory=/opt/expense_tracker
+ExecStart=/bin/bash /opt/expense_tracker/startup.sh
 
 [Install]
 WantedBy=multi-user.target
