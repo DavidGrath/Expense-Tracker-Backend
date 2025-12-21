@@ -49,7 +49,7 @@ pipeline {
                 sh './gradlew test'
             }
         }
-        stage('Flyway') {
+        stage('Flyway Dev') {
             steps {
                 dir ('database/flyway') {
                     sh 'flyway migrate -environment=dev  -user=$MYSQL_CREDS_USR -password=$MYSQL_CREDS_PSW'
