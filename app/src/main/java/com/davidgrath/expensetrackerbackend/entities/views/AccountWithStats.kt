@@ -8,7 +8,7 @@ data class AccountWithStats(
     val profileId: Long,
     val currencyCode: String,
     val financialInstitutionId: Long?,
-    val referenceNumber: String,
+    val referenceNumber: String?,
     val name: String,
     val createdAt: String,
     val expenses: BigDecimal,

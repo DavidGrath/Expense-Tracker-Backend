@@ -13,6 +13,7 @@ import com.davidgrath.expensetrackerbackend.testutils.createBearerToken
 import com.davidgrath.expensetrackerbackend.testutils.tempInit
 import com.davidgrath.expensetrackerbackend.utils.Constants
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.JWT_ALG
+import org.hamcrest.Matchers
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -81,6 +82,30 @@ class AccountsControllerTest {
             )
             .andExpectAll(
                 MockMvcResultMatchers.status().is2xxSuccessful
+            )
+    }
+
+    /**
+     * This test feels like a false positive because I got an exception from referenceNumber not being nullable and this test passed while it was still non-nullable
+     */
+    @Test
+    fun getAccountsHappyPathTest() {
+        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
+        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+
+
+
+        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
+
+        mockMvc
+            .perform(
+                MockMvcRequestBuilders.get("/accounts")
+                    .header("Authorization", "Bearer ${jws}")
+                    .header("Profile-Id", profile.stringId)
+            )
+            .andExpectAll(
+                MockMvcResultMatchers.status().is2xxSuccessful,
+                MockMvcResultMatchers.jsonPath("$", Matchers.hasSize<Int>(1))
             )
     }
 }
