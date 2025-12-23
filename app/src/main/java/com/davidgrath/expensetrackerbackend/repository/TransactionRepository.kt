@@ -141,7 +141,7 @@ open class TransactionRepository {
         modes: List<TransactionMode>,
         sellers: List<Long>
     ): BigDecimal {
-        var selectStep = DSL.select(DSL.sum(TRANSACTION.AMOUNT)).from(TRANSACTION)
+        var selectStep = dslContext.select(DSL.sum(TRANSACTION.AMOUNT)).from(TRANSACTION)
             .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
             .where(ACCOUNT.PROFILE_ID.eq(profileId))
             .and(TRANSACTION.DEBIT_OR_CREDIT.eq(debitOrCredit.toByte()))
