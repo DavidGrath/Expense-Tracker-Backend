@@ -53,7 +53,7 @@ open class AccountRepository {
         return selectStep.fetchOne()?.into(AccountPojo::class.java)
     }
 
-    fun getAccountSummary(id: Long): AccountWithStats? {
+    fun getAccountSummary(profileId: Long, id: Long): AccountWithStats? {
         val selectStep = dslContext
             .select(ACCOUNT.asterisk(),
                 dslContext.select(DSL.ifnull(DSL.sum(TRANSACTION.AMOUNT), BigDecimal.ZERO)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID).and(TRANSACTION.DEBIT_OR_CREDIT.eq(0))).asField<BigDecimal>().`as`("expenses"),
@@ -64,8 +64,24 @@ open class AccountRepository {
                     .where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID))
                     .asField<Int>().`as`("itemCount")
                 )
-            .from(ACCOUNT).where(ACCOUNT.ID.eq(id))
+            .from(ACCOUNT)
+            .where(ACCOUNT.ID.eq(id))
+            .and(ACCOUNT.PROFILE_ID.eq(profileId))
         return selectStep.fetchOne()?.into(AccountWithStats::class.java)
+    }
+    fun getAccountSummariesForProfile(profileId: Long): List<AccountWithStats> {
+        val selectStep = dslContext
+            .select(ACCOUNT.asterisk(),
+                dslContext.select(DSL.ifnull(DSL.sum(TRANSACTION.AMOUNT), BigDecimal.ZERO)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID).and(TRANSACTION.DEBIT_OR_CREDIT.eq(0))).asField<BigDecimal>().`as`("expenses"),
+                dslContext.select(DSL.ifnull(DSL.sum(TRANSACTION.AMOUNT), BigDecimal.ZERO)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID).and(TRANSACTION.DEBIT_OR_CREDIT.ne(0))).asField<BigDecimal>().`as`("income"),
+                dslContext.select(DSL.count(TRANSACTION.ID)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID)).asField<Int>().`as`("transactionCount"),
+                dslContext.select(DSL.count(TRANSACTION_ITEM.ID)).from(TRANSACTION_ITEM)
+                    .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(TRANSACTION_ITEM.ID))
+                    .where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID))
+                    .asField<Int>().`as`("itemCount")
+                )
+            .from(ACCOUNT).where(ACCOUNT.PROFILE_ID.eq(profileId))
+        return selectStep.fetch()?.into(AccountWithStats::class.java)?:emptyList()
     }
 
     fun deleteAllForTesting(): Int {

@@ -13,6 +13,7 @@ import org.jooq.impl.DSL
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Repository
+import java.math.BigDecimal
 import java.time.LocalDate
 
 @Repository
@@ -127,6 +128,48 @@ open class TransactionRepository {
         }
         val seekStep = selectStep.orderBy(TRANSACTION.DATED_AT)
         return seekStep.fetch().into(TransactionPojo::class.java)
+    }
+
+
+    fun getTransactionSum(
+        profileId: Long,
+        debitOrCredit: Boolean,
+        fromDate: LocalDate?, toDate: LocalDate?,
+        accountIds: List<Long>,
+        dates: List<LocalDate>,
+        categories: List<Long>,
+        modes: List<TransactionMode>,
+        sellers: List<Long>
+    ): BigDecimal {
+        var selectStep = DSL.select(DSL.sum(TRANSACTION.AMOUNT)).from(TRANSACTION)
+            .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
+            .where(ACCOUNT.PROFILE_ID.eq(profileId))
+            .and(TRANSACTION.DEBIT_OR_CREDIT.eq(debitOrCredit.toByte()))
+        if(fromDate != null) {
+            selectStep = selectStep.and(TRANSACTION.DATED_AT.greaterOrEqual(fromDate))
+        }
+        if(toDate != null) {
+            selectStep = selectStep.and(TRANSACTION.DATED_AT.lessOrEqual(toDate))
+        }
+        if(accountIds.isNotEmpty()) {
+            selectStep = selectStep.and(TRANSACTION.ACCOUNT_ID.`in`(accountIds))
+        }
+        if(dates.isNotEmpty()) {
+            selectStep = selectStep.and(TRANSACTION.DATED_AT.`in`(dates))
+        }
+        if(categories.isNotEmpty()) {
+            selectStep = selectStep.and(TRANSACTION.ID.`in`(
+                dslContext.select(TRANSACTION.ID).from(TRANSACTION).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.TRANSACTION_ID.eq(TRANSACTION.ID)).where(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.`in`(categories))
+            ))
+        }
+        if(modes.isNotEmpty()) {
+            selectStep = selectStep.and(TRANSACTION.MODE.`in`(modes))
+        }
+        if(sellers.isNotEmpty()) {
+            selectStep = selectStep.and(TRANSACTION.SELLER_ID.`in`(sellers))
+        }
+
+        return selectStep.fetchOne()?.value1()?: BigDecimal.ZERO
     }
 
     //endregion

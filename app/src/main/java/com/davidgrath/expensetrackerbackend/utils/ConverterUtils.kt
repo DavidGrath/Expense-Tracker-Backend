@@ -39,6 +39,16 @@ fun TransactionMode?.toApiMode(): com.davidgrath.expensetracker.generatedapi.mod
     }
 }
 
+fun com.davidgrath.expensetracker.generatedapi.model.TransactionMode?.toDbMode(): TransactionMode? {
+    return when(this) {
+        com.davidgrath.expensetracker.generatedapi.model.TransactionMode.CARD -> TransactionMode.Card
+        com.davidgrath.expensetracker.generatedapi.model.TransactionMode.TRANSFER -> TransactionMode.Transfer
+        com.davidgrath.expensetracker.generatedapi.model.TransactionMode.CASH -> TransactionMode.Cash
+        com.davidgrath.expensetracker.generatedapi.model.TransactionMode.OTHER -> TransactionMode.Other
+        null -> null
+    }
+}
+
 fun accountWithStatsToAccount(accountWithStats: AccountWithStats): Account {
     return Account(accountWithStats.id, accountWithStats.profileId, accountWithStats.currencyCode, accountWithStats.name, accountWithStats.transactionCount, accountWithStats.income, accountWithStats.expenses)
 }

@@ -142,6 +142,19 @@ class TransactionService {
         return list
     }
 
+    fun getTransactionDebitSum(profileId: Long, fromDate: LocalDate?, toDate: LocalDate?,
+                               accountIds: List<Long>,
+                               dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>): BigDecimal {
+        return transactionRepository.getTransactionSum(profileId, true, fromDate, toDate, accountIds, dates, categories, modes, sellers)
+    }
+
+    fun getTransactionCreditSum(profileId: Long, fromDate: LocalDate?, toDate: LocalDate?,
+                                accountIds: List<Long>,
+                                dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>): BigDecimal {
+        return transactionRepository.getTransactionSum(profileId, false, fromDate, toDate, accountIds, dates, categories, modes, sellers)
+    }
+
+
     companion object {
         private val LOGGER = LoggerFactory.getLogger(TransactionService::class.java)
     }

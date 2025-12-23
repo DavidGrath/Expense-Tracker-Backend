@@ -25,7 +25,11 @@ class AccountService {
         return accountRepository.getByProfileIdAndId(profileId, accountId)
     }
 
-    fun getAccountSummary(accountId: Long): AccountWithStats? {
-        return accountRepository.getAccountSummary(accountId)
+    fun getAccountsForProfile(profileId: Long): List<AccountWithStats> {
+        return accountRepository.getAccountSummariesForProfile(profileId)
+    }
+
+    fun getAccountSummary(profileId: Long, accountId: Long): AccountWithStats? {
+        return accountRepository.getAccountSummary(profileId, accountId)
     }
 }

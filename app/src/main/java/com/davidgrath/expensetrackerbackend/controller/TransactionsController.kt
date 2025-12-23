@@ -85,7 +85,7 @@ open class TransactionsController: TransactionsApi {
         val transactions = transactionService.getTransactions(profile.id!!, fromDate, toDate,
             accountIds as List<Long>, emptyList(), emptyList(), emptyList(), emptyList())
         val details = transactions.map { t ->
-            val accountStats = accountService.getAccountSummary(t.accountId!!)!!
+            val accountStats = accountService.getAccountSummary(profile.id!!, t.accountId!!)!!
             val account = accountWithStatsToAccount(accountStats)
             val itemsPojo = transactionService.getItemsForTransaction(t.id!!)
             val items = itemsPojo.map { item ->
@@ -113,7 +113,7 @@ open class TransactionsController: TransactionsApi {
             LOGGER.error("Not found", exception)
             throw exception
         }
-        val accountStats = accountService.getAccountSummary(t.accountId!!)!!
+        val accountStats = accountService.getAccountSummary(profile.id!!,t.accountId!!)!!
         val account = accountWithStatsToAccount(accountStats)
         val itemsPojo = transactionService.getItemsForTransaction(t.id!!)
         val items = itemsPojo.map { item ->
