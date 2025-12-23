@@ -1,5 +1,6 @@
 package com.davidgrath.expensetrackerbackend.entities.views
 
+import jakarta.persistence.Column
 import java.math.BigDecimal
 
 data class AccountWithStats(
@@ -10,8 +11,6 @@ data class AccountWithStats(
     val referenceNumber: String,
     val name: String,
     val createdAt: String,
-    val createdAtOffset: String,
-    val createdAtTimezone: String,
     val expenses: BigDecimal,
     val income: BigDecimal,
     val transactionCount: Int,
