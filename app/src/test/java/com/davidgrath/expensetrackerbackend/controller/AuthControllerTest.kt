@@ -9,6 +9,7 @@ import com.davidgrath.expensetrackerbackend.controller.exception.ExceptionRespon
 import com.davidgrath.expensetrackerbackend.service.UserService
 import com.davidgrath.expensetrackerbackend.testutils.TestUtilComponent
 import com.davidgrath.expensetrackerbackend.testutils.createBearerToken
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.JWT_ALG
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.ObjectWriter
@@ -135,7 +136,7 @@ class AuthControllerTest {
             .andExpectAll(
                 MockMvcResultMatchers.status().isBadRequest,
                 MockMvcResultMatchers.jsonPath(
-                    "$.errorCode", Matchers.equalTo(ErrorCode.USERNAME_TAKEN.code)
+                    "$.$CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE", Matchers.equalTo(ErrorCode.USERNAME_TAKEN.code)
                 )
             )
     }

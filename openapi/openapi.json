@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "ExTrack API",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "description": "API for the client-server version of ExTrack. It's meant to mirror the offline version for the most part"
   },
   "security": [
@@ -58,7 +58,7 @@
           "200": {
             "description": "A JWT bearer token",
             "content": {
-              "application/json": {
+              "text/plain": {
                 "schema": {
                   "type": "string"
                 }
@@ -87,7 +87,7 @@
           "200": {
             "description": "A JWT bearer token",
             "content": {
-              "application/json": {
+              "text/plain": {
                 "schema": {
                   "type": "string"
                 }
@@ -139,7 +139,8 @@
               "type": "array",
               "items": {
                 "type": "integer",
-                "format": "int64"
+                "format": "int64",
+                "nullable": false
               }
             },
             "style": "form",
@@ -223,7 +224,9 @@
           "in": "path",
           "required": true,
           "schema": {
-            "type": "integer"
+            "type": "integer",
+            "format": "int64",
+            "nullable": false
           }
         }
       ],
@@ -242,7 +245,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "./schemas.json#/components/schemas/Transaction"
+                  "$ref": "./schemas.json#/components/schemas/TransactionDetails"
                 }
               }
             }
@@ -265,7 +268,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer"
+              "type": "integer",
+              "format": "int64",
+              "nullable": false
             }
           }
         ],
@@ -361,7 +366,9 @@
           "in": "path",
           "required": true,
           "schema": {
-            "type": "integer"
+            "type": "integer",
+            "format": "int64",
+            "nullable": false
           }
         },
         {

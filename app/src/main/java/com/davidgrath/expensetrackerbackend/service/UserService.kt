@@ -1,7 +1,6 @@
 package com.davidgrath.expensetrackerbackend.service
 
-import com.davidgrath.expensetrackerbackend.CORE_CATEGORIES
-import com.davidgrath.expensetrackerbackend.configuration.MainTimeHandler
+import com.davidgrath.expensetrackerbackend.utils.CORE_CATEGORIES
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.AccountPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.CategoryPojo
@@ -11,7 +10,7 @@ import com.davidgrath.expensetrackerbackend.repository.AccountRepository
 import com.davidgrath.expensetrackerbackend.repository.CategoryRepository
 import com.davidgrath.expensetrackerbackend.repository.ProfileRepository
 import com.davidgrath.expensetrackerbackend.repository.UserRepository
-import com.davidgrath.expensetrackerbackend.toByte
+import com.davidgrath.expensetrackerbackend.utils.toByte
 import com.davidgrath.expensetrackerbackend.utils.Constants
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired

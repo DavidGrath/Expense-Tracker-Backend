@@ -8,7 +8,7 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.Transact
 import com.davidgrath.expensetrackerbackend.repository.AccountRepository
 import com.davidgrath.expensetrackerbackend.repository.TransactionItemRepository
 import com.davidgrath.expensetrackerbackend.repository.TransactionRepository
-import com.davidgrath.expensetrackerbackend.toByte
+import com.davidgrath.expensetrackerbackend.utils.toByte
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
@@ -30,15 +30,11 @@ class TransactionService {
     @Autowired
     lateinit var timeHandler: TimeHandler
     
-    fun addTransaction(accountId: Long, debitOrCredit: Boolean, amount: BigDecimal, description: String, categoryId: Long): Long {
+    fun addTransaction(accountId: Long, debitOrCredit: Boolean, amount: BigDecimal, description: String, categoryId: Long, zoneId: ZoneId): Long {
         val date = ZonedDateTime.now(timeHandler.getClock())
         val utcDate = date.withZoneSameInstant(ZoneId.of("UTC"))
-        val dateTimeString = utcDate.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
-        val dateString = date.format(DateTimeFormatter.ISO_LOCAL_DATE)
-        val timeString = date.format(DateTimeFormatter.ISO_LOCAL_TIME)
+        val userTime = date.withZoneSameInstant(zoneId).toLocalTime()
 
-        val offset = date.offset.id
-        val zone = date.zone.id
         val account = accountRepository.findById(accountId)!!
         val maxOrdinal = transactionRepository.getMaxOrdinalInDayForAccount(accountId, utcDate.toLocalDate())?: 0
         val ordinal = maxOrdinal + 1
@@ -55,7 +51,7 @@ class TransactionService {
             null,
             null,
             null,
-            utcDate.toLocalDateTime()
+            utcDate.toLocalDateTime(), userTime
         )
         val transactionId = transactionRepository.insertTransaction(transaction)
 
@@ -113,12 +109,37 @@ class TransactionService {
             currentDate = currentDate.plusDays(1)
         }
         if (zeroCount > 0) {
-            LOGGER.info("getTotalSpentByDate: Filled {} empty dates with zeroes", zeroCount)
+            LOGGER.info("getTotalAmountByDate: Filled {} empty dates with zeroes", zeroCount)
         }
-        LOGGER.info("getTotalSpentByDate: Item Count: {}", newList.size)
+        LOGGER.info("getTotalAmountByDate: Item Count: {}", newList.size)
         val filledSummary = newList.toList()
 
         return filledSummary
+    }
+
+//    fun getByProfileIdAndId(): TransactionPojo? {
+//
+//    }
+
+    fun getByUserIdAndId(userId: Long, id: Long): TransactionPojo? {
+        return transactionRepository.getByUserIdAndId(userId, id)
+    }
+
+    fun getTransactions(
+        profileId: Long,
+        fromDate: LocalDate? = null, toDate: LocalDate? = null,
+        accountIds: List<Long>,
+        dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>
+    ): List<TransactionPojo> {
+        val list = transactionRepository.getTransactions(profileId, fromDate, toDate, accountIds, dates, categories, modes, sellers)
+        LOGGER.info("getTransactions: Fetched {} items", list.size)
+        return list
+    }
+
+    fun getItemsForTransaction(transactionId: Long): List<TransactionItemPojo> {
+        val list = transactionItemRepository.getAllById(transactionId)
+        LOGGER.info("getItemsForTransaction: Fetched {} items", list.size)
+        return list
     }
 
     companion object {

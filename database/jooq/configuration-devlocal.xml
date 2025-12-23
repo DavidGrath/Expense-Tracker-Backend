@@ -4,7 +4,7 @@
     <logging>DEBUG</logging>
     <jdbc>
         <driver>com.mysql.jdbc.Driver</driver>
-        <url>jdbc:mysql://localhost:3306/expense_tracker_database_dev</url>
+        <url>jdbc:mysql://localhost:3306/expense_tracker_database_devlocal</url>
         <user>expense_tracker</user>
         <password>password</password>
         <properties></properties>
@@ -13,7 +13,7 @@
         <name>org.jooq.codegen.KotlinGenerator</name>
         <database>
             <name>org.jooq.meta.mysql.MySQLDatabase</name>
-            <inputSchema>expense_tracker_database_dev</inputSchema>
+            <inputSchema>expense_tracker_database_devlocal</inputSchema>
             <outputSchemaToDefault>true</outputSchemaToDefault>
             <forcedTypes>
                 <forcedType>

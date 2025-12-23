@@ -1,10 +1,9 @@
 package com.davidgrath.expensetrackerbackend.controller
 
-import com.davidgrath.expensetrackerbackend.configuration.CustomUserDetails
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.controller.exception.CustomHttpException
 import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
-import com.davidgrath.expensetrackerbackend.file
+import com.davidgrath.expensetrackerbackend.utils.file
 import com.davidgrath.expensetrackerbackend.service.UserService
 import com.davidgrath.expensetrackerbackend.utils.Constants
 import org.slf4j.LoggerFactory
@@ -12,16 +11,11 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.core.io.FileSystemResource
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
-import org.springframework.http.ResponseEntity
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.oauth2.jwt.Jwt
-import org.springframework.util.LinkedMultiValueMap
-import org.springframework.util.MultiValueMap
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RestController
-import org.springframework.web.multipart.MultipartFile
-import java.io.File
 
 @RestController
 class FilesController {

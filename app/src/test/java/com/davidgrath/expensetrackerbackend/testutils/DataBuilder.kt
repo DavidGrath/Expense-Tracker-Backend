@@ -3,7 +3,7 @@ package com.davidgrath.expensetrackerbackend.testutils
 import com.davidgrath.expensetracker.generatedapi.model.DocumentType
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
-import com.davidgrath.expensetrackerbackend.file
+import com.davidgrath.expensetrackerbackend.utils.file
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.AccountPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.DocumentPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ImagePojo
@@ -12,7 +12,7 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.Transact
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionItemPojo
 import com.davidgrath.expensetrackerbackend.repository.*
-import com.davidgrath.expensetrackerbackend.toByte
+import com.davidgrath.expensetrackerbackend.utils.toByte
 import com.davidgrath.expensetrackerbackend.utils.Constants
 import java.io.File
 import java.math.BigDecimal
@@ -20,7 +20,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
-class DataBuilder(private val root: File, private val timeHandler: TimeHandler, private val userUuid: String, private val profileUuid: String,
+class DataBuilder(private val root: File, private val timeHandler: TimeHandler, private val userUuid: String?, private val profileUuid: String,
                   private val transactionRepository: TransactionRepository,
                   private val categoryRepository: CategoryRepository, private val profileRepository: ProfileRepository,
                   private val accountRepository: AccountRepository,
@@ -40,7 +40,7 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
         return id
     }
 
-    private class TransactionBuilderImpl(private val root: File, private val timeHandler: TimeHandler, private val userUuid: String, private val profileUuid: String, private val transactionRepository: TransactionRepository,
+    private class TransactionBuilderImpl(private val root: File, private val timeHandler: TimeHandler, private val _userUuid: String?, private val profileUuid: String, private val transactionRepository: TransactionRepository,
                                          private val categoryRepository: CategoryRepository, private val profileRepository: ProfileRepository,
                                          private val accountRepository: AccountRepository,
                                          private val transactionItemRepository: TransactionItemRepository,
@@ -64,9 +64,10 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
         private var documents = arrayListOf<TestData.Resource>()
 
         private val profile: ProfilePojo
+        private val userUuid = _userUuid?: TestConstants.DEFAULT_USER_ID
 
         init {
-            val user = userRepository.findByUuid(Constants.DEFAULT_USER_ID)!!
+            val user = userRepository.findByUuid(userUuid)!!
             profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
             account = accountRepository.getAllByProfileId(profile.id!!).first()
         }

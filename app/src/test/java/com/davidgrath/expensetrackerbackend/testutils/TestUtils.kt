@@ -1,13 +1,13 @@
 package com.davidgrath.expensetrackerbackend.testutils
 
-import com.davidgrath.expensetrackerbackend.CORE_CATEGORIES
+import com.davidgrath.expensetrackerbackend.utils.CORE_CATEGORIES
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.AccountPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.CategoryPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ProfilePojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.UserPojo
 import com.davidgrath.expensetrackerbackend.repository.*
-import com.davidgrath.expensetrackerbackend.toByte
+import com.davidgrath.expensetrackerbackend.utils.toByte
 import com.davidgrath.expensetrackerbackend.utils.Constants
 import io.jsonwebtoken.Jwts
 import org.junit.Assert
@@ -35,7 +35,7 @@ fun file(vararg segments: String): File {
 
 fun getDefaultAccountId(userRepository: UserRepository, profileRepository: ProfileRepository, accountRepository: AccountRepository): Long {
 
-    val user = userRepository.findByUuid(Constants.DEFAULT_USER_ID)!!
+    val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
     val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
     val accountId = accountRepository.getAllByProfileId(profile.id!!).firstOrNull()!!.id
     return accountId!!
@@ -59,7 +59,7 @@ fun tempInit(component: TestUtilComponent, timeHandler: TimeHandler): Unit {
     val profileRepository = component.profileRepository
     val accountRepository = component.accountRepository
     val categoryRepository = component.categoryRepository
-    val user = UserPojo(null, Constants.DEFAULT_USER_ID, "username", "password", "", LocalDateTime.now(timeHandler.getClock()))
+    val user = UserPojo(null, TestConstants.DEFAULT_USER_ID, "username", "password", "", LocalDateTime.now(timeHandler.getClock()))
     val id = userRepository.insertUser(user)
     val userDb = userRepository.findById(id)!!
     val profile = profileRepository.findByStringId(userDb.id!!, Constants.DEFAULT_PROFILE_ID)

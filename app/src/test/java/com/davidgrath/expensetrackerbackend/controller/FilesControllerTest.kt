@@ -5,15 +5,15 @@ import com.davidgrath.expensetrackerbackend.configuration.TestConfiguration
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.controller.exception.ExceptionResponseHandler
-import com.davidgrath.expensetrackerbackend.file
-import com.davidgrath.expensetrackerbackend.getSha256
+import com.davidgrath.expensetrackerbackend.utils.file
+import com.davidgrath.expensetrackerbackend.utils.getSha256
 import com.davidgrath.expensetrackerbackend.repository.ProfileRepository
 import com.davidgrath.expensetrackerbackend.service.UserService
 import com.davidgrath.expensetrackerbackend.testutils.TestData
 import com.davidgrath.expensetrackerbackend.testutils.TestUtilComponent
 import com.davidgrath.expensetrackerbackend.testutils.createBearerToken
-import com.davidgrath.expensetrackerbackend.testutils.file
 import com.davidgrath.expensetrackerbackend.utils.Constants
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.JWT_ALG
 import org.hamcrest.Matchers
 import org.junit.After
@@ -24,9 +24,7 @@ import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
-import org.springframework.http.MediaType
 import org.springframework.test.annotation.DirtiesContext
-import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.test.web.servlet.MockMvc
@@ -35,7 +33,6 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers
 import org.springframework.web.util.DefaultUriBuilderFactory
 import java.io.File
 import java.nio.file.Files
-import java.util.Base64
 import java.util.Locale
 
 @RunWith(SpringRunner::class)
@@ -107,7 +104,7 @@ class FilesControllerTest {
             .andExpectAll(
                 MockMvcResultMatchers.status().isNotFound(),
                 MockMvcResultMatchers.jsonPath(
-                    "$.errorCode", Matchers.equalTo(ErrorCode.ENTITY_NOT_FOUND.code))
+                    "$.$CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE", Matchers.equalTo(ErrorCode.ENTITY_NOT_FOUND.code))
             )
             .andReturn();
     }

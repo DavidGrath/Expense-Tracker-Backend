@@ -34,7 +34,6 @@ open class AuthController: AuthApi {
     }
 
     override fun authSignUpPost(signUpRequest: SignUpRequest?): ResponseEntity<String> {
-        LOGGER.debug("signUpRequest: {}", signUpRequest)
         val userExists = userService.doesUserExist(signUpRequest!!.username!!)
         if(userExists) {
             val exception = CustomHttpException(ErrorCode.USERNAME_TAKEN, HttpStatus.BAD_REQUEST)

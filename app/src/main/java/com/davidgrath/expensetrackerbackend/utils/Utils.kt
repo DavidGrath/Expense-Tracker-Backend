@@ -1,6 +1,6 @@
-package com.davidgrath.expensetrackerbackend
+package com.davidgrath.expensetrackerbackend.utils
 
-import com.davidgrath.expensetrackerbackend.service.UserService
+import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.InputStream
@@ -10,13 +10,6 @@ import java.security.MessageDigest
 
 private val LOGGER = LoggerFactory.getLogger("com.davidgrath.expensetrackerbackend.Utils")
 
-fun Boolean.toByte(): Byte {
-    return if(this) {
-        1
-    } else {
-        0
-    }
-}
 
 val CORE_CATEGORIES = setOf(
     "food",

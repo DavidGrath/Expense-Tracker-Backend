@@ -19,6 +19,7 @@ import java.math.BigDecimal
 import java.nio.file.Files
 import java.time.LocalDate
 import java.time.LocalTime
+import java.time.ZoneId
 
 @SpringBootTest
 @RunWith(SpringRunner::class)
@@ -70,9 +71,9 @@ class TransactionServiceTest {
     fun givenTransactionRangeDoesNotHaveDatesInIntervalWhenFetchTotalThenDatesIntervalHaveZeroes() {
         val folder = Files.createTempDirectory("temp").toFile()
         folder.deleteOnExit()
-        val dataBuilder = DataBuilder(folder, timeHandler, "", Constants.DEFAULT_PROFILE_ID, transactionRepository, categoryRepository, profileRepository, accountRepository, itemRepository, imageRepository, itemImagesRepository, userRepository, documentRepository)
+        val dataBuilder = DataBuilder(folder, timeHandler, null, Constants.DEFAULT_PROFILE_ID, transactionRepository, categoryRepository, profileRepository, accountRepository, itemRepository, imageRepository, itemImagesRepository, userRepository, documentRepository)
 
-        val user = userRepository.findByUuid(Constants.DEFAULT_USER_ID)!!
+        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
         val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val profileId = profile.id!!
         val time = LocalTime.of(8, 0, 0)
@@ -147,5 +148,19 @@ class TransactionServiceTest {
         assertEquals(daysBetweenFirstAndThirdTransactionInclusive, transactionSumByDates.size)
         assertEqualsBD(BigDecimal(860), grandSum)
         assertEqualsBD(BigDecimal.ZERO, missingSum1.sum)
+    }
+
+    @Test
+    fun correctTimeTest() {
+        val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
+        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
+        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profileId = profile.id!!
+        val category = categoryRepository.findByProfileIdAndStringId(profileId, "miscellaneous")!!
+        val transactionId = transactionService.addTransaction(accountId, false, BigDecimal.TEN, "Description", category.id!!,
+            ZoneId.of("Etc/GMT-2"))
+        val transaction = transactionService.getByUserIdAndId(user.id!!, transactionId)!!
+        val expectedTime = LocalTime.parse("10:00")
+        assertEquals(expectedTime, transaction.time)
     }
 }

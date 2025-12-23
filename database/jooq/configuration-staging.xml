@@ -4,14 +4,11 @@
     <jdbc>
         <driver>com.mysql.jdbc.Driver</driver>
         <url>jdbc:mysql://172.26.48.26:3306/expense_tracker_database</url>
-        <user></user>
-        <password></password>
-        <properties></properties>
     </jdbc>
     <generator>
         <database>
             <name>org.jooq.meta.mysql.MySQLDatabase</name>
-            <inputSchema>expense_tracker_database_dev</inputSchema>
+            <inputSchema>expense_tracker_database</inputSchema>
             <outputSchemaToDefault>true</outputSchemaToDefault>
             <forcedTypes>
                 <forcedType>

@@ -11,11 +11,24 @@
 == Setting Up Locally
 
 * Have https://dev.mysql.com/downloads/installer/[MySQL 8.0] installed with the executable on your PATH
-* https://repo1.maven.org/maven2/org/flywaydb/flyway-commandline/10.22.0/[Flyway 10.22] on your PATH
+* https://repo1.maven.org/maven2/org/flywaydb/flyway-commandline/10.22.0/[Flyway 10.22] on your PATH, or symlinked in `/usr/bin`
 * Setting up  a user:
 [source,mysql-sql]
 ----
-    CREATE USER 'expense_tracker' IDENTIFIED BY 'password';
-    GRANT ALL ON `expense_tracker_database_testlocal`.* TO 'expense_tracker'@'localhost';
-    GRANT ALL ON `expense_tracker_database_devlocal`.* TO 'expense_tracker'@'localhost';
+CREATE USER 'expense_tracker' IDENTIFIED BY 'password';
+CREATE DATABASE `expense_tracker_database_testlocal`;
+CREATE DATABASE `expense_tracker_database_devlocal`;
+GRANT ALL ON `expense_tracker_database_testlocal`.* TO 'expense_tracker'@'localhost';
+GRANT ALL ON `expense_tracker_database_devlocal`.* TO 'expense_tracker'@'localhost';
 ----
+[source,shell]
+----
+cd database/flyway
+flyway migrate -environment=devlocal
+gradlew.bat :app:jooqCodeGenDevLocal
+----
+
+== Notes
+* The project uses an API-first approach, so the endpoints are derived from the OpenAPI specification
+* Generation is done using the codegen plugin with the `openApiGenerate` task
+* Any changes to the openapi files should also increment the version number. How exactly to increment it is based on [.line-through]#vibes# discretion

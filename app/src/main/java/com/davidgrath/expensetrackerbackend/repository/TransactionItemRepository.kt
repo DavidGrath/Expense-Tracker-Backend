@@ -26,6 +26,12 @@ open class TransactionItemRepository {
         return itemDb.id!!
     }
 
+    fun getAllById(transactionId: Long): List<TransactionItemPojo> {
+        return dslContext.selectFrom(TRANSACTION_ITEM)
+            .where(TRANSACTION_ITEM.TRANSACTION_ID.eq(transactionId))
+            .fetch().into(TransactionItemPojo::class.java)
+    }
+
     fun deleteAllForTesting(): Int {
         val delete = dslContext.deleteFrom(TRANSACTION_ITEM).where("true")
         return delete.execute()

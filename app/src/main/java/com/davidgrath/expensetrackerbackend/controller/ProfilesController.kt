@@ -5,6 +5,7 @@ import com.davidgrath.expensetracker.generatedapi.model.Profile
 import com.davidgrath.expensetrackerbackend.configuration.CustomUserDetails
 import com.davidgrath.expensetrackerbackend.service.ProfileService
 import com.davidgrath.expensetrackerbackend.service.UserService
+import jakarta.validation.constraints.NotNull
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.ResponseEntity
@@ -24,7 +25,7 @@ class ProfilesController: ProfilesApi{
         TODO("Not yet implemented")
     }
 
-    override fun profilesStringIdGet(stringId: String?): ResponseEntity<Profile?>? {
+    override fun profilesStringIdGet(stringId: @NotNull String): ResponseEntity<Profile?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
         LOGGER.info("Username: {}", principal.subject)
