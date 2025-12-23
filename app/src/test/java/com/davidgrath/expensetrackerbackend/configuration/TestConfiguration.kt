@@ -4,6 +4,7 @@ import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.repository.TransactionRepository
 import com.davidgrath.expensetrackerbackend.service.TransactionService
 import com.davidgrath.expensetrackerbackend.testutils.TestTimeHandler
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.JWT_ALG
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import org.jooq.DSLContext
@@ -17,8 +18,14 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.DelegatingPasswordEncoder
 import org.springframework.security.crypto.password.NoOpPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm
+import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
+import java.security.KeyFactory
+import java.security.interfaces.ECPublicKey
+import java.security.interfaces.RSAPublicKey
+import java.security.spec.X509EncodedKeySpec
 import java.sql.SQLException
 import java.time.Instant
 import java.time.ZoneId
@@ -36,7 +43,8 @@ open class TestConfiguration {
 
     @Value("\${jwt.signingkey}")
     private val jwtSigningKey: String? = null
-    private val JWT_ALG = "HmacSHA256"
+    @Value("\${jwt.publickey}")
+    private val jwtPublicKey: String? = null
 
     @Bean
     open fun timeHandler(): TimeHandler {
@@ -73,8 +81,13 @@ open class TestConfiguration {
 
     @Bean
     open fun jwtDecoder(): JwtDecoder {
-        val key: SecretKey = SecretKeySpec(jwtSigningKey!!.toByteArray(), JWT_ALG)
-        return NimbusJwtDecoder.withSecretKey(key).build()
+        val bytes = Base64.getDecoder().decode(jwtPublicKey)
+        val keySpec = X509EncodedKeySpec(bytes)
+        val keyFactory = KeyFactory.getInstance(JWT_ALG)
+        val pubKey = keyFactory.generatePublic(keySpec) as RSAPublicKey
+
+
+        return NimbusJwtDecoder.withPublicKey(pubKey).signatureAlgorithm(SignatureAlgorithm.RS512).build()
     }
 
 }

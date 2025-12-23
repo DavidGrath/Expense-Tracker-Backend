@@ -1,11 +1,16 @@
 package com.davidgrath.expensetrackerbackend.service
 
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.JWT_ALG
 import io.jsonwebtoken.Jwts
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
+import java.security.KeyFactory
+import java.security.interfaces.ECPrivateKey
+import java.security.interfaces.RSAPrivateKey
+import java.security.spec.PKCS8EncodedKeySpec
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
@@ -20,14 +25,16 @@ class AuthService {
     @Autowired
     lateinit var timeHandler: TimeHandler
 
-    private val JWT_ALG = "HmacSHA256"
 
     @Value("\${jwt.signingkey}")
     private val jwtSigningKey: String? = null
 
     fun createUserToken(username: String): String {
 
-        val key: SecretKey = SecretKeySpec(jwtSigningKey!!.toByteArray(), JWT_ALG)
+        val bytes = Base64.getDecoder().decode(jwtSigningKey)
+        val keySpec = PKCS8EncodedKeySpec(bytes)
+        val keyFactory = KeyFactory.getInstance(JWT_ALG)
+        val key = keyFactory.generatePrivate(keySpec) as RSAPrivateKey
         val localDateTime = LocalDateTime.now(timeHandler.getClock())
         val expiry = localDateTime.plus(60, ChronoUnit.MINUTES)
         val jws = Jwts.builder()

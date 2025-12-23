@@ -10,10 +10,15 @@ import com.davidgrath.expensetrackerbackend.repository.*
 import com.davidgrath.expensetrackerbackend.utils.toByte
 import com.davidgrath.expensetrackerbackend.utils.Constants
 import io.jsonwebtoken.Jwts
+import io.jsonwebtoken.SignatureAlgorithm
 import org.junit.Assert
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.math.BigDecimal
+import java.security.KeyFactory
+import java.security.interfaces.ECPrivateKey
+import java.security.interfaces.RSAPrivateKey
+import java.security.spec.PKCS8EncodedKeySpec
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -42,7 +47,10 @@ fun getDefaultAccountId(userRepository: UserRepository, profileRepository: Profi
 }
 
 fun createBearerToken(username: String, signingKey: String, algorithm: String, timeHandler: TimeHandler): String {
-    val key: SecretKey = SecretKeySpec(signingKey!!.toByteArray(), algorithm)
+    val bytes = Base64.getDecoder().decode(signingKey)
+    val keySpec = PKCS8EncodedKeySpec(bytes)
+    val keyFactory = KeyFactory.getInstance(algorithm)
+    val key = keyFactory.generatePrivate(keySpec) as RSAPrivateKey
     val localDateTime = LocalDateTime.now(timeHandler.getClock())
 //        val expiry = localDateTime.plus(60, ChronoUnit.MINUTES)
     val jws = Jwts.builder()
