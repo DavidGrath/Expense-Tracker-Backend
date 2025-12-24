@@ -2,6 +2,7 @@ package com.davidgrath.expensetrackerbackend.service
 
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.CategoryPojo
 import com.davidgrath.expensetrackerbackend.repository.CategoryRepository
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 
@@ -12,10 +13,22 @@ class CategoryService {
 
     fun isCategoryForProfile(profileId: Long, categoryId: Long): Boolean {
         val category = categoryRepository.findByProfileIdAndId(profileId, categoryId)
-        return category != null
+        val value = category != null
+        LOGGER.info("Category for profile: {}", value)
+        return value
     }
 
     fun getByProfileIdAndId(profileId: Long, categoryId: Long): CategoryPojo? {
         return categoryRepository.findByProfileIdAndId(profileId, categoryId)
+    }
+
+    fun getCategoriesForProfile(profileId: Long): List<CategoryPojo> {
+        val categories = categoryRepository.getAllByProfileId(profileId)
+        LOGGER.info("Categories size: {}", categories.size)
+        return categories
+    }
+
+    companion object {
+        private val LOGGER = LoggerFactory.getLogger(CategoryService::class.java)
     }
 }
