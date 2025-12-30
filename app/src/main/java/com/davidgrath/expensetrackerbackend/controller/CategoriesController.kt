@@ -2,14 +2,23 @@ package com.davidgrath.expensetrackerbackend.controller
 
 import com.davidgrath.expensetracker.generatedapi.api.CategoriesApi
 import com.davidgrath.expensetracker.generatedapi.model.Category
+import com.davidgrath.expensetracker.generatedapi.model.CategoryCreateRequest
+import com.davidgrath.expensetracker.generatedapi.model.CategoryUpdateRequest
+import com.davidgrath.expensetrackerbackend.controller.exception.CustomHttpException
+import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.service.CategoryService
 import com.davidgrath.expensetrackerbackend.service.ProfileService
 import com.davidgrath.expensetrackerbackend.service.UserService
+import com.davidgrath.expensetrackerbackend.utils.Constants
 import com.davidgrath.expensetrackerbackend.utils.accountWithStatsToAccount
 import com.davidgrath.expensetrackerbackend.utils.categoryPojoToCategory
+import com.davidgrath.expensetrackerbackend.utils.loadMaterialSymbolsIcons
+import com.davidgrath.expensetrackerbackend.utils.toBoolean
+import jakarta.validation.Valid
 import jakarta.validation.constraints.NotNull
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.oauth2.jwt.Jwt
@@ -37,6 +46,88 @@ class CategoriesController: CategoriesApi {
             categoryPojoToCategory(c)
         }
         return ResponseEntity.ok(apiCategories)
+    }
+
+    override fun categoriesIdPut(id: @NotNull Long, profileId: @NotNull String, categoryUpdateRequest: @Valid CategoryUpdateRequest?): ResponseEntity<Void?>? {
+        val authentication = SecurityContextHolder.getContext().authentication
+        val principal = authentication.principal as Jwt
+        LOGGER.info("Username: {}", principal.subject)
+        val user = userService.getByUsername(principal.subject!!)
+        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        if(!categoryService.doesCategoryExist(user.id!!, id)) {
+            val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
+            LOGGER.error("Category not for user", exception)
+            throw exception
+        }
+        if(!categoryService.isCategoryForProfile(profile.id!!, id)) {
+            val exception = CustomHttpException(ErrorCode.ENTITY_NOT_IN_PROFILE, HttpStatus.BAD_REQUEST)
+            LOGGER.error("Category not for profile", exception)
+            throw exception
+        }
+        val category = categoryService.getByProfileIdAndId(profile.id!!, id)!!
+        if(!category.isCustom.toBoolean()) {
+            val exception = CustomHttpException(ErrorCode.CATEGORY_NOT_MODIFIABLE, HttpStatus.BAD_REQUEST)
+            LOGGER.error("Category is default", exception)
+            throw exception
+        }
+        val icon = categoryUpdateRequest!!.icon
+        val namespacedIcon = icon.split(':')
+        if(namespacedIcon.isEmpty()) {
+            val exception = CustomHttpException(ErrorCode.CATEGORY_ICON_FORMAT_INCORRECT, HttpStatus.BAD_REQUEST)
+            LOGGER.error("No icon", exception)
+            throw exception
+        }
+        if(!namespacedIcon.first().equals(Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS, true)) {
+            val exception = CustomHttpException(ErrorCode.CATEGORY_ICON_FORMAT_INCORRECT, HttpStatus.BAD_REQUEST)
+            LOGGER.error("Icon format not correct", exception)
+            throw exception
+        }
+        val loader = this.javaClass.classLoader!!
+        val legalIconNames = loadMaterialSymbolsIcons(loader)
+        if(namespacedIcon[1].lowercase() !in legalIconNames) {
+            val exception = CustomHttpException(ErrorCode.CATEGORY_ICON_NAME_INCORRECT, HttpStatus.BAD_REQUEST)
+            LOGGER.error("Icon name not correct", exception)
+            throw exception
+        }
+        val rows = categoryService.updateCategory(id, profile.id!!, categoryUpdateRequest.name, categoryUpdateRequest.icon)
+
+        return ResponseEntity.ok().build()
+    }
+
+    override fun categoriesPost(profileId: @NotNull String, categoryCreateRequest: @Valid CategoryCreateRequest?): ResponseEntity<Long?>? {
+        val authentication = SecurityContextHolder.getContext().authentication
+        val principal = authentication.principal as Jwt
+        LOGGER.info("Username: {}", principal.subject)
+        val user = userService.getByUsername(principal.subject!!)
+        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+
+        val existing = categoryService.getCategoriesForProfile(profile.id!!)
+        if(existing.size >= Constants.Constraints.MAX_CATEGORIES_PER_PROFILE) {
+            val exception = CustomHttpException(ErrorCode.LIMITS_EXCEEDED, HttpStatus.BAD_REQUEST)
+            LOGGER.error("Too many categories", exception)
+            throw exception
+        }
+        val icon = categoryCreateRequest!!.icon
+        val namespacedIcon = icon.split(':')
+        if(namespacedIcon.isEmpty()) {
+            val exception = CustomHttpException(ErrorCode.CATEGORY_ICON_FORMAT_INCORRECT, HttpStatus.BAD_REQUEST)
+            LOGGER.error("No icon", exception)
+            throw exception
+        }
+        if(!namespacedIcon.first().equals(Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS, true)) {
+            val exception = CustomHttpException(ErrorCode.CATEGORY_ICON_FORMAT_INCORRECT, HttpStatus.BAD_REQUEST)
+            LOGGER.error("Icon format not correct", exception)
+            throw exception
+        }
+        val loader = this.javaClass.classLoader!!
+        val legalIconNames = loadMaterialSymbolsIcons(loader)
+        if(namespacedIcon[1].lowercase() !in legalIconNames) {
+            val exception = CustomHttpException(ErrorCode.CATEGORY_ICON_NAME_INCORRECT, HttpStatus.BAD_REQUEST)
+            LOGGER.error("Icon name not correct", exception)
+            throw exception
+        }
+        val categoryId = categoryService.createCategory(profile.id!!, categoryCreateRequest.name, categoryCreateRequest.icon)
+        return ResponseEntity.ok(categoryId)
     }
 
     companion object {

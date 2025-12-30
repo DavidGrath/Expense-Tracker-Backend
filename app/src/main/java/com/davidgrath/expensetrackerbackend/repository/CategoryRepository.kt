@@ -8,7 +8,9 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.User
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.CategoryPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.UserPojo
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.PROFILE
 import org.jooq.DSLContext
+import org.jooq.impl.DSL
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Repository
 
@@ -40,10 +42,28 @@ open class CategoryRepository {
         return selectStep.fetchOne()?.into(CategoryPojo::class.java)
     }
 
+    fun findByUserIdAndId(userId: Long, id: Long): Long? {
+        val selectStep = dslContext.select(CATEGORY.ID)
+            .from(CATEGORY)
+            .innerJoin(PROFILE).on(PROFILE.ID.eq(CATEGORY.PROFILE_ID))
+            .where(PROFILE.USER_ID.eq(userId))
+            .and(CATEGORY.ID.eq(id))
+        return selectStep.fetchOne()?.value1()
+    }
+
     fun getAllByProfileId(profileId: Long): List<CategoryPojo> {
         val selectStep = dslContext.selectFrom(CATEGORY)
             .where(CATEGORY.PROFILE_ID.eq(profileId))
         return selectStep.fetch().into(CategoryPojo::class.java)
+    }
+
+    fun updateCategory(id: Long, profileId: Long, name: String, icon: String): Int {
+        val updateStep = dslContext.update(CATEGORY)
+            .set(CATEGORY.NAME, name)
+            .set(CATEGORY.ICON, icon)
+            .where(CATEGORY.ID.eq(id))
+            .and(CATEGORY.PROFILE_ID.eq(profileId))
+        return updateStep.execute()
     }
 
     fun deleteAllForTesting(): Int {

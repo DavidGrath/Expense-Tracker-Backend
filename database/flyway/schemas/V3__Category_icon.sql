@@ -1,0 +1,18 @@
+ALTER TABLE `Category` ADD COLUMN `icon` VARCHAR(255) NOT NULL default 'materialsymbols:category';
+UPDATE `Category` SET `icon`='materialsymbols:restaurant' WHERE `string_id`='food';
+UPDATE `Category` SET `icon`='materialsymbols:home' WHERE `string_id`='rent';
+UPDATE `Category` SET `icon`='materialsymbols:construction' WHERE `string_id`='utilities';
+UPDATE `Category` SET `icon`='materialsymbols:directions_car' WHERE `string_id`='transportation';
+UPDATE `Category` SET `icon`='materialsymbols:medical_services' WHERE `string_id`='healthcare';
+UPDATE `Category` SET `icon`='materialsymbols:credit_card' WHERE `string_id`='debt';
+UPDATE `Category` SET `icon`='materialsymbols:child_care' WHERE `string_id`='childcare';
+UPDATE `Category` SET `icon`='materialsymbols:household_supplies' WHERE `string_id`='household';
+UPDATE `Category` SET `icon`='materialsymbols:tv' WHERE `string_id`='entertainment';
+UPDATE `Category` SET `icon`='materialsymbols:self_care' WHERE `string_id`='self_care';
+UPDATE `Category` SET `icon`='materialsymbols:checkroom' WHERE `string_id`='clothing';
+UPDATE `Category` SET `icon`='materialsymbols:book' WHERE `string_id`='education';
+UPDATE `Category` SET `icon`='materialsymbols:featured_seasonal_and_gifts' WHERE `string_id`='gifts_and_donations';
+UPDATE `Category` SET `icon`='materialsymbols:emergency' WHERE `string_id`='emergency';
+UPDATE `Category` SET `icon`='materialsymbols:savings' WHERE `string_id`='savings';
+UPDATE `Category` SET `icon`='materialsymbols:fitness_center' WHERE `string_id`='fitness';
+UPDATE `Category` SET `icon`='materialsymbols:category' WHERE `string_id`='miscellaneous';

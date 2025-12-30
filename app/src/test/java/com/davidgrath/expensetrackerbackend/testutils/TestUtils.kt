@@ -7,6 +7,7 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.Category
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ProfilePojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.UserPojo
 import com.davidgrath.expensetrackerbackend.repository.*
+import com.davidgrath.expensetrackerbackend.utils.CATEGORY_IDS_ICONS_DEFAULT
 import com.davidgrath.expensetrackerbackend.utils.toByte
 import com.davidgrath.expensetrackerbackend.utils.Constants
 import io.jsonwebtoken.Jwts
@@ -129,6 +130,7 @@ fun tempInitDefaultCategories(profileId: Long, categoryRepository: CategoryRepos
         for (category in CORE_CATEGORIES) {
             val categoryDb = categoryRepository.findByProfileIdAndStringId(profileId, category)
             if (categoryDb == null) {
+                val defaultIcon = CATEGORY_IDS_ICONS_DEFAULT[category]!!
                 anyCategoryNotExist = true
                 categoryRepository.insertCategory(
                     CategoryPojo(
@@ -137,7 +139,8 @@ fun tempInitDefaultCategories(profileId: Long, categoryRepository: CategoryRepos
                         category,
                         false.toByte(),
                         null,
-                        utcDate
+                        utcDate,
+                        defaultIcon
                     )
                 )
             }

@@ -61,5 +61,5 @@ fun transactionItemPojoToTransactionItem(transactionItemPojo: TransactionItemPoj
 }
 
 fun categoryPojoToCategory(categoryPojo: CategoryPojo): Category {
-    return Category(categoryPojo.id, categoryPojo.name, categoryPojo.isCustom.toBoolean(), categoryPojo.stringId)
+    return Category(categoryPojo.id, categoryPojo.name, categoryPojo.isCustom.toBoolean(), categoryPojo.stringId, categoryPojo.icon)
 }

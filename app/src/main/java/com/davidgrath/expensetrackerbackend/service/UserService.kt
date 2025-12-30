@@ -10,6 +10,7 @@ import com.davidgrath.expensetrackerbackend.repository.AccountRepository
 import com.davidgrath.expensetrackerbackend.repository.CategoryRepository
 import com.davidgrath.expensetrackerbackend.repository.ProfileRepository
 import com.davidgrath.expensetrackerbackend.repository.UserRepository
+import com.davidgrath.expensetrackerbackend.utils.CATEGORY_IDS_ICONS_DEFAULT
 import com.davidgrath.expensetrackerbackend.utils.toByte
 import com.davidgrath.expensetrackerbackend.utils.Constants
 import org.slf4j.LoggerFactory
@@ -65,6 +66,7 @@ class UserService {
         for (category in CORE_CATEGORIES) {
             val categoryDb = categoryRepository.findByProfileIdAndStringId(profileId, category)
             if (categoryDb == null) {
+                val defaultIcon = CATEGORY_IDS_ICONS_DEFAULT[category]!!
                 anyCategoryNotExist = true
                 categoryRepository.insertCategory(
                     CategoryPojo(
@@ -73,12 +75,14 @@ class UserService {
                         category,
                         false.toByte(),
                         null,
-                        utcDate
+                        utcDate,
+                        defaultIcon
                     )
                 )
             }
         }
         LOGGER.info("Created default categories")
+        LOGGER.info("Any category not exist: {}", anyCategoryNotExist)
         return userId
     }
 

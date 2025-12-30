@@ -140,8 +140,39 @@
           },
           "stringId": {
             "type": "string"
+          },
+          "icon": {
+            "type": "string"
           }
         }
+      },
+      "CategoryCreateRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": false
+          },
+          "icon": {
+            "type": "string",
+            "nullable": false
+          }
+        },
+        "required": ["name", "icon"]
+      },
+      "CategoryUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": false
+          },
+          "icon": {
+            "type": "string",
+            "nullable": false
+          }
+        },
+        "required": ["name", "icon"]
       },
       "Profile": {
         "description": "A named group of accounts",
@@ -412,7 +443,13 @@
             "format": "int64"
           },
           "isReduction": {
-            "type": "boolean"
+            "type": "boolean",
+            "default": false
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 1
           },
           "images": {
             "type": "array",
@@ -426,7 +463,8 @@
               "$ref": "#/components/schemas/TransactionDraftFile"
             }
           }
-        }
+        },
+        "required": ["amount", "description", "categoryId"]
       },
       "TransactionDraftFile": {
         "type": "object",
