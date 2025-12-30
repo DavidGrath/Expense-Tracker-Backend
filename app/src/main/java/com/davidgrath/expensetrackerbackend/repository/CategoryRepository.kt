@@ -1,5 +1,6 @@
 package com.davidgrath.expensetrackerbackend.repository
 
+import com.davidgrath.expensetrackerbackend.entities.views.CategoryWithStats
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.Account
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.Category
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.Transaction
@@ -9,6 +10,8 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.Category
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.UserPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.PROFILE
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION_ITEM
 import org.jooq.DSLContext
 import org.jooq.impl.DSL
 import org.springframework.beans.factory.annotation.Autowired
@@ -55,6 +58,24 @@ open class CategoryRepository {
         val selectStep = dslContext.selectFrom(CATEGORY)
             .where(CATEGORY.PROFILE_ID.eq(profileId))
         return selectStep.fetch().into(CategoryPojo::class.java)
+    }
+
+    fun getAllByProfileIdWithStats(profileId: Long): List<CategoryWithStats> {
+
+        val selectStep = dslContext.select(
+            CATEGORY.ID, CATEGORY.PROFILE_ID, CATEGORY.STRING_ID, CATEGORY.IS_CUSTOM, CATEGORY.NAME, CATEGORY.ICON,
+            dslContext.select(DSL.countDistinct(TRANSACTION.ID))
+                .from(TRANSACTION)
+                .innerJoin(TRANSACTION_ITEM).on(TRANSACTION.ID.eq(TRANSACTION_ITEM.ID))
+                .where(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.eq(CATEGORY.ID)).asField<Int>("transactionCount"),
+            dslContext.select(DSL.count(TRANSACTION_ITEM.ID))
+                .from(TRANSACTION_ITEM)
+                .where(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.eq(CATEGORY.ID)).asField<Int>("itemCount")
+
+        )
+            .from(CATEGORY)
+            .where(CATEGORY.PROFILE_ID.eq(profileId))
+        return selectStep.fetch().into(CategoryWithStats::class.java)
     }
 
     fun updateCategory(id: Long, profileId: Long, name: String, icon: String): Int {

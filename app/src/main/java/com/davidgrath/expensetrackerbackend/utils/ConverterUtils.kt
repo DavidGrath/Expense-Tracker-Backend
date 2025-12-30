@@ -2,10 +2,12 @@ package com.davidgrath.expensetrackerbackend.utils
 
 import com.davidgrath.expensetracker.generatedapi.model.Account
 import com.davidgrath.expensetracker.generatedapi.model.Category
+import com.davidgrath.expensetracker.generatedapi.model.CategoryDetails
 import com.davidgrath.expensetracker.generatedapi.model.TransactionDraftFile
 import com.davidgrath.expensetracker.generatedapi.model.TransactionItem
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import com.davidgrath.expensetrackerbackend.entities.views.AccountWithStats
+import com.davidgrath.expensetrackerbackend.entities.views.CategoryWithStats
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.AccountPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.CategoryPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionItemPojo
@@ -62,4 +64,7 @@ fun transactionItemPojoToTransactionItem(transactionItemPojo: TransactionItemPoj
 
 fun categoryPojoToCategory(categoryPojo: CategoryPojo): Category {
     return Category(categoryPojo.id, categoryPojo.name, categoryPojo.isCustom.toBoolean(), categoryPojo.stringId, categoryPojo.icon)
+}
+fun categoryWithStatsToApiCategory(categoryWithStats: CategoryWithStats): CategoryDetails {
+    return CategoryDetails(categoryWithStats.id, categoryWithStats.name, categoryWithStats.isCustom, categoryWithStats.stringId, categoryWithStats.icon, categoryWithStats.transactionCount, categoryWithStats.itemCount)
 }

@@ -3,6 +3,7 @@ package com.davidgrath.expensetrackerbackend.controller
 import com.davidgrath.expensetracker.generatedapi.api.CategoriesApi
 import com.davidgrath.expensetracker.generatedapi.model.Category
 import com.davidgrath.expensetracker.generatedapi.model.CategoryCreateRequest
+import com.davidgrath.expensetracker.generatedapi.model.CategoryDetails
 import com.davidgrath.expensetracker.generatedapi.model.CategoryUpdateRequest
 import com.davidgrath.expensetrackerbackend.controller.exception.CustomHttpException
 import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
@@ -12,6 +13,7 @@ import com.davidgrath.expensetrackerbackend.service.UserService
 import com.davidgrath.expensetrackerbackend.utils.Constants
 import com.davidgrath.expensetrackerbackend.utils.accountWithStatsToAccount
 import com.davidgrath.expensetrackerbackend.utils.categoryPojoToCategory
+import com.davidgrath.expensetrackerbackend.utils.categoryWithStatsToApiCategory
 import com.davidgrath.expensetrackerbackend.utils.loadMaterialSymbolsIcons
 import com.davidgrath.expensetrackerbackend.utils.toBoolean
 import jakarta.validation.Valid
@@ -34,16 +36,16 @@ class CategoriesController: CategoriesApi {
     @Autowired
     lateinit var categoryService: CategoryService
 
-    override fun categoriesGet(profileId: @NotNull String): ResponseEntity<List<Category?>?>? {
+    override fun categoriesGet(profileId: @NotNull String): ResponseEntity<List<CategoryDetails?>?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
         val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
 
-        val categories = categoryService.getCategoriesForProfile(profile.id!!)
+        val categories = categoryService.getCategoryDetailsForProfile(profile.id!!)
         val apiCategories = categories.map { c ->
-            categoryPojoToCategory(c)
+            categoryWithStatsToApiCategory(c)
         }
         return ResponseEntity.ok(apiCategories)
     }

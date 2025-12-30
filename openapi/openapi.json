@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "ExTrack API",
-    "version": "0.1.4",
+    "version": "0.1.5",
     "description": "API for the client-server version of ExTrack. It's meant to mirror the offline version for the most part"
   },
   "security": [
@@ -326,7 +326,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "./schemas.json#/components/schemas/Category"
+                    "$ref": "./schemas.json#/components/schemas/CategoryDetails"
                   }
                 }
               }

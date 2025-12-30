@@ -1,6 +1,7 @@
 package com.davidgrath.expensetrackerbackend.service
 
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
+import com.davidgrath.expensetrackerbackend.entities.views.CategoryWithStats
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.CategoryPojo
 import com.davidgrath.expensetrackerbackend.repository.CategoryRepository
 import com.davidgrath.expensetrackerbackend.utils.toByte
@@ -37,6 +38,12 @@ class CategoryService {
 
     fun getCategoriesForProfile(profileId: Long): List<CategoryPojo> {
         val categories = categoryRepository.getAllByProfileId(profileId)
+        LOGGER.info("Categories size: {}", categories.size)
+        return categories
+    }
+
+    fun getCategoryDetailsForProfile(profileId: Long): List<CategoryWithStats> {
+        val categories = categoryRepository.getAllByProfileIdWithStats(profileId)
         LOGGER.info("Categories size: {}", categories.size)
         return categories
     }
