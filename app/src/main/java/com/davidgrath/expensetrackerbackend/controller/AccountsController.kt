@@ -2,13 +2,17 @@ package com.davidgrath.expensetrackerbackend.controller
 
 import com.davidgrath.expensetracker.generatedapi.api.AccountsApi
 import com.davidgrath.expensetracker.generatedapi.model.Account
+import com.davidgrath.expensetracker.generatedapi.model.AccountCreateRequest
+import com.davidgrath.expensetracker.generatedapi.model.AccountDetails
+import com.davidgrath.expensetracker.generatedapi.model.AccountUpdateRequest
 import com.davidgrath.expensetracker.generatedapi.model.AccountsIdPutRequest
 import com.davidgrath.expensetrackerbackend.controller.exception.CustomHttpException
 import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.service.AccountService
 import com.davidgrath.expensetrackerbackend.service.ProfileService
 import com.davidgrath.expensetrackerbackend.service.UserService
-import com.davidgrath.expensetrackerbackend.utils.accountWithStatsToAccount
+import com.davidgrath.expensetrackerbackend.utils.accountPojoToAccount
+import com.davidgrath.expensetrackerbackend.utils.accountWithStatsToAccountDetails
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotNull
 import org.slf4j.LoggerFactory
@@ -38,15 +42,20 @@ class AccountsController: AccountsApi {
 
         val accounts = accountService.getAccountsForProfile(profile.id!!)
         val apiAccounts = accounts.map { a ->
-            accountWithStatsToAccount(a)
+            accountPojoToAccount(a)
         }
         return ResponseEntity.ok(apiAccounts)
+    }
+
+    override fun accountsDetailsGet(profileId: @NotNull String): ResponseEntity<List<AccountDetails?>?>? {
+        TODO("Not yet implemented")
     }
 
     override fun accountsIdGet(
         id: @NotNull Long,
         profileId: @NotNull String
-    ): ResponseEntity<Account?>? {
+    ): ResponseEntity<AccountDetails?>? {
+
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
         LOGGER.info("Username: {}", principal.subject)
@@ -60,15 +69,22 @@ class AccountsController: AccountsApi {
             LOGGER.error("Account not found", exception)
             throw exception
         }
-        val apiAccounts = accountWithStatsToAccount(account)
+        val apiAccounts = accountWithStatsToAccountDetails(account)
         return ResponseEntity.ok(apiAccounts)
     }
 
     override fun accountsIdPut(
         id: @NotNull Long,
         profileId: @NotNull String,
-        accountsIdPutRequest: @Valid AccountsIdPutRequest?
+        accountUpdateRequest: @Valid AccountUpdateRequest?
     ): ResponseEntity<Void?>? {
+        TODO("Not yet implemented")
+    }
+
+    override fun accountsPost(
+        profileId: @NotNull String,
+        accountCreateRequest: @Valid AccountCreateRequest?
+    ): ResponseEntity<Long?>? {
         TODO("Not yet implemented")
     }
 

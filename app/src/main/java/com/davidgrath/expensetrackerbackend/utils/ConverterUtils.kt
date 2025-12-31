@@ -1,8 +1,10 @@
 package com.davidgrath.expensetrackerbackend.utils
 
 import com.davidgrath.expensetracker.generatedapi.model.Account
+import com.davidgrath.expensetracker.generatedapi.model.AccountDetails
 import com.davidgrath.expensetracker.generatedapi.model.Category
 import com.davidgrath.expensetracker.generatedapi.model.CategoryDetails
+import com.davidgrath.expensetracker.generatedapi.model.Image
 import com.davidgrath.expensetracker.generatedapi.model.TransactionDraftFile
 import com.davidgrath.expensetracker.generatedapi.model.TransactionItem
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
@@ -51,14 +53,18 @@ fun com.davidgrath.expensetracker.generatedapi.model.TransactionMode?.toDbMode()
     }
 }
 
-fun accountWithStatsToAccount(accountWithStats: AccountWithStats): Account {
-    return Account(accountWithStats.id, accountWithStats.profileId, accountWithStats.currencyCode, accountWithStats.name, accountWithStats.transactionCount, accountWithStats.income, accountWithStats.expenses)
+fun accountWithStatsToAccountDetails(accountWithStats: AccountWithStats): AccountDetails {
+    return AccountDetails(accountWithStats.id, accountWithStats.profileId, accountWithStats.currencyCode, accountWithStats.name, accountWithStats.transactionCount, accountWithStats.itemCount, accountWithStats.income, accountWithStats.expenses)
 }
 
+fun accountPojoToAccount(accountPojo: AccountPojo): Account {
+    return Account(accountPojo.id, accountPojo.profileId, accountPojo.currencyCode, accountPojo.name)
+
+}
 fun transactionItemPojoToTransactionItem(transactionItemPojo: TransactionItemPojo, categoryPojo: CategoryPojo): TransactionItem {
     return TransactionItem(
         transactionItemPojo.id, transactionItemPojo.amount, transactionItemPojo.description, categoryPojoToCategory(categoryPojo),
-        transactionItemPojo.isReduction.toBoolean(), emptyList<TransactionDraftFile>()
+        transactionItemPojo.isReduction.toBoolean(), emptyList<Image>()
         )
 }
 

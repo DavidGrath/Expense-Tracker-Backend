@@ -27,6 +27,8 @@ class Constants {
             const val MAX_DOCUMENTS_PER_TRANSACTION = 3
             const val MAX_CATEGORIES_PER_PROFILE = 30
             const val MAX_ACCOUNTS_PER_PROFILE = 5
+            const val MAX_SELLERS_PER_PROFILE = 15
+
             const val MAX_PROFILES_PER_USER = 2
         }
     }

@@ -2,6 +2,7 @@ package com.davidgrath.expensetrackerbackend.controller
 
 import com.davidgrath.expensetracker.generatedapi.api.StatisticsApi
 import com.davidgrath.expensetracker.generatedapi.model.StatisticsFilter
+import com.davidgrath.expensetracker.generatedapi.model.StatsTransactionAndItemCount
 import com.davidgrath.expensetracker.generatedapi.model.TotalAmountByCategory
 import com.davidgrath.expensetracker.generatedapi.model.TotalAmountByDate
 import com.davidgrath.expensetracker.generatedapi.model.TransactionDetails
@@ -95,6 +96,13 @@ class StatisticsController: StatisticsApi {
         profileId: @NotNull String,
         statisticsFilter: @Valid StatisticsFilter?
     ): ResponseEntity<List<TransactionDetails?>?>? {
+        TODO("Not yet implemented")
+    }
+
+    override fun statisticsTransactionAndItemCountPost(
+        profileId: @NotNull String,
+        statisticsFilter: @Valid StatisticsFilter?
+    ): ResponseEntity<List<StatsTransactionAndItemCount?>?>? {
         TODO("Not yet implemented")
     }
 

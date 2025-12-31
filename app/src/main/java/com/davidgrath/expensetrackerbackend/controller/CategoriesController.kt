@@ -11,7 +11,6 @@ import com.davidgrath.expensetrackerbackend.service.CategoryService
 import com.davidgrath.expensetrackerbackend.service.ProfileService
 import com.davidgrath.expensetrackerbackend.service.UserService
 import com.davidgrath.expensetrackerbackend.utils.Constants
-import com.davidgrath.expensetrackerbackend.utils.accountWithStatsToAccount
 import com.davidgrath.expensetrackerbackend.utils.categoryPojoToCategory
 import com.davidgrath.expensetrackerbackend.utils.categoryWithStatsToApiCategory
 import com.davidgrath.expensetrackerbackend.utils.loadMaterialSymbolsIcons
@@ -36,16 +35,16 @@ class CategoriesController: CategoriesApi {
     @Autowired
     lateinit var categoryService: CategoryService
 
-    override fun categoriesGet(profileId: @NotNull String): ResponseEntity<List<CategoryDetails?>?>? {
+    override fun categoriesGet(profileId: @NotNull String): ResponseEntity<List<Category?>?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
         val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
 
-        val categories = categoryService.getCategoryDetailsForProfile(profile.id!!)
+        val categories = categoryService.getCategoriesForProfile(profile.id!!)
         val apiCategories = categories.map { c ->
-            categoryWithStatsToApiCategory(c)
+            categoryPojoToCategory(c)
         }
         return ResponseEntity.ok(apiCategories)
     }
@@ -130,6 +129,20 @@ class CategoriesController: CategoriesApi {
         }
         val categoryId = categoryService.createCategory(profile.id!!, categoryCreateRequest.name, categoryCreateRequest.icon)
         return ResponseEntity.ok(categoryId)
+    }
+
+    override fun categoriesDetailsGet(profileId: @NotNull String): ResponseEntity<List<CategoryDetails?>?>? {
+        val authentication = SecurityContextHolder.getContext().authentication
+        val principal = authentication.principal as Jwt
+        LOGGER.info("Username: {}", principal.subject)
+        val user = userService.getByUsername(principal.subject!!)
+        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+
+        val categories = categoryService.getCategoryDetailsForProfile(profile.id!!)
+        val apiCategories = categories.map { c ->
+            categoryWithStatsToApiCategory(c)
+        }
+        return ResponseEntity.ok(apiCategories)
     }
 
     companion object {

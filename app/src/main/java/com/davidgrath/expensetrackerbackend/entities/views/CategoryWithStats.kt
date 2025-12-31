@@ -7,6 +7,6 @@ data class CategoryWithStats(
     val isCustom: Boolean,
     val name: String?,
     val icon: String,
-    val transactionCount: Int,
-    val itemCount: Int //TODO Account for reductions
+    val transactionCount: Long,
+    val itemCount: Long //TODO Account for reductions
 )

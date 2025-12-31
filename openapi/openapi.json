@@ -2,8 +2,8 @@
   "openapi": "3.0.0",
   "info": {
     "title": "ExTrack API",
-    "version": "0.1.5",
-    "description": "API for the client-server version of ExTrack. It's meant to mirror the offline version for the most part"
+    "version": "0.2.0",
+    "description": "API for the client-server version of ExTrack. It's meant to mirror the offline version for the most part.  # Text Field recommended length limits: Short: 20, Medium: 50, Long: 100, Extra long: 400. Try and apply these to any schemas that have 'Request' in the name"
   },
   "security": [
     {
@@ -28,6 +28,9 @@
     },
     {
       "name": "categories"
+    },
+    {
+      "name": "sellers"
     }
   ],
   "paths": {
@@ -308,6 +311,117 @@
         }
       }
     },
+    "/transactions/{id}/items": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": false
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "transactions"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/profileId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "./schemas.json/#/components/schemas/TransactionItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transactions/earliestDate": {
+      "get": {
+        "tags": [
+          "transactions"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/profileId"
+          },
+          {
+            "name": "accountIds",
+            "description": "If accounts with multiple distinct currencies are selected, then only the currency of the first account will be used",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int64",
+                "nullable": false
+              }
+            },
+            "style": "form",
+            "explode": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas.json/#/components/schemas/TransactionsEarliestDateResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transactions/suggestions": {
+      "get": {
+        "tags": [
+          "transactions"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/profileId"
+          },
+          {
+            "name": "fieldType",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "./schemas.json/#/components/schemas/SuggestionsFieldType"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas.json/#/components/schemas/SuggestionsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/categories": {
       "get": {
         "parameters": [
@@ -326,7 +440,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "./schemas.json#/components/schemas/CategoryDetails"
+                    "$ref": "./schemas.json#/components/schemas/Category"
                   }
                 }
               }
@@ -354,12 +468,39 @@
         },
         "responses": {
           "200": {
-            "description": "",
+            "description": "The new category ID",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "integer",
                   "format": "int64"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/categories/details": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/profileId"
+          }
+        ],
+        "tags": [
+          "categories"
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "./schemas.json#/components/schemas/CategoryDetails"
+                  }
                 }
               }
             }
@@ -429,6 +570,65 @@
             }
           }
         }
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/profileId"
+          }
+        ],
+        "tags": [
+          "accounts"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "./schemas.json#/components/schemas/AccountCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The new account ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/accounts/details": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/profileId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "accounts"
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "./schemas.json#/components/schemas/AccountDetails"
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/accounts/{id}": {
@@ -455,12 +655,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string"
-                  }
-                }
+                "$ref": "./schemas.json#/components/schemas/AccountUpdateRequest"
               }
             }
           }
@@ -491,7 +686,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "./schemas.json#/components/schemas/Account"
+                  "$ref": "./schemas.json#/components/schemas/AccountDetails"
                 }
               }
             }
@@ -733,6 +928,42 @@
         }
       }
     },
+    "/statistics/transactionAndItemCount": {
+      "post": {
+        "tags": [
+          "statistics"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/profileId"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "./schemas.json#/components/schemas/StatisticsFilter"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "./schemas.json#/components/schemas/StatsTransactionAndItemCount"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/profiles/{stringId}": {
       "parameters": [
         {
@@ -774,6 +1005,342 @@
                   "items": {
                     "$ref": "./schemas.json#/components/schemas/Profile"
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sellers": {
+      "get": {
+        "tags": [
+          "sellers"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/profileId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "./schemas.json#/components/schemas/Seller"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "sellers"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/profileId"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "./schemas.json#/components/schemas/SellerCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The new seller ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sellers/{id}": {
+      "get": {
+        "tags": [
+          "sellers"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/profileId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas.json/#/components/schemas/SellerDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "sellers"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/profileId"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "./schemas.json/#/components/schemas/SellerUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/sellers/{id}/locations": {
+      "get": {
+        "tags": [
+          "sellers"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/profileId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "./schemas.json/#/components/schemas/SellerLocation"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "sellers"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/profileId"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "./schemas.json/#/components/schemas/SellerLocationCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The new seller ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sellers/{id}/locations/{id}": {
+      "get": {
+        "tags": [
+          "sellers"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/profileId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas.json/#/components/schemas/SellerLocation"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "sellers"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/profileId"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "./schemas.json#/components/schemas/SellerLocationUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/documents": {
+      "get": {
+        "tags": [
+          "documents"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/profileId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Limit 1,000",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "./schemas.json/#/components/schemas/DocumentDetails"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/documents/{id}": {
+      "get": {
+        "tags": [
+          "documents"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/profileId"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "nullable": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas.json/#/components/schemas/DocumentDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/images": {
+      "get": {
+        "tags": [
+          "documents"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/profileId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Limit 1,000",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "./schemas.json/#/components/schemas/ImageDetails"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/images/{id}": {
+      "get": {
+        "tags": [
+          "images"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/profileId"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "nullable": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas.json/#/components/schemas/ImageDetails"
                 }
               }
             }

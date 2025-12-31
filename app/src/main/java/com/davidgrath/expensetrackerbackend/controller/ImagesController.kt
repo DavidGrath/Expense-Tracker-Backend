@@ -1,0 +1,21 @@
+package com.davidgrath.expensetrackerbackend.controller
+
+import com.davidgrath.expensetracker.generatedapi.api.ImagesApi
+import com.davidgrath.expensetracker.generatedapi.model.ImageDetails
+import jakarta.validation.constraints.NotNull
+import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.RestController
+
+@RestController
+class ImagesController: ImagesApi {
+    override fun imagesGet(profileId: @NotNull String): ResponseEntity<List<ImageDetails?>?>? {
+        TODO("Not yet implemented")
+    }
+
+    override fun imagesIdGet(
+        profileId: @NotNull String,
+        id: @NotNull Long
+    ): ResponseEntity<ImageDetails?>? {
+        TODO("Not yet implemented")
+    }
+}

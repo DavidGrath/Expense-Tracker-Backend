@@ -3,9 +3,11 @@ package com.davidgrath.expensetrackerbackend.controller
 import com.davidgrath.expensetracker.generatedapi.api.TransactionsApi
 import com.davidgrath.expensetracker.generatedapi.model.BasicTransactionCreateRequest
 import com.davidgrath.expensetracker.generatedapi.model.Document
+import com.davidgrath.expensetracker.generatedapi.model.SuggestionsFieldType
 import com.davidgrath.expensetracker.generatedapi.model.Transaction
 import com.davidgrath.expensetracker.generatedapi.model.TransactionDetails
 import com.davidgrath.expensetracker.generatedapi.model.TransactionDraft
+import com.davidgrath.expensetracker.generatedapi.model.TransactionItem1
 import com.davidgrath.expensetrackerbackend.controller.exception.CustomHttpException
 import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.service.AccountService
@@ -13,7 +15,7 @@ import com.davidgrath.expensetrackerbackend.service.CategoryService
 import com.davidgrath.expensetrackerbackend.service.ProfileService
 import com.davidgrath.expensetrackerbackend.service.TransactionService
 import com.davidgrath.expensetrackerbackend.service.UserService
-import com.davidgrath.expensetrackerbackend.utils.accountWithStatsToAccount
+import com.davidgrath.expensetrackerbackend.utils.accountPojoToAccount
 import com.davidgrath.expensetrackerbackend.utils.toApiMode
 import com.davidgrath.expensetrackerbackend.utils.toBoolean
 import com.davidgrath.expensetrackerbackend.utils.transactionItemPojoToTransactionItem
@@ -28,6 +30,7 @@ import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.bind.annotation.RestController
 import java.time.DateTimeException
 import java.time.LocalDate
+import java.time.OffsetDateTime
 import java.time.ZoneId
 
 @RestController
@@ -85,8 +88,8 @@ open class TransactionsController: TransactionsApi {
         val transactions = transactionService.getTransactions(profile.id!!, fromDate, toDate,
             accountIds as List<Long>, emptyList(), emptyList(), emptyList(), emptyList())
         val details = transactions.map { t ->
-            val accountStats = accountService.getAccountSummary(profile.id!!, t.accountId!!)!!
-            val account = accountWithStatsToAccount(accountStats)
+            val accountStats = accountService.getAccount(profile.id!!, t.accountId!!)!!
+            val account = accountPojoToAccount(accountStats)
             val itemsPojo = transactionService.getItemsForTransaction(t.id!!)
             val items = itemsPojo.map { item ->
                 val category = categoryService.getByProfileIdAndId(profile.id!!, item.primaryCategoryId!!)
@@ -113,8 +116,8 @@ open class TransactionsController: TransactionsApi {
             LOGGER.error("Not found", exception)
             throw exception
         }
-        val accountStats = accountService.getAccountSummary(profile.id!!,t.accountId!!)!!
-        val account = accountWithStatsToAccount(accountStats)
+        val accountStats = accountService.getAccount(profile.id!!,t.accountId!!)!!
+        val account = accountPojoToAccount(accountStats)
         val itemsPojo = transactionService.getItemsForTransaction(t.id!!)
         val items = itemsPojo.map { item ->
             val category = categoryService.getByProfileIdAndId(profile.id!!, item.primaryCategoryId!!)
@@ -131,6 +134,27 @@ open class TransactionsController: TransactionsApi {
 
     override fun transactionsPost(profileId: @NotNull String, transactionDraft: @Valid TransactionDraft?): ResponseEntity<Void?>? {
         throw UnsupportedOperationException("Not implemented yet")
+    }
+
+    override fun transactionsEarliestDateGet(
+        profileId: @NotNull String,
+        accountIds: @NotNull @Valid List<Long?>
+    ): ResponseEntity<OffsetDateTime?>? {
+        TODO("Not yet implemented")
+    }
+
+    override fun transactionsIdItemsGet(
+        id: @NotNull Long,
+        profileId: @NotNull String
+    ): ResponseEntity<List<TransactionItem1?>?>? {
+        TODO("Not yet implemented")
+    }
+
+    override fun transactionsSuggestionsGet(
+        profileId: @NotNull String,
+        fieldType: @NotNull @Valid SuggestionsFieldType
+    ): ResponseEntity<List<String?>?>? {
+        TODO("Not yet implemented")
     }
 
     companion object {

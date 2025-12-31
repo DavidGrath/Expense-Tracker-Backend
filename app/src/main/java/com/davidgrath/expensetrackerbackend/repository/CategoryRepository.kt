@@ -67,10 +67,10 @@ open class CategoryRepository {
             dslContext.select(DSL.countDistinct(TRANSACTION.ID))
                 .from(TRANSACTION)
                 .innerJoin(TRANSACTION_ITEM).on(TRANSACTION.ID.eq(TRANSACTION_ITEM.ID))
-                .where(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.eq(CATEGORY.ID)).asField<Int>("transactionCount"),
+                .where(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.eq(CATEGORY.ID)).asField<Long>("transactionCount"),
             dslContext.select(DSL.count(TRANSACTION_ITEM.ID))
                 .from(TRANSACTION_ITEM)
-                .where(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.eq(CATEGORY.ID)).asField<Int>("itemCount")
+                .where(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.eq(CATEGORY.ID)).asField<Long>("itemCount")
 
         )
             .from(CATEGORY)

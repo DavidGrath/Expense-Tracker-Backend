@@ -58,11 +58,11 @@ open class AccountRepository {
             .select(ACCOUNT.asterisk(),
                 dslContext.select(DSL.ifnull(DSL.sum(TRANSACTION.AMOUNT), BigDecimal.ZERO)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID).and(TRANSACTION.DEBIT_OR_CREDIT.eq(0))).asField<BigDecimal>().`as`("expenses"),
                 dslContext.select(DSL.ifnull(DSL.sum(TRANSACTION.AMOUNT), BigDecimal.ZERO)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID).and(TRANSACTION.DEBIT_OR_CREDIT.ne(0))).asField<BigDecimal>().`as`("income"),
-                dslContext.select(DSL.count(TRANSACTION.ID)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID)).asField<Int>().`as`("transactionCount"),
+                dslContext.select(DSL.count(TRANSACTION.ID)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID)).asField<Long>().`as`("transactionCount"),
                 dslContext.select(DSL.count(TRANSACTION_ITEM.ID)).from(TRANSACTION_ITEM)
                     .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(TRANSACTION_ITEM.ID))
                     .where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID))
-                    .asField<Int>().`as`("itemCount")
+                    .asField<Long>().`as`("itemCount")
                 )
             .from(ACCOUNT)
             .where(ACCOUNT.ID.eq(id))
@@ -74,11 +74,11 @@ open class AccountRepository {
             .select(ACCOUNT.asterisk(),
                 dslContext.select(DSL.ifnull(DSL.sum(TRANSACTION.AMOUNT), BigDecimal.ZERO)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID).and(TRANSACTION.DEBIT_OR_CREDIT.eq(0))).asField<BigDecimal>().`as`("expenses"),
                 dslContext.select(DSL.ifnull(DSL.sum(TRANSACTION.AMOUNT), BigDecimal.ZERO)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID).and(TRANSACTION.DEBIT_OR_CREDIT.ne(0))).asField<BigDecimal>().`as`("income"),
-                dslContext.select(DSL.count(TRANSACTION.ID)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID)).asField<Int>().`as`("transactionCount"),
+                dslContext.select(DSL.count(TRANSACTION.ID)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID)).asField<Long>().`as`("transactionCount"),
                 dslContext.select(DSL.count(TRANSACTION_ITEM.ID)).from(TRANSACTION_ITEM)
                     .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(TRANSACTION_ITEM.ID))
                     .where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID))
-                    .asField<Int>().`as`("itemCount")
+                    .asField<Long>().`as`("itemCount")
                 )
             .from(ACCOUNT).where(ACCOUNT.PROFILE_ID.eq(profileId))
         return selectStep.fetch()?.into(AccountWithStats::class.java)?:emptyList()

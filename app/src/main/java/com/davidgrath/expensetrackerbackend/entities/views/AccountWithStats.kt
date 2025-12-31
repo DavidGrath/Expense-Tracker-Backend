@@ -13,6 +13,6 @@ data class AccountWithStats(
     val createdAt: String,
     val expenses: BigDecimal,
     val income: BigDecimal,
-    val transactionCount: Int,
-    val itemCount: Int //TODO Account for reductions
+    val transactionCount: Long,
+    val itemCount: Long //TODO Account for reductions
 )
