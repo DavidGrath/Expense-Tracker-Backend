@@ -16,23 +16,36 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 class SellersController: SellersApi {
+
     override fun sellersGet(profileId: @NotNull String): ResponseEntity<List<Seller?>?>? {
         TODO("Not yet implemented")
     }
 
-    override fun sellersIdGet(profileId: @NotNull String): ResponseEntity<SellerDetails?>? {
+    override fun sellersIdGet(
+        id: @NotNull Long,
+        profileId: @NotNull String
+    ): ResponseEntity<SellerDetails?>? {
         TODO("Not yet implemented")
     }
 
-    override fun sellersIdLocationsGet(profileId: @NotNull String): ResponseEntity<List<SellerLocation?>?>? {
+    override fun sellersIdLocationsGet(
+        id: @NotNull Long,
+        profileId: @NotNull String
+    ): ResponseEntity<List<SellerLocation?>?>? {
         TODO("Not yet implemented")
     }
 
-    override fun sellersIdLocationsIdGet(profileId: @NotNull String): ResponseEntity<SellerLocation?>? {
+    override fun sellersIdLocationsLocationIdGet(
+        id: @NotNull Long,
+        locationId: @NotNull Long,
+        profileId: @NotNull String
+    ): ResponseEntity<SellerLocation?>? {
         TODO("Not yet implemented")
     }
 
-    override fun sellersIdLocationsIdPut(
+    override fun sellersIdLocationsLocationIdPut(
+        id: @NotNull Long,
+        locationId: @NotNull Long,
         profileId: @NotNull String,
         sellerLocationUpdateRequest: @Valid SellerLocationUpdateRequest?
     ): ResponseEntity<Void?>? {
@@ -40,6 +53,7 @@ class SellersController: SellersApi {
     }
 
     override fun sellersIdLocationsPost(
+        id: @NotNull Long,
         profileId: @NotNull String,
         sellerLocationCreateRequest: @Valid SellerLocationCreateRequest?
     ): ResponseEntity<Long?>? {
@@ -47,6 +61,7 @@ class SellersController: SellersApi {
     }
 
     override fun sellersIdPut(
+        id: @NotNull Long,
         profileId: @NotNull String,
         sellerUpdateRequest: @Valid SellerUpdateRequest?
     ): ResponseEntity<Void?>? {
