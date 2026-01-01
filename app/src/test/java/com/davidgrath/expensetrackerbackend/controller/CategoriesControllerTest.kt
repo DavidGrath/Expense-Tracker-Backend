@@ -1,6 +1,5 @@
 package com.davidgrath.expensetrackerbackend.controller
 
-import com.davidgrath.expensetracker.generatedapi.model.BasicTransactionCreateRequest
 import com.davidgrath.expensetracker.generatedapi.model.CategoryCreateRequest
 import com.davidgrath.expensetracker.generatedapi.model.CategoryUpdateRequest
 import com.davidgrath.expensetrackerbackend.configuration.SecurityConfiguration
@@ -23,7 +22,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.ObjectWriter
 import org.hamcrest.Matchers
 import org.junit.After
-import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -37,7 +35,6 @@ import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers
-import java.math.BigDecimal
 import java.time.LocalDateTime
 
 @RunWith(SpringRunner::class)
@@ -168,8 +165,8 @@ class CategoriesControllerTest {
 
         val objectWriter: ObjectWriter = ObjectMapper().writer()
 
-        val createRequest = CategoryUpdateRequest("new category", "shopping_cart")
-        var json: String = objectWriter.writeValueAsString(createRequest)
+        val updateRequest = CategoryUpdateRequest("new category", "shopping_cart")
+        var json: String = objectWriter.writeValueAsString(updateRequest)
         var response = mockMvc
             .perform(
                 MockMvcRequestBuilders.put("/categories/{id}", customCategoryId)
@@ -223,8 +220,8 @@ class CategoriesControllerTest {
 
         val objectWriter: ObjectWriter = ObjectMapper().writer()
 
-        val createRequest = CategoryUpdateRequest("Shopping and groceries", "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:shopping_cart_x")
-        var json: String = objectWriter.writeValueAsString(createRequest)
+        val updateRequest = CategoryUpdateRequest("Shopping and groceries", "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:shopping_cart_x")
+        var json: String = objectWriter.writeValueAsString(updateRequest)
         var response = mockMvc
             .perform(
                 MockMvcRequestBuilders.put("/categories/{id}", customCategoryId)
@@ -255,8 +252,8 @@ class CategoriesControllerTest {
 
         val objectWriter: ObjectWriter = ObjectMapper().writer()
 
-        val createRequest = CategoryUpdateRequest("Not Food", "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:shopping_cart")
-        var json: String = objectWriter.writeValueAsString(createRequest)
+        val updateRequest = CategoryUpdateRequest("Not Food", "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:shopping_cart")
+        var json: String = objectWriter.writeValueAsString(updateRequest)
         var response = mockMvc
             .perform(
                 MockMvcRequestBuilders.put("/categories/{id}", categoryId)
@@ -269,6 +266,68 @@ class CategoriesControllerTest {
                 MockMvcResultMatchers.status().isBadRequest,
                 MockMvcResultMatchers.jsonPath(
                     "$.${Constants.CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE}", Matchers.equalTo(ErrorCode.CATEGORY_NOT_MODIFIABLE.code)
+                )
+            ).andReturn()
+    }
+
+    /*
+    //I could probably use a Regex in the OpenAPI spec so that this is handled automatically by bean validation, but I'm not sure how negative lookahead:
+    (?!^\s+$)^.+$
+    would translate back and forth. Also, I'm going to assume that PCRE isn't universal for now
+
+     */
+    @Test
+    fun givenNameIsBlankWhenCreateCategoryThenBadRequest() {
+        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
+
+        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
+        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val objectWriter: ObjectWriter = ObjectMapper().writer()
+
+        val createRequest = CategoryCreateRequest("  \t\r", "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category")
+        var json: String = objectWriter.writeValueAsString(createRequest)
+        var response = mockMvc
+            .perform(
+                MockMvcRequestBuilders.post("/categories")
+                    .header("Authorization", "Bearer ${jws}")
+                    .header("Profile-Id", profile.stringId)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(json)
+            )
+            .andExpectAll(
+                MockMvcResultMatchers.status().isBadRequest,
+                MockMvcResultMatchers.jsonPath(
+                    "$.${Constants.CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE}", Matchers.equalTo(ErrorCode.INVALID_INPUT.code)
+                )
+            ).andReturn()
+    }
+
+    @Test
+    fun givenNameIsBlankWhenUpdateCategoryThenBadRequest() {
+        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
+
+        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
+        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+
+        val customCategoryId = categoryRepository.insertCategory(CategoryPojo(null, profile.id!!, null, true.toByte(), "Shopping",
+            LocalDateTime.now(timeHandler.getClock())))
+
+        val objectWriter: ObjectWriter = ObjectMapper().writer()
+
+        val updateRequest = CategoryUpdateRequest(" \t\n", "materialsymbols:shopping_cart")
+        var json: String = objectWriter.writeValueAsString(updateRequest)
+        var response = mockMvc
+            .perform(
+                MockMvcRequestBuilders.put("/categories/{id}", customCategoryId)
+                    .header("Authorization", "Bearer ${jws}")
+                    .header("Profile-Id", profile.stringId)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(json)
+            )
+            .andExpectAll(
+                MockMvcResultMatchers.status().isBadRequest,
+                MockMvcResultMatchers.jsonPath(
+                    "$.${Constants.CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE}", Matchers.equalTo(ErrorCode.INVALID_INPUT.code)
                 )
             ).andReturn()
     }

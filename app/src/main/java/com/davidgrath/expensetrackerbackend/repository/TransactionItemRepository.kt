@@ -1,14 +1,10 @@
 package com.davidgrath.expensetrackerbackend.repository
 
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.Account
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.Image
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.Transaction
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.TransactionItem
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.User
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ImagePojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionItemPojo
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionPojo
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.UserPojo
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.ACCOUNT
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.PROFILE
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION
 import org.jooq.DSLContext
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Repository
@@ -26,9 +22,13 @@ open class TransactionItemRepository {
         return itemDb.id!!
     }
 
-    fun getAllById(transactionId: Long): List<TransactionItemPojo> {
-        return dslContext.selectFrom(TRANSACTION_ITEM)
+    fun getAllByTransactionId(profileId: Long, transactionId: Long): List<TransactionItemPojo> {
+        return dslContext.select(TRANSACTION_ITEM.asterisk())
+            .from(TRANSACTION_ITEM)
+            .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(TRANSACTION_ITEM.TRANSACTION_ID))
+            .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
             .where(TRANSACTION_ITEM.TRANSACTION_ID.eq(transactionId))
+            .and(ACCOUNT.PROFILE_ID.eq(profileId))
             .fetch().into(TransactionItemPojo::class.java)
     }
 

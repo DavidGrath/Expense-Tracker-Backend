@@ -65,18 +65,28 @@ open class TransactionsController: TransactionsApi {
             LOGGER.error("Bad time zone", exception)
             throw exception
         }
-        if(accountService.isAccountInProfile(profile.id!!, basicTransactionCreateRequest!!.accountId)) {
-            val transactionId = transactionService.addTransaction(basicTransactionCreateRequest.accountId, basicTransactionCreateRequest.debitOrCredit, basicTransactionCreateRequest.amount, basicTransactionCreateRequest.description, basicTransactionCreateRequest.categoryId, zone)
-            return ResponseEntity.ok(transactionId)
-        } else if(accountService.isAccountForUser(user!!.id!!, basicTransactionCreateRequest.accountId)) {// && !categoryService.isCategoryForProfile(profile.id!!, basicTransactionCreateRequest.categoryId)) {
+        if(!accountService.isAccountForUser(profile.id!!, user.id!!)) {
+            val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
+            LOGGER.error("Account not for user", exception)
+            throw exception
+        }
+        if(!categoryService.isCategoryForUser(profile.id!!, user.id!!)) {
+            val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
+            LOGGER.error("Category not for user", exception)
+            throw exception
+        }
+        if(!accountService.isAccountInProfile(profile.id!!, basicTransactionCreateRequest!!.accountId)) {
             val exception = CustomHttpException(ErrorCode.ENTITY_NOT_IN_PROFILE, HttpStatus.BAD_REQUEST)
             LOGGER.error("Account not in profile", exception)
             throw exception
-        } else {
-            val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
-            LOGGER.error("Not found", exception)
+        }
+        if(!categoryService.isCategoryForProfile(profile.id!!, basicTransactionCreateRequest!!.accountId)) {
+            val exception = CustomHttpException(ErrorCode.ENTITY_NOT_IN_PROFILE, HttpStatus.BAD_REQUEST)
+            LOGGER.error("Category not in profile", exception)
             throw exception
         }
+        val transactionId = transactionService.addTransaction(profile.id!!, basicTransactionCreateRequest.accountId, basicTransactionCreateRequest.debitOrCredit, basicTransactionCreateRequest.amount, basicTransactionCreateRequest.description, basicTransactionCreateRequest.categoryId, zone)
+        return ResponseEntity.ok(transactionId)
     }
 
     override fun transactionsGet(profileId: @NotNull String, accountIds: @NotNull @Valid List<Long?>, fromDate: @Valid LocalDate?, toDate: @Valid LocalDate?): ResponseEntity<List<TransactionDetails?>?>? {
@@ -90,7 +100,7 @@ open class TransactionsController: TransactionsApi {
         val details = transactions.map { t ->
             val accountStats = accountService.getAccount(profile.id!!, t.accountId!!)!!
             val account = accountPojoToAccount(accountStats)
-            val itemsPojo = transactionService.getItemsForTransaction(t.id!!)
+            val itemsPojo = transactionService.getItemsForTransaction(profile.id!!, t.id!!)
             val items = itemsPojo.map { item ->
                 val category = categoryService.getByProfileIdAndId(profile.id!!, item.primaryCategoryId!!)
                 transactionItemPojoToTransactionItem(item, category!!)
@@ -118,7 +128,7 @@ open class TransactionsController: TransactionsApi {
         }
         val accountStats = accountService.getAccount(profile.id!!,t.accountId!!)!!
         val account = accountPojoToAccount(accountStats)
-        val itemsPojo = transactionService.getItemsForTransaction(t.id!!)
+        val itemsPojo = transactionService.getItemsForTransaction(profile.id!!,t.id!!)
         val items = itemsPojo.map { item ->
             val category = categoryService.getByProfileIdAndId(profile.id!!, item.primaryCategoryId!!)
             transactionItemPojoToTransactionItem(item, category!!)

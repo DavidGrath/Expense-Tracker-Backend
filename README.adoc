@@ -28,7 +28,34 @@ flyway migrate -environment=devlocal
 gradlew.bat :app:jooqCodeGenDevLocal
 ----
 
+== Versioning
+For now, it's not fully fleshed out yet, because I have 3 separate things to consider:
+
+* The Backend
+* The Android app
+* The OpenAPI spec
+
+But the Backend - this repo, derives its version from link:app-version[] - uses this format:
+
+----
+YYYY-MM-DD:NN
+----
+The NN part is supposed to be incremented before every push to the test server, which in turn is supposed to happen on every merge to dev, which in turn is supposed to be the gateway to master.
+
+It restarts at "01" each day. Let me see you try and reach 100 commits in 24 hours
+
+=== TODO
+* I use "supposed" because these haven't been implemented just yet
+* Fail any pushes if the version remains the same
+* Alternatively, or combined - increment the version number automatically in the pipeline
+* Also, let the Gradle project derive its version from the file
+
 == Notes
-* The project uses an API-first approach, so the endpoints are derived from the OpenAPI specification
+* The project uses an API-first approach, so the endpoints are derived from the link:openapi/openapi.json[OpenAPI specification]
 * Generation is done using the codegen plugin with the `openApiGenerate` task
 * Any changes to the openapi files should also increment the version number. How exactly to increment it is based on [.line-through]#vibes# discretion
+* Subtle issues noted with the plugin:
+** Anytime a change is made to `schemas.json`, but not the root `openapi.json`, the Gradle task remains UP-TO-DATE
+** Validation doesn't work, likely also because of the file splitting. TODO  I'll try adding a task that does merging and validation before the actual generation
+* Concerning repositories:
+** Most of the methods should include a parameter that links back to the user: userId or profileId and the queries should include them, too. Basically https://developer.mozilla.org/en-US/docs/Web/Security/Attacks/IDOR[IDOR] mitigation

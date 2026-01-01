@@ -16,7 +16,6 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
 
 @Service
 class TransactionService {
@@ -30,13 +29,13 @@ class TransactionService {
     @Autowired
     lateinit var timeHandler: TimeHandler
     
-    fun addTransaction(accountId: Long, debitOrCredit: Boolean, amount: BigDecimal, description: String, categoryId: Long, zoneId: ZoneId): Long {
+    fun addTransaction(profileId: Long, accountId: Long, debitOrCredit: Boolean, amount: BigDecimal, description: String, categoryId: Long, zoneId: ZoneId): Long {
         val date = ZonedDateTime.now(timeHandler.getClock())
         val utcDate = date.withZoneSameInstant(ZoneId.of("UTC"))
         val userTime = date.withZoneSameInstant(zoneId).toLocalTime()
 
-        val account = accountRepository.findById(accountId)!!
-        val maxOrdinal = transactionRepository.getMaxOrdinalInDayForAccount(accountId, utcDate.toLocalDate())?: 0
+        val account = accountRepository.findByProfileIdAndId(profileId, accountId)!!
+        val maxOrdinal = transactionRepository.getMaxOrdinalInDayForAccount(profileId, accountId, utcDate.toLocalDate())?: 0
         val ordinal = maxOrdinal + 1
         val transaction = TransactionPojo(
             null,
@@ -136,8 +135,8 @@ class TransactionService {
         return list
     }
 
-    fun getItemsForTransaction(transactionId: Long): List<TransactionItemPojo> {
-        val list = transactionItemRepository.getAllById(transactionId)
+    fun getItemsForTransaction(profileId: Long, transactionId: Long): List<TransactionItemPojo> {
+        val list = transactionItemRepository.getAllByTransactionId(profileId, transactionId)
         LOGGER.info("getItemsForTransaction: Fetched {} items", list.size)
         return list
     }

@@ -176,7 +176,7 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
                 if(useDatesAsCreationDates) {
                     dateTime = repeatDate.atTime(LocalTime.parse("08:00:00"))
                 }
-                val ordinal = transactionRepository.getMaxOrdinalInDayForAccount(account.id!!, repeatDate)?: 0
+                val ordinal = transactionRepository.getMaxOrdinalInDayForAccount(profile.id!!, account.id!!, repeatDate)?: 0
                 val transaction = TransactionPojo(null, account.id!!, sum, account.currencyCode, null, debitOrCredit.toByte(), date, ordinal + 1, TransactionMode.Other,null, null, null, dateTime)
                 val transactionId = transactionRepository.insertTransaction(transaction)
 

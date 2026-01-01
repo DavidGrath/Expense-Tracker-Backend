@@ -162,6 +162,37 @@ class TransactionsControllerTest {
     }
 
     @Test
+    fun givenCategoryIdExistsAndCategoryIdBelongsToAnotherUserWhenCreateTransactionThenNotFound() {
+
+        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
+        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+
+        val userId = userService.createUser("user2", "password", Locale.US)
+        val profile2 = profileRepository.findByStringId(userId, Constants.DEFAULT_PROFILE_ID)!!
+        val accounts = accountRepository.getAllByProfileId(profile.id!!)
+        val misc = categoryRepository.findByProfileIdAndStringId(profile2.id!!, "miscellaneous") //This should cause a failure
+        var basicTransactionRequest = BasicTransactionCreateRequest(accounts[0].id!!, true, BigDecimal.TEN, "Description", misc!!.id, "Etc/UTC")
+
+        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
+        val objectWriter: ObjectWriter = ObjectMapper().writer()
+        val json: String = objectWriter.writeValueAsString(basicTransactionRequest)
+        mockMvc
+            .perform(
+                MockMvcRequestBuilders.post("/transactions/basic")
+                    .header("Authorization", "Bearer ${jws}")
+                    .header("Profile-Id", profile.stringId)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(json)
+            )
+            .andExpectAll(
+                MockMvcResultMatchers.status().isNotFound,
+                MockMvcResultMatchers.jsonPath(
+                    "$.$CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE", Matchers.equalTo(ErrorCode.ENTITY_NOT_FOUND.code)
+                )
+            )
+    }
+
+    @Test
     @Ignore("Not ready yet")
     fun givenTransactionExistsAndTransactionInOtherProfileWhenGetThenNotInProfile() {
 

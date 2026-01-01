@@ -11,6 +11,7 @@ import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.service.AccountService
 import com.davidgrath.expensetrackerbackend.service.ProfileService
 import com.davidgrath.expensetrackerbackend.service.UserService
+import com.davidgrath.expensetrackerbackend.utils.Constants
 import com.davidgrath.expensetrackerbackend.utils.accountPojoToAccount
 import com.davidgrath.expensetrackerbackend.utils.accountWithStatsToAccountDetails
 import jakarta.validation.Valid
@@ -22,6 +23,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.bind.annotation.RestController
+import java.util.Currency
 
 @RestController
 class AccountsController: AccountsApi {
@@ -48,7 +50,17 @@ class AccountsController: AccountsApi {
     }
 
     override fun accountsDetailsGet(profileId: @NotNull String): ResponseEntity<List<AccountDetails?>?>? {
-        TODO("Not yet implemented")
+        val authentication = SecurityContextHolder.getContext().authentication
+        val principal = authentication.principal as Jwt
+        LOGGER.info("Username: {}", principal.subject)
+        val user = userService.getByUsername(principal.subject!!)
+        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+
+        val accounts = accountService.getAccountSummariesForProfile(profile.id!!)
+        val apiAccounts = accounts.map { a ->
+            accountWithStatsToAccountDetails(a)
+        }
+        return ResponseEntity.ok(apiAccounts)
     }
 
     override fun accountsIdGet(
@@ -60,7 +72,6 @@ class AccountsController: AccountsApi {
         val principal = authentication.principal as Jwt
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
-        val userUuid = user!!.uuid!!
         val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
 
         val account = accountService.getAccountSummary(profile.id!!, id)
@@ -78,14 +89,67 @@ class AccountsController: AccountsApi {
         profileId: @NotNull String,
         accountUpdateRequest: @Valid AccountUpdateRequest?
     ): ResponseEntity<Void?>? {
-        TODO("Not yet implemented")
+        val authentication = SecurityContextHolder.getContext().authentication
+        val principal = authentication.principal as Jwt
+        LOGGER.info("Username: {}", principal.subject)
+        val user = userService.getByUsername(principal.subject!!)
+        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+
+        if(!accountService.isAccountForUser(user.id!!, id)) {
+            val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
+            LOGGER.error("Account not for user", exception)
+            throw exception
+        }
+        if(!accountService.isAccountInProfile(profile.id!!, id)) {
+            val exception = CustomHttpException(ErrorCode.ENTITY_NOT_IN_PROFILE, HttpStatus.BAD_REQUEST)
+            LOGGER.error("Account not for profile", exception)
+            throw exception
+        }
+
+        val nameTrimmed = accountUpdateRequest!!.name.trim()
+        if(nameTrimmed.isBlank()) {
+            val exception = CustomHttpException(ErrorCode.INVALID_INPUT, HttpStatus.BAD_REQUEST)
+            LOGGER.error("Name blank", exception)
+            throw exception
+        }
+        val id = accountService.updateAccount(profile.id!!, id, nameTrimmed)
+        return ResponseEntity.ok().build()
     }
 
     override fun accountsPost(
         profileId: @NotNull String,
         accountCreateRequest: @Valid AccountCreateRequest?
     ): ResponseEntity<Long?>? {
-        TODO("Not yet implemented")
+        val authentication = SecurityContextHolder.getContext().authentication
+        val principal = authentication.principal as Jwt
+        LOGGER.info("Username: {}", principal.subject)
+        val user = userService.getByUsername(principal.subject!!)
+        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val existing = accountService.getAccountsForProfile(profile.id!!)
+        if(existing.size >= Constants.Constraints.MAX_ACCOUNTS_PER_PROFILE) {
+            val exception = CustomHttpException(ErrorCode.LIMITS_EXCEEDED, HttpStatus.BAD_REQUEST)
+            LOGGER.error("Max accounts reached", exception)
+            throw exception
+        }
+        val currency = try {
+            Currency.getInstance(accountCreateRequest!!.currencyCode)
+        } catch (e: IllegalArgumentException) {
+            LOGGER.warn("Wrong currency: {}", accountCreateRequest!!.currencyCode)
+            null
+        }
+        if(currency == null) {
+            val exception = CustomHttpException(ErrorCode.INVALID_INPUT, HttpStatus.BAD_REQUEST)
+            LOGGER.error("Wrong currency code", exception)
+            throw exception
+        }
+        val nameTrimmed = accountCreateRequest!!.name.trim()
+        if(nameTrimmed.isBlank()) {
+            val exception = CustomHttpException(ErrorCode.INVALID_INPUT, HttpStatus.BAD_REQUEST)
+            LOGGER.error("Name blank", exception)
+            throw exception
+        }
+        val id = accountService.createAccount(profile.id!!, nameTrimmed, accountCreateRequest.currencyCode)
+        return ResponseEntity.ok(id)
     }
 
     companion object {

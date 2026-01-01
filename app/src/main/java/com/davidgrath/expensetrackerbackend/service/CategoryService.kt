@@ -25,10 +25,10 @@ class CategoryService {
         return value
     }
 
-    fun doesCategoryExist(userId: Long, categoryId: Long): Boolean {
+    fun isCategoryForUser(userId: Long, categoryId: Long): Boolean {
         val category = categoryRepository.findByUserIdAndId(userId, categoryId)
         val value = category != null
-        LOGGER.info("Category for profile: {}", value)
+        LOGGER.info("Category for user: {}", value)
         return value
     }
 

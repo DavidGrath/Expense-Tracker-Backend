@@ -55,7 +55,7 @@ class CategoriesController: CategoriesApi {
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
         val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
-        if(!categoryService.doesCategoryExist(user.id!!, id)) {
+        if(!categoryService.isCategoryForUser(user.id!!, id)) {
             val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
             LOGGER.error("Category not for user", exception)
             throw exception
@@ -69,6 +69,12 @@ class CategoriesController: CategoriesApi {
         if(!category.isCustom.toBoolean()) {
             val exception = CustomHttpException(ErrorCode.CATEGORY_NOT_MODIFIABLE, HttpStatus.BAD_REQUEST)
             LOGGER.error("Category is default", exception)
+            throw exception
+        }
+        val nameTrimmed = categoryUpdateRequest!!.name.trim()
+        if(nameTrimmed.isBlank()) {
+            val exception = CustomHttpException(ErrorCode.INVALID_INPUT, HttpStatus.BAD_REQUEST)
+            LOGGER.error("Name blank", exception)
             throw exception
         }
         val icon = categoryUpdateRequest!!.icon
@@ -90,7 +96,7 @@ class CategoriesController: CategoriesApi {
             LOGGER.error("Icon name not correct", exception)
             throw exception
         }
-        val rows = categoryService.updateCategory(id, profile.id!!, categoryUpdateRequest.name, categoryUpdateRequest.icon)
+        val rows = categoryService.updateCategory(id, profile.id!!, nameTrimmed, categoryUpdateRequest.icon)
 
         return ResponseEntity.ok().build()
     }
@@ -106,6 +112,12 @@ class CategoriesController: CategoriesApi {
         if(existing.size >= Constants.Constraints.MAX_CATEGORIES_PER_PROFILE) {
             val exception = CustomHttpException(ErrorCode.LIMITS_EXCEEDED, HttpStatus.BAD_REQUEST)
             LOGGER.error("Too many categories", exception)
+            throw exception
+        }
+        val nameTrimmed = categoryCreateRequest!!.name.trim()
+        if(nameTrimmed.isBlank()) {
+            val exception = CustomHttpException(ErrorCode.INVALID_INPUT, HttpStatus.BAD_REQUEST)
+            LOGGER.error("Name blank", exception)
             throw exception
         }
         val icon = categoryCreateRequest!!.icon

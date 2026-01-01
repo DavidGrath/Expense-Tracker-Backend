@@ -3,6 +3,8 @@ package com.davidgrath.expensetrackerbackend.repository
 import com.davidgrath.expensetrackerbackend.entities.views.AccountWithStats
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.Account
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.AccountPojo
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.CategoryPojo
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.ACCOUNT
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.PROFILE
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION_ITEM
@@ -17,7 +19,8 @@ open class AccountRepository {
 
     @Autowired
     open lateinit var dslContext: DSLContext
-    open var ACCOUNT: Account = Account.ACCOUNT
+
+    //region Create
 
     fun insertAccount(account: AccountPojo): Long {
         val accountDb = dslContext.newRecord(ACCOUNT, account)
@@ -25,11 +28,23 @@ open class AccountRepository {
         return accountDb.id!!
     }
 
-    fun findById(id: Long): AccountPojo? {
+    //endregion
+
+    //region Read
+    /*fun findById(id: Long): AccountPojo? {
         val selectStep = dslContext.selectFrom(ACCOUNT)
             .where(ACCOUNT.ID.eq(id))
         return selectStep.fetchOne()?.into(AccountPojo::class.java)
+    }*/
+
+    fun findByProfileIdAndId(profileId: Long, id: Long): AccountPojo? {
+        val selectStep = dslContext.selectFrom(ACCOUNT)
+            .where(ACCOUNT.PROFILE_ID.eq(profileId))
+            .and(ACCOUNT.ID.eq(id))
+        return selectStep.fetchOne()?.into(AccountPojo::class.java)
     }
+
+
 
     fun getAllByProfileId(profileId: Long): List<AccountPojo> {
         val selectStep = dslContext.selectFrom(ACCOUNT)
@@ -84,8 +99,25 @@ open class AccountRepository {
         return selectStep.fetch()?.into(AccountWithStats::class.java)?:emptyList()
     }
 
+    // endregion
+
+    // region Update
+
+    fun updateAccount(profileId: Long, id: Long, name: String): Int {
+        val updateStep = dslContext.update(ACCOUNT)
+            .set(ACCOUNT.NAME, name)
+            .where(ACCOUNT.ID.eq(id))
+            .and(ACCOUNT.PROFILE_ID.eq(profileId))
+        return updateStep.execute()
+    }
+
+    //endregion
+
+    // region DELETE!!!
+
     fun deleteAllForTesting(): Int {
         val delete = dslContext.deleteFrom(ACCOUNT).where("true")
         return delete.execute()
     }
+    // endregion
 }

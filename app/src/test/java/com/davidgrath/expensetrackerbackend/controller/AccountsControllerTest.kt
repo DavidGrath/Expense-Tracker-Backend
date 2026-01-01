@@ -1,9 +1,13 @@
 package com.davidgrath.expensetrackerbackend.controller
 
+import com.davidgrath.expensetracker.generatedapi.model.AccountCreateRequest
+import com.davidgrath.expensetracker.generatedapi.model.AccountUpdateRequest
 import com.davidgrath.expensetrackerbackend.configuration.SecurityConfiguration
 import com.davidgrath.expensetrackerbackend.configuration.TestConfiguration
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
+import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.controller.exception.ExceptionResponseHandler
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.AccountPojo
 import com.davidgrath.expensetrackerbackend.repository.AccountRepository
 import com.davidgrath.expensetrackerbackend.repository.ProfileRepository
 import com.davidgrath.expensetrackerbackend.repository.UserRepository
@@ -13,6 +17,8 @@ import com.davidgrath.expensetrackerbackend.testutils.createBearerToken
 import com.davidgrath.expensetrackerbackend.testutils.tempInit
 import com.davidgrath.expensetrackerbackend.utils.Constants
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.JWT_ALG
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.ObjectWriter
 import org.hamcrest.Matchers
 import org.junit.After
 import org.junit.Before
@@ -21,12 +27,14 @@ import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.http.MediaType
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers
+import java.time.LocalDateTime
 
 @RunWith(SpringRunner::class)
 @WebMvcTest(AccountsController::class)
@@ -108,4 +116,166 @@ class AccountsControllerTest {
                 MockMvcResultMatchers.jsonPath("$", Matchers.hasSize<Int>(1))
             )
     }
+
+    @Test
+    fun givenNameBlankWhenCreateAccountThenBadRequest() {
+        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
+
+        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
+        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+
+
+        val objectWriter: ObjectWriter = ObjectMapper().writer()
+
+        val createRequest = AccountCreateRequest(" \t\n", "GBP")
+        var json: String = objectWriter.writeValueAsString(createRequest)
+        var response = mockMvc
+            .perform(
+                MockMvcRequestBuilders.post("/accounts")
+                    .header("Authorization", "Bearer ${jws}")
+                    .header("Profile-Id", profile.stringId)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(json)
+            )
+            .andExpectAll(
+                MockMvcResultMatchers.status().isBadRequest,
+                MockMvcResultMatchers.jsonPath(
+                    "$.${Constants.CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE}", Matchers.equalTo(ErrorCode.INVALID_INPUT.code)
+                )
+            ).andReturn()
+    }
+
+    @Test
+    fun givenCurrencyCodeInvalidWhenCreateAccountThenBadRequest() {
+        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
+
+        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
+        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+
+
+        val objectWriter: ObjectWriter = ObjectMapper().writer()
+
+        val createRequest = AccountCreateRequest("New Account", "XYZ")
+        var json: String = objectWriter.writeValueAsString(createRequest)
+        var response = mockMvc
+            .perform(
+                MockMvcRequestBuilders.post("/accounts")
+                    .header("Authorization", "Bearer ${jws}")
+                    .header("Profile-Id", profile.stringId)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(json)
+            )
+            .andExpectAll(
+                MockMvcResultMatchers.status().isBadRequest,
+                MockMvcResultMatchers.jsonPath(
+                    "$.${Constants.CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE}", Matchers.equalTo(ErrorCode.INVALID_INPUT.code)
+                )
+            ).andReturn()
+
+    }
+    @Test
+    fun givenNameBlankWhenUpdateAccountThenBadRequest() {
+        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
+
+        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
+        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+
+
+        val objectWriter: ObjectWriter = ObjectMapper().writer()
+
+        val defaultAccountId = accountRepository.getAllByProfileId(profile.id!!).firstOrNull()!!.id!!
+        val updateRequest = AccountUpdateRequest(" \t\n")
+        var json: String = objectWriter.writeValueAsString(updateRequest)
+        var response = mockMvc
+            .perform(
+                MockMvcRequestBuilders.put("/accounts/{id}", defaultAccountId)
+                    .header("Authorization", "Bearer ${jws}")
+                    .header("Profile-Id", profile.stringId)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(json)
+            )
+            .andExpectAll(
+                MockMvcResultMatchers.status().isBadRequest,
+                MockMvcResultMatchers.jsonPath(
+                    "$.${Constants.CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE}", Matchers.equalTo(ErrorCode.INVALID_INPUT.code)
+                )
+            ).andReturn()
+    }
+
+    @Test
+    fun givenAccountCountIsMaxWhenCreateThenBadRequest() {
+        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
+
+        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
+        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val objectWriter: ObjectWriter = ObjectMapper().writer()
+        val existing = accountRepository.getAllByProfileId(profile.id!!)
+        val remaining = Constants.Constraints.MAX_ACCOUNTS_PER_PROFILE - existing.size
+        if(remaining <= 0) {
+            throw RuntimeException("Existing accounts too many")
+        }
+        for(acc in 0 until remaining) {
+            accountRepository.insertAccount(AccountPojo(null, profile.id!!, "USD", null, null, "New Account $acc",
+                LocalDateTime.now(timeHandler.getClock())))
+        }
+        val createRequest = AccountCreateRequest("New account", "GBP")
+        var json: String = objectWriter.writeValueAsString(createRequest)
+        var response = mockMvc
+            .perform(
+                MockMvcRequestBuilders.post("/accounts")
+                    .header("Authorization", "Bearer ${jws}")
+                    .header("Profile-Id", profile.stringId)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(json)
+            )
+            .andExpectAll(
+                MockMvcResultMatchers.status().isBadRequest,
+                MockMvcResultMatchers.jsonPath(
+                    "$.${Constants.CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE}", Matchers.equalTo(ErrorCode.LIMITS_EXCEEDED.code)
+                )
+            ).andReturn()
+    }
+
+    @Test
+    fun getAllOkTest() {
+        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
+
+        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
+        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+
+        var response = mockMvc
+            .perform(
+                MockMvcRequestBuilders.get("/accounts")
+                    .header("Authorization", "Bearer ${jws}")
+                    .header("Profile-Id", profile.stringId)
+            )
+            .andExpectAll(
+                MockMvcResultMatchers.status().isOk,
+                MockMvcResultMatchers.jsonPath(
+                    "$.*", Matchers.iterableWithSize<Int>(Matchers.greaterThanOrEqualTo(1))
+                )
+            ).andReturn()
+    }
+
+    @Test
+    fun getAllDetailsOkTest() {
+        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
+
+        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
+        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+
+        var response = mockMvc
+            .perform(
+                MockMvcRequestBuilders.get("/accounts/details")
+                    .header("Authorization", "Bearer ${jws}")
+                    .header("Profile-Id", profile.stringId)
+            )
+            .andExpectAll(
+                MockMvcResultMatchers.status().isOk,
+                MockMvcResultMatchers.jsonPath(
+                    "$.*", Matchers.iterableWithSize<Int>(Matchers.greaterThanOrEqualTo(1))
+                )
+            ).andReturn()
+    }
+
 }

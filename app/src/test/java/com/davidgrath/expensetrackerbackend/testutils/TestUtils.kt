@@ -113,7 +113,7 @@ fun tempInitProfile(profile: ProfilePojo, accountRepository: AccountRepository, 
                 utcDate,
             )
             val id = accountRepository.insertAccount(account)
-            defaultAccount = accountRepository.findById(id)!!
+            defaultAccount = accountRepository.findByProfileIdAndId(profile.id!!, id)!!
             LOGGER.info("Created default account for profile ${profile.stringId}")
         }
         return profile.id!!

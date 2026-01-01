@@ -73,11 +73,13 @@ open class TransactionRepository {
     }
 
 
-    fun getMaxOrdinalInDayForAccount(accountId: Long, date: LocalDate): Int? {
-        val selectStep = dslContext.select(DSL.max(TRANSACTION.ORDINAL)).from(TRANSACTION)
+    fun getMaxOrdinalInDayForAccount(profileId: Long, accountId: Long, date: LocalDate): Int? {
+        val selectStep = dslContext.select(DSL.max(TRANSACTION.ORDINAL))
+            .from(TRANSACTION)
+            .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
             .where(TRANSACTION.ACCOUNT_ID.eq(accountId))
             .and(TRANSACTION.DATED_AT.eq(date))
-
+            .and(ACCOUNT.PROFILE_ID.eq(profileId))
         return selectStep.fetchOne()?.value1()
     }
 
