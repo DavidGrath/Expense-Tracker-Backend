@@ -102,7 +102,7 @@ class StatisticsController: StatisticsApi {
     override fun statisticsTransactionAndItemCountPost(
         profileId: @NotNull String,
         statisticsFilter: @Valid StatisticsFilter?
-    ): ResponseEntity<List<StatsTransactionAndItemCount?>?>? {
+    ): ResponseEntity<StatsTransactionAndItemCount?>? {
         TODO("Not yet implemented")
     }
 

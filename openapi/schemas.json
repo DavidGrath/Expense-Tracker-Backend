@@ -342,6 +342,13 @@
               "$ref": "#/components/schemas/TransactionMode"
             }
           },
+          "sellers": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
           "includeDates": {
             "type": "array",
             "items": {
