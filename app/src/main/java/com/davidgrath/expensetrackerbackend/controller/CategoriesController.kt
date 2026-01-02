@@ -1,10 +1,10 @@
 package com.davidgrath.expensetrackerbackend.controller
 
-import com.davidgrath.expensetracker.generatedapi.api.CategoriesApi
-import com.davidgrath.expensetracker.generatedapi.model.Category
-import com.davidgrath.expensetracker.generatedapi.model.CategoryCreateRequest
-import com.davidgrath.expensetracker.generatedapi.model.CategoryDetails
-import com.davidgrath.expensetracker.generatedapi.model.CategoryUpdateRequest
+import com.davidgrath.expensetrackerbackend.generatedapi.api.CategoriesApi
+import com.davidgrath.expensetrackerbackend.generatedapi.model.Category
+import com.davidgrath.expensetrackerbackend.generatedapi.model.CategoryCreateRequest
+import com.davidgrath.expensetrackerbackend.generatedapi.model.CategoryDetails
+import com.davidgrath.expensetrackerbackend.generatedapi.model.CategoryUpdateRequest
 import com.davidgrath.expensetrackerbackend.controller.exception.CustomHttpException
 import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.service.CategoryService

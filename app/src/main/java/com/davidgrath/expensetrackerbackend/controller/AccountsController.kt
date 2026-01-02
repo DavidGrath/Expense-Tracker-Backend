@@ -1,11 +1,10 @@
 package com.davidgrath.expensetrackerbackend.controller
 
-import com.davidgrath.expensetracker.generatedapi.api.AccountsApi
-import com.davidgrath.expensetracker.generatedapi.model.Account
-import com.davidgrath.expensetracker.generatedapi.model.AccountCreateRequest
-import com.davidgrath.expensetracker.generatedapi.model.AccountDetails
-import com.davidgrath.expensetracker.generatedapi.model.AccountUpdateRequest
-import com.davidgrath.expensetracker.generatedapi.model.AccountsIdPutRequest
+import com.davidgrath.expensetrackerbackend.generatedapi.api.AccountsApi
+import com.davidgrath.expensetrackerbackend.generatedapi.model.Account
+import com.davidgrath.expensetrackerbackend.generatedapi.model.AccountCreateRequest
+import com.davidgrath.expensetrackerbackend.generatedapi.model.AccountDetails
+import com.davidgrath.expensetrackerbackend.generatedapi.model.AccountUpdateRequest
 import com.davidgrath.expensetrackerbackend.controller.exception.CustomHttpException
 import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.service.AccountService

@@ -69,6 +69,29 @@ class AccountService {
         return value
     }
 
+    fun areAllAccountsForUser(userId: Long, accountIds: List<Long>): Boolean {
+        val userAccounts = accountRepository.getAllByUserId(userId).map { it.id }
+        for(acc in accountIds) {
+            if(acc !in userAccounts) {
+                LOGGER.info("Account {} not for user {}", acc, userId)
+                return false
+            }
+        }
+        LOGGER.info("All accounts belong to user {}", userId)
+        return true
+    }
+    fun areAllAccountsForProfile(profileId: Long, accountIds: List<Long>): Boolean {
+        val userAccounts = accountRepository.getAllByProfileId(profileId).map { it.id }
+        for(acc in accountIds) {
+            if(acc !in userAccounts) {
+                LOGGER.info("Account {} not for profile {}", acc, profileId)
+                return false
+            }
+        }
+        LOGGER.info("All accounts belong to profile {}", profileId)
+        return true
+    }
+
     companion object {
         private val LOGGER = LoggerFactory.getLogger(AccountService::class.java)
     }

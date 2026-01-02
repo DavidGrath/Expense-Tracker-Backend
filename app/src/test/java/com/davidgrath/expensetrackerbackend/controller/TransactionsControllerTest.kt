@@ -1,6 +1,6 @@
 package com.davidgrath.expensetrackerbackend.controller
 
-import com.davidgrath.expensetracker.generatedapi.model.BasicTransactionCreateRequest
+import com.davidgrath.expensetrackerbackend.generatedapi.model.BasicTransactionCreateRequest
 import com.davidgrath.expensetrackerbackend.configuration.SecurityConfiguration
 import com.davidgrath.expensetrackerbackend.configuration.TestConfiguration
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler

@@ -1,6 +1,6 @@
 package com.davidgrath.expensetrackerbackend.controller
 
-import com.davidgrath.expensetracker.generatedapi.model.SignUpRequest
+import com.davidgrath.expensetrackerbackend.generatedapi.model.SignUpRequest
 import com.davidgrath.expensetrackerbackend.configuration.SecurityConfiguration
 import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.configuration.TestConfiguration

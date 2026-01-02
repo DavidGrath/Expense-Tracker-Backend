@@ -1,12 +1,12 @@
 package com.davidgrath.expensetrackerbackend.utils
 
-import com.davidgrath.expensetracker.generatedapi.model.Account
-import com.davidgrath.expensetracker.generatedapi.model.AccountDetails
-import com.davidgrath.expensetracker.generatedapi.model.Category
-import com.davidgrath.expensetracker.generatedapi.model.CategoryDetails
-import com.davidgrath.expensetracker.generatedapi.model.Image
-import com.davidgrath.expensetracker.generatedapi.model.TransactionDraftFile
-import com.davidgrath.expensetracker.generatedapi.model.TransactionItem
+import com.davidgrath.expensetrackerbackend.generatedapi.model.Account
+import com.davidgrath.expensetrackerbackend.generatedapi.model.AccountDetails
+import com.davidgrath.expensetrackerbackend.generatedapi.model.Category
+import com.davidgrath.expensetrackerbackend.generatedapi.model.CategoryDetails
+import com.davidgrath.expensetrackerbackend.generatedapi.model.Image
+import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraftFile
+import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionItem
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import com.davidgrath.expensetrackerbackend.entities.views.AccountWithStats
 import com.davidgrath.expensetrackerbackend.entities.views.CategoryWithStats
@@ -33,22 +33,22 @@ fun Byte?.toBoolean(): Boolean {
     }
 }
 
-fun TransactionMode?.toApiMode(): com.davidgrath.expensetracker.generatedapi.model.TransactionMode? {
+fun TransactionMode?.toApiMode(): com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionMode? {
     return when(this) {
-        TransactionMode.Card -> com.davidgrath.expensetracker.generatedapi.model.TransactionMode.CARD
-        TransactionMode.Transfer -> com.davidgrath.expensetracker.generatedapi.model.TransactionMode.TRANSFER
-        TransactionMode.Cash -> com.davidgrath.expensetracker.generatedapi.model.TransactionMode.CASH
-        TransactionMode.Other -> com.davidgrath.expensetracker.generatedapi.model.TransactionMode.OTHER
+        TransactionMode.Card -> com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionMode.CARD
+        TransactionMode.Transfer -> com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionMode.TRANSFER
+        TransactionMode.Cash -> com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionMode.CASH
+        TransactionMode.Other -> com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionMode.OTHER
         null -> null
     }
 }
 
-fun com.davidgrath.expensetracker.generatedapi.model.TransactionMode?.toDbMode(): TransactionMode? {
+fun com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionMode?.toDbMode(): TransactionMode? {
     return when(this) {
-        com.davidgrath.expensetracker.generatedapi.model.TransactionMode.CARD -> TransactionMode.Card
-        com.davidgrath.expensetracker.generatedapi.model.TransactionMode.TRANSFER -> TransactionMode.Transfer
-        com.davidgrath.expensetracker.generatedapi.model.TransactionMode.CASH -> TransactionMode.Cash
-        com.davidgrath.expensetracker.generatedapi.model.TransactionMode.OTHER -> TransactionMode.Other
+        com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionMode.CARD -> TransactionMode.Card
+        com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionMode.TRANSFER -> TransactionMode.Transfer
+        com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionMode.CASH -> TransactionMode.Cash
+        com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionMode.OTHER -> TransactionMode.Other
         null -> null
     }
 }

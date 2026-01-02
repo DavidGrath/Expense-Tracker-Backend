@@ -1,13 +1,11 @@
 package com.davidgrath.expensetrackerbackend.controller
 
-import com.davidgrath.expensetracker.generatedapi.api.TransactionsApi
-import com.davidgrath.expensetracker.generatedapi.model.BasicTransactionCreateRequest
-import com.davidgrath.expensetracker.generatedapi.model.Document
-import com.davidgrath.expensetracker.generatedapi.model.SuggestionsFieldType
-import com.davidgrath.expensetracker.generatedapi.model.Transaction
-import com.davidgrath.expensetracker.generatedapi.model.TransactionDetails
-import com.davidgrath.expensetracker.generatedapi.model.TransactionDraft
-import com.davidgrath.expensetracker.generatedapi.model.TransactionItem1
+import com.davidgrath.expensetrackerbackend.generatedapi.api.TransactionsApi
+import com.davidgrath.expensetrackerbackend.generatedapi.model.BasicTransactionCreateRequest
+import com.davidgrath.expensetrackerbackend.generatedapi.model.Document
+import com.davidgrath.expensetrackerbackend.generatedapi.model.SuggestionsFieldType
+import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDetails
+import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraft
 import com.davidgrath.expensetrackerbackend.controller.exception.CustomHttpException
 import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.service.AccountService
@@ -21,6 +19,7 @@ import com.davidgrath.expensetrackerbackend.utils.toBoolean
 import com.davidgrath.expensetrackerbackend.utils.transactionItemPojoToTransactionItem
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotNull
+import org.hibernate.validator.constraints.CodePointLength
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
@@ -65,12 +64,12 @@ open class TransactionsController: TransactionsApi {
             LOGGER.error("Bad time zone", exception)
             throw exception
         }
-        if(!accountService.isAccountForUser(profile.id!!, user.id!!)) {
+        if(!accountService.isAccountForUser( user.id!!, basicTransactionCreateRequest!!.accountId)) {
             val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
             LOGGER.error("Account not for user", exception)
             throw exception
         }
-        if(!categoryService.isCategoryForUser(profile.id!!, user.id!!)) {
+        if(!categoryService.isCategoryForUser( user.id!!, basicTransactionCreateRequest!!.categoryId)) {
             val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
             LOGGER.error("Category not for user", exception)
             throw exception
@@ -80,7 +79,7 @@ open class TransactionsController: TransactionsApi {
             LOGGER.error("Account not in profile", exception)
             throw exception
         }
-        if(!categoryService.isCategoryForProfile(profile.id!!, basicTransactionCreateRequest!!.accountId)) {
+        if(!categoryService.isCategoryForProfile(profile.id!!, basicTransactionCreateRequest!!.categoryId)) {
             val exception = CustomHttpException(ErrorCode.ENTITY_NOT_IN_PROFILE, HttpStatus.BAD_REQUEST)
             LOGGER.error("Category not in profile", exception)
             throw exception
@@ -149,22 +148,45 @@ open class TransactionsController: TransactionsApi {
     override fun transactionsEarliestDateGet(
         profileId: @NotNull String,
         accountIds: @NotNull @Valid List<Long?>
-    ): ResponseEntity<OffsetDateTime?>? {
-        TODO("Not yet implemented")
-    }
+    ): ResponseEntity<LocalDate?>? {
+        val authentication = SecurityContextHolder.getContext().authentication
+        val principal = authentication.principal as Jwt
+        LOGGER.info("Username: {}", principal.subject)
+        val user = userService.getByUsername(principal.subject!!)
+        val userUuid = user!!.uuid!!
+        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
 
-    override fun transactionsIdItemsGet(
-        id: @NotNull Long,
-        profileId: @NotNull String
-    ): ResponseEntity<List<TransactionItem1?>?>? {
-        TODO("Not yet implemented")
+        if(!accountService.areAllAccountsForUser(user.id!!, accountIds.map { it!! })) {
+            val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
+            LOGGER.error("Account not for user", exception)
+            throw exception
+        }
+        if(!accountService.areAllAccountsForProfile(profile.id!!, accountIds.map { it!! })) {
+            val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
+            LOGGER.error("Category not for user", exception)
+            throw exception
+        }
+        val date = transactionService.getEarliestDate(profile.id!!, accountIds.map { it!! })
+        return ResponseEntity.ok(date)
     }
 
     override fun transactionsSuggestionsGet(
         profileId: @NotNull String,
-        fieldType: @NotNull @Valid SuggestionsFieldType
+        fieldType: @NotNull @Valid SuggestionsFieldType,
+        query: @NotNull @CodePointLength(
+            normalizationStrategy = CodePointLength.NormalizationStrategy.NFC,
+            max = 20
+        ) @Valid String
     ): ResponseEntity<List<String?>?>? {
-        TODO("Not yet implemented")
+        val authentication = SecurityContextHolder.getContext().authentication
+        val principal = authentication.principal as Jwt
+        LOGGER.info("Username: {}", principal.subject)
+        val user = userService.getByUsername(principal.subject!!)
+        val userUuid = user!!.uuid!!
+        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+
+        val suggestions = transactionService.getGenericSuggestions(profile.id!!, fieldType, query)
+        return ResponseEntity.ok(suggestions)
     }
 
     companion object {

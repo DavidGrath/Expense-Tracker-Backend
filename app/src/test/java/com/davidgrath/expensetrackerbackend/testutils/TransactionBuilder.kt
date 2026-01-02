@@ -9,6 +9,7 @@ interface TransactionBuilder: Commit {
     fun withItem(description: String, category: String, amount: BigDecimal): TransactionBuilder
     fun withDefaultItemPrice(defaultPrice: BigDecimal): TransactionBuilder
     fun withNewAccount(currencyCode: String, accountName: String): TransactionBuilder
+    fun withAccountId(accountId: Long): TransactionBuilder
     fun debitOrCredit(debitOrCredit: Boolean): TransactionBuilder
     fun withDetailedItem(): TransactionItemBuilder
     fun repeatIntoDates(dates: List<LocalDate>): TransactionBuilder

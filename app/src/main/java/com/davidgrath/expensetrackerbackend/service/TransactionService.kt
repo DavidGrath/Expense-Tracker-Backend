@@ -3,8 +3,11 @@ package com.davidgrath.expensetrackerbackend.service
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import com.davidgrath.expensetrackerbackend.entities.views.DateAmountSummary
+import com.davidgrath.expensetrackerbackend.entities.views.ItemSumByCategory
+import com.davidgrath.expensetrackerbackend.entities.views.TransactionAndItemCount
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionItemPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionPojo
+import com.davidgrath.expensetrackerbackend.generatedapi.model.SuggestionsFieldType
 import com.davidgrath.expensetrackerbackend.repository.AccountRepository
 import com.davidgrath.expensetrackerbackend.repository.TransactionItemRepository
 import com.davidgrath.expensetrackerbackend.repository.TransactionRepository
@@ -13,9 +16,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
-import java.time.LocalDate
-import java.time.ZoneId
-import java.time.ZonedDateTime
+import java.time.*
 
 @Service
 class TransactionService {
@@ -151,6 +152,101 @@ class TransactionService {
                                 accountIds: List<Long>,
                                 dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>): BigDecimal {
         return transactionRepository.getTransactionSum(profileId, false, fromDate, toDate, accountIds, dates, categories, modes, sellers)
+    }
+
+    fun getTransactionDebitSumByCategory(profileId: Long, fromDate: LocalDate?, toDate: LocalDate?,
+                                accountIds: List<Long>,
+                                dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>): List<ItemSumByCategory> {
+        val list = transactionRepository.getSumByCategory(profileId, true, fromDate, toDate, accountIds, dates, categories, modes, sellers)
+        LOGGER.info("List size: {}", list.size)
+        return list
+    }
+
+    fun getTransactionCreditSumByCategory(profileId: Long, fromDate: LocalDate?, toDate: LocalDate?,
+                                accountIds: List<Long>,
+                                dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>): List<ItemSumByCategory> {
+        val list = transactionRepository.getSumByCategory(profileId, false, fromDate, toDate, accountIds, dates, categories, modes, sellers)
+        LOGGER.info("List size: {}", list.size)
+        return list
+    }
+
+    fun getTransactionAndItemCount(profileId: Long, fromDate: LocalDate?, toDate: LocalDate?,
+                                accountIds: List<Long>,
+                                dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>): TransactionAndItemCount {
+        return transactionRepository.getTransactionAndItemCount(profileId, fromDate, toDate, accountIds, dates, categories, modes, sellers)
+    }
+
+    fun getEarliestDate(profileId: Long, accountIds: List<Long>): LocalDate? {
+        return transactionRepository.getEarliestTransactionDate(profileId, accountIds)
+    }
+
+    /**
+     * Main idea gotten from
+     * https://udn.realityripple.com/docs/Mozilla/Tech/Places/Frecency_algorithm
+     */
+    fun getGenericSuggestions(profileId: Long, field: SuggestionsFieldType, prefixString: String): List<String> {
+        if(prefixString.isBlank()) {
+            LOGGER.warn("getGenericSuggestions: Blank prefix, returning empty list")
+            return emptyList()
+        }
+        val start = System.currentTimeMillis()
+
+        val now = LocalDateTime.now(timeHandler.getClock())
+        val bucket1 = 0..4;     val bucket1Weight = 100
+        val bucket2 = 5..14;    val bucket2Weight = 70
+        val bucket3 = 15..31;   val bucket3Weight = 50
+        val bucket4 = 32..90;   val bucket4Weight = 30
+        val bucket5Weight = 10
+        val stringFields = when (field) {
+            SuggestionsFieldType.DESCRIPTION -> {
+                transactionItemRepository.getDescriptionsAndDates(profileId, prefixString)
+            }
+
+            SuggestionsFieldType.BRAND -> {
+                transactionItemRepository.getBrandsAndDates(profileId, prefixString)
+            }
+
+            SuggestionsFieldType.VARIATION -> {
+                transactionItemRepository.getVariationsAndDates(profileId, prefixString)
+            }
+        }
+        LOGGER.info("getGenericSuggestions: Loaded {} suggestions", stringFields.size)
+        val groupedByDesc = stringFields.groupBy { it.stringField }
+        val _groupedByDesc = stringFields.groupBy { it.stringField.lowercase() }
+        LOGGER.info("getGenericSuggestions: Grouped suggestions into {} lists", groupedByDesc.size)
+        LOGGER.info(
+            "getGenericSuggestions: Suggestions are grouped into {} lists when ignoring case",
+            _groupedByDesc.size
+        )
+        val scoredDescriptions = arrayListOf<Pair<Double, String>>()
+        for ((stringField, list) in groupedByDesc) {
+            val sampled = list.take(10)
+            var sum = 0.0
+            for (date in sampled) {
+                val descriptionDate = date.createdAt
+                val difference = Duration.between(descriptionDate, now).toDays()
+                if (difference in bucket1) {
+                    sum += bucket1Weight
+                } else if (difference in bucket2) {
+                    sum += bucket2Weight
+                } else if (difference in bucket3) {
+                    sum += bucket3Weight
+                } else if (difference in bucket4) {
+                    sum += bucket4Weight
+                } else {
+                    sum += bucket5Weight
+                }
+            }
+            val score = list.size * sum / sampled.size
+            scoredDescriptions.add(score to stringField)
+        }
+        val sorted = scoredDescriptions.sortedByDescending { it.first }
+        LOGGER.info("Scores: {}", sorted.take(5))
+
+        val end = System.currentTimeMillis()
+        val duration = end - start
+        LOGGER.info("getGenericSuggestions time: {} ms", duration)
+        return sorted.map { it.second }.take(5)
     }
 
 

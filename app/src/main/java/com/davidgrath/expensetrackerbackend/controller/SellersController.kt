@@ -1,13 +1,13 @@
 package com.davidgrath.expensetrackerbackend.controller
 
-import com.davidgrath.expensetracker.generatedapi.api.SellersApi
-import com.davidgrath.expensetracker.generatedapi.model.Seller
-import com.davidgrath.expensetracker.generatedapi.model.SellerCreateRequest
-import com.davidgrath.expensetracker.generatedapi.model.SellerDetails
-import com.davidgrath.expensetracker.generatedapi.model.SellerLocation
-import com.davidgrath.expensetracker.generatedapi.model.SellerLocationCreateRequest
-import com.davidgrath.expensetracker.generatedapi.model.SellerLocationUpdateRequest
-import com.davidgrath.expensetracker.generatedapi.model.SellerUpdateRequest
+import com.davidgrath.expensetrackerbackend.generatedapi.api.SellersApi
+import com.davidgrath.expensetrackerbackend.generatedapi.model.Seller
+import com.davidgrath.expensetrackerbackend.generatedapi.model.SellerCreateRequest
+import com.davidgrath.expensetrackerbackend.generatedapi.model.SellerDetails
+import com.davidgrath.expensetrackerbackend.generatedapi.model.SellerLocation
+import com.davidgrath.expensetrackerbackend.generatedapi.model.SellerLocationCreateRequest
+import com.davidgrath.expensetrackerbackend.generatedapi.model.SellerLocationUpdateRequest
+import com.davidgrath.expensetrackerbackend.generatedapi.model.SellerUpdateRequest
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotNull
 import org.slf4j.LoggerFactory

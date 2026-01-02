@@ -678,7 +678,7 @@
           "description": {
             "type": "string",
             "nullable": false,
-            "maxLength": 500
+            "maxLength": 100
           },
           "categoryId": {
             "type": "integer",
@@ -723,7 +723,7 @@
       },
       "TransactionsEarliestDateResponse": {
         "type": "string",
-        "format": "date-time"
+        "format": "date"
       },
       "SuggestionsFieldType": {
         "type": "string",
@@ -734,6 +734,10 @@
         "items": {
           "type": "string"
         }
+      },
+      "SuggestionsQuery": {
+        "type": "string",
+        "maxLength": 20
       },
       "Seller": {
         "type": "object",

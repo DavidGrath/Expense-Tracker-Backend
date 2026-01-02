@@ -1,6 +1,6 @@
 package com.davidgrath.expensetrackerbackend.testutils
 
-import com.davidgrath.expensetracker.generatedapi.model.DocumentType
+import com.davidgrath.expensetrackerbackend.generatedapi.model.DocumentType
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import com.davidgrath.expensetrackerbackend.utils.file
@@ -21,20 +21,15 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 
 class DataBuilder(private val root: File, private val timeHandler: TimeHandler, private val userUuid: String?, private val profileUuid: String,
-                  private val transactionRepository: TransactionRepository,
-                  private val categoryRepository: CategoryRepository, private val profileRepository: ProfileRepository,
-                  private val accountRepository: AccountRepository,
-                  private val transactionItemRepository: TransactionItemRepository,
-                  private val imagesRepository: ImageRepository,
-                  private val itemImagesRepository: ItemImagesRepository, private val userRepository: UserRepository, val documentRepository: DocumentRepository
+                  private val testUtilComponent: TestUtilComponent
     ) {
     fun createTransaction(): TransactionBuilder {
-        val transactionBuilder = TransactionBuilderImpl(root, timeHandler, userUuid, profileUuid, transactionRepository, categoryRepository, profileRepository, accountRepository, transactionItemRepository, imagesRepository, itemImagesRepository, userRepository, documentRepository)
+        val transactionBuilder = TransactionBuilderImpl(root, timeHandler, userUuid, profileUuid, testUtilComponent.transactionRepository, testUtilComponent.categoryRepository, testUtilComponent.profileRepository, testUtilComponent.accountRepository, testUtilComponent.itemRepository, testUtilComponent.imageRepository, testUtilComponent.itemImagesRepository, testUtilComponent.userRepository, testUtilComponent.documentRepository)
         return transactionBuilder
     }
 
     fun createBasicTransaction(description: String, category: String, amount: BigDecimal): Long {
-        val transactionBuilder = TransactionBuilderImpl(root, timeHandler, userUuid, profileUuid, transactionRepository, categoryRepository, profileRepository, accountRepository, transactionItemRepository, imagesRepository, itemImagesRepository, userRepository, documentRepository)
+        val transactionBuilder = TransactionBuilderImpl(root, timeHandler, userUuid, profileUuid, testUtilComponent.transactionRepository, testUtilComponent.categoryRepository, testUtilComponent.profileRepository, testUtilComponent.accountRepository, testUtilComponent.itemRepository, testUtilComponent.imageRepository, testUtilComponent.itemImagesRepository, testUtilComponent.userRepository, testUtilComponent.documentRepository)
             .withItem(description, category, amount)
         val id = transactionBuilder.commit().first()
         return id
@@ -104,16 +99,21 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
             return this
         }
 
+        override fun withAccountId(accountId: Long): TransactionBuilder {
+            newAccount = accountRepository.findByProfileIdAndId(profile!!.id!!, accountId)
+            return this
+        }
+
         override fun repeatIntoDates(dates: List<LocalDate>): TransactionBuilder {
             this.repeatDates.addAll(dates)
             return this
         }
 
-        override fun atDate(localDate: LocalDate): TransactionBuilder {
+        override fun atDate(date: LocalDate): TransactionBuilder {
             if(this.date != null) {
                 throw IllegalStateException("Date has already been set")
             }
-            this.date = localDate
+            this.date = date
             return this
         }
 
@@ -177,7 +177,7 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
                     dateTime = repeatDate.atTime(LocalTime.parse("08:00:00"))
                 }
                 val ordinal = transactionRepository.getMaxOrdinalInDayForAccount(profile.id!!, account.id!!, repeatDate)?: 0
-                val transaction = TransactionPojo(null, account.id!!, sum, account.currencyCode, null, debitOrCredit.toByte(), date, ordinal + 1, TransactionMode.Other,null, null, null, dateTime)
+                val transaction = TransactionPojo(null, account.id!!, sum, account.currencyCode, null, debitOrCredit.toByte(), repeatDate, ordinal + 1, TransactionMode.Other,null, null, null, dateTime)
                 val transactionId = transactionRepository.insertTransaction(transaction)
 
                 items.forEachIndexed { index, item ->

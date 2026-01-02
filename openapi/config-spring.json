@@ -1,7 +1,7 @@
 {
-	"basePackage": "com.davidgrath.expensetracker.generatedapi",
-	"apiPackage": "com.davidgrath.expensetracker.generatedapi.api",
-	"modelPackage": "com.davidgrath.expensetracker.generatedapi.model",
+	"basePackage": "com.davidgrath.expensetrackerbackend.generatedapi",
+	"apiPackage": "com.davidgrath.expensetrackerbackend.generatedapi.api",
+	"modelPackage": "com.davidgrath.expensetrackerbackend.generatedapi.model",
 	"generateConstructorWithAllArgs": true,
 	"hideGenerationTimestamp": true,
 	"interfaceOnly": true,

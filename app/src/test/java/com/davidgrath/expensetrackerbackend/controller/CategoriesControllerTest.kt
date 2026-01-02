@@ -1,7 +1,7 @@
 package com.davidgrath.expensetrackerbackend.controller
 
-import com.davidgrath.expensetracker.generatedapi.model.CategoryCreateRequest
-import com.davidgrath.expensetracker.generatedapi.model.CategoryUpdateRequest
+import com.davidgrath.expensetrackerbackend.generatedapi.model.CategoryCreateRequest
+import com.davidgrath.expensetrackerbackend.generatedapi.model.CategoryUpdateRequest
 import com.davidgrath.expensetrackerbackend.configuration.SecurityConfiguration
 import com.davidgrath.expensetrackerbackend.configuration.TestConfiguration
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler

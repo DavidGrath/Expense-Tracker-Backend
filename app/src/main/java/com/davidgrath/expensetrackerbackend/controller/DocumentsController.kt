@@ -1,7 +1,7 @@
 package com.davidgrath.expensetrackerbackend.controller
 
-import com.davidgrath.expensetracker.generatedapi.api.DocumentsApi
-import com.davidgrath.expensetracker.generatedapi.model.DocumentDetails
+import com.davidgrath.expensetrackerbackend.generatedapi.api.DocumentsApi
+import com.davidgrath.expensetrackerbackend.generatedapi.model.DocumentDetails
 import jakarta.validation.constraints.NotNull
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.RestController

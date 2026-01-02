@@ -10,7 +10,13 @@ pipeline {
     }
     // Branch dev
     stages {
-        //TODO Gradle Clean
+
+        stage('Build') {
+            steps {
+                sh 'chmod +x ./gradlew'
+                sh './gradlew clean'
+            }
+        }
         stage('Flyway') {
 
             steps {
@@ -21,6 +27,7 @@ pipeline {
                 }
             }
         }
+        //TODO Version Provider
         stage('JooQ') {
             steps {
                 sh './gradlew jooqCodeGenCi'

@@ -2,6 +2,7 @@ package com.davidgrath.expensetrackerbackend.service
 
 import com.davidgrath.expensetrackerbackend.configuration.TestConfiguration
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
+import com.davidgrath.expensetrackerbackend.generatedapi.model.SuggestionsFieldType
 import com.davidgrath.expensetrackerbackend.repository.*
 import com.davidgrath.expensetrackerbackend.testutils.*
 import com.davidgrath.expensetrackerbackend.utils.Constants
@@ -37,25 +38,15 @@ class TransactionServiceTest {
     lateinit var timeHandler: TimeHandler
     @Autowired
     lateinit var profileRepository: ProfileRepository
-    @Autowired
-    lateinit var transactionRepository: TransactionRepository
 
     @Autowired
     lateinit var categoryRepository: CategoryRepository
     @Autowired
     lateinit var accountRepository: AccountRepository
     @Autowired
-    lateinit var itemRepository: TransactionItemRepository
-    @Autowired
-    lateinit var imageRepository: ImageRepository
-    @Autowired
-    lateinit var itemImagesRepository: ItemImagesRepository
-    @Autowired
     lateinit var userRepository: UserRepository
     @Autowired
     lateinit var testUtilComponent: TestUtilComponent
-    @Autowired
-    lateinit var documentRepository: DocumentRepository
 
     @Before
     fun setUp() {
@@ -71,7 +62,7 @@ class TransactionServiceTest {
     fun givenTransactionRangeDoesNotHaveDatesInIntervalWhenFetchTotalThenDatesIntervalHaveZeroes() {
         val folder = Files.createTempDirectory("temp").toFile()
         folder.deleteOnExit()
-        val dataBuilder = DataBuilder(folder, timeHandler, null, Constants.DEFAULT_PROFILE_ID, transactionRepository, categoryRepository, profileRepository, accountRepository, itemRepository, imageRepository, itemImagesRepository, userRepository, documentRepository)
+        val dataBuilder = DataBuilder(folder, timeHandler, null, Constants.DEFAULT_PROFILE_ID, testUtilComponent)
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
         val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
@@ -162,5 +153,155 @@ class TransactionServiceTest {
         val transaction = transactionService.getByUserIdAndId(user.id!!, transactionId)!!
         val expectedTime = LocalTime.parse("10:00")
         assertEquals(expectedTime, transaction.time)
+    }
+
+    @Test
+    fun givenTextHasHigherFrequencyAndLowerRecencyWhenGetSuggestionsThenSuggestionAppearsLater() {
+        val folder = Files.createTempDirectory("temp").toFile()
+        folder.deleteOnExit()
+
+        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
+        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profileId = profile.id!!
+
+        val dataBuilder = DataBuilder(folder, timeHandler, null, Constants.DEFAULT_PROFILE_ID, testUtilComponent)
+
+        val irrelevantDescription = "Water"
+        val higherFrequencyDescription = "Chocolate"
+        val lowerFrequencyDescription = "Cookies"
+        val today = LocalDate.parse("2025-06-30")
+
+        val bucket1Dates = listOf(today, today.minusDays(1)) //Total frequency: 2
+
+        val _bucket3Dates = listOf(today.minusDays(15), today.minusDays(16), today.minusDays(20), today.minusDays(25), today.minusDays(25))
+        val bucket3Dates = _bucket3Dates + _bucket3Dates //Total frequency: 10
+
+        dataBuilder.createTransaction()
+            .withItem(irrelevantDescription, "miscellaneous", BigDecimal(1000.00))
+            .repeatIntoDates(bucket1Dates)
+            .useDatesAsCreationDates(true)
+            .commit()
+
+        dataBuilder.createTransaction()
+            .withItem(higherFrequencyDescription, "miscellaneous", BigDecimal(1000.00))
+            .repeatIntoDates(bucket1Dates)
+            .useDatesAsCreationDates(true)
+            .commit()
+
+        dataBuilder.createTransaction()
+            .withItem(lowerFrequencyDescription, "miscellaneous", BigDecimal(1000.00))
+            .repeatIntoDates(bucket3Dates)
+            .useDatesAsCreationDates(true)
+            .commit()
+
+        val suggestions = transactionService.getGenericSuggestions(profileId, SuggestionsFieldType.DESCRIPTION, "C")
+        assertEquals(2, suggestions.size)
+
+        assertEquals(lowerFrequencyDescription, suggestions[0])
+        assertEquals(higherFrequencyDescription, suggestions[1])
+    }
+
+
+    @Test
+    fun givenTextHasHigherFrecencyWhenGetSuggestionsThenSuggestionAppearsEarlier() {
+
+        val folder = Files.createTempDirectory("temp").toFile()
+        folder.deleteOnExit()
+
+        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
+        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profileId = profile.id!!
+
+        val dataBuilder = DataBuilder(folder, timeHandler, null, Constants.DEFAULT_PROFILE_ID, testUtilComponent)
+
+        val irrelevantDescription = "Water"
+        val higherFrequencyDescription = "Chocolate"
+        val lowerFrequencyDescription = "Cookies"
+        val today = LocalDate.parse("2025-06-30")
+
+        val _bucket1Dates = listOf(today, today.minusDays(1), today.minusDays(1), today.minusDays(2), today.minusDays(4))
+        val bucket1Dates = _bucket1Dates + _bucket1Dates //Total frequency: 10
+
+        val bucket3Dates = listOf(today.minusDays(15), today.minusDays(16)) //Total frequency: 2
+
+        dataBuilder.createTransaction()
+            .withItem(irrelevantDescription, "miscellaneous", BigDecimal(1000.00))
+            .repeatIntoDates(bucket1Dates)
+            .useDatesAsCreationDates(true)
+            .commit()
+
+        dataBuilder.createTransaction()
+            .withItem(higherFrequencyDescription, "miscellaneous", BigDecimal(1000.00))
+            .repeatIntoDates(bucket1Dates)
+            .useDatesAsCreationDates(true)
+            .commit()
+
+        dataBuilder.createTransaction()
+            .withItem(lowerFrequencyDescription, "miscellaneous", BigDecimal(1000.00))
+            .repeatIntoDates(bucket3Dates)
+            .useDatesAsCreationDates(true)
+            .commit()
+
+        val suggestions = transactionService.getGenericSuggestions(profileId,SuggestionsFieldType.DESCRIPTION, "C")
+
+        assertEquals(2, suggestions.size)
+        assertEquals(higherFrequencyDescription, suggestions[0])
+        assertEquals(lowerFrequencyDescription, suggestions[1])
+    }
+
+    /**
+     * I've decided to let the suggestions be case-sensitive, because
+     * otherwise coercing them to lowercase for the sake of weighting means the user would never get sentence-case suggestions
+     */
+    @Test
+    fun frecencyMixedCaseTest() {
+
+        val folder = Files.createTempDirectory("temp").toFile()
+        folder.deleteOnExit()
+
+        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
+        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profileId = profile.id!!
+
+        val dataBuilder = DataBuilder(folder, timeHandler, null, Constants.DEFAULT_PROFILE_ID, testUtilComponent)
+
+        val irrelevantDescription = "Water"
+        val higherFrequencyDescription = "Chocolate"
+        val lowerFrequencyDescription = "Cookies"
+        val lowerFrequencyDescriptionB = "COokiEs"
+        val today = LocalDate.parse("2025-06-30")
+
+        val bucket1Dates = listOf(today, today.minusDays(1)) //Total frequency: 2
+
+        val _bucket3Dates = listOf(today.minusDays(15), today.minusDays(16), today.minusDays(20), today.minusDays(25), today.minusDays(25))
+
+        dataBuilder.createTransaction()
+            .withItem(irrelevantDescription, "miscellaneous", BigDecimal(1000.00))
+            .repeatIntoDates(bucket1Dates)
+            .useDatesAsCreationDates(true)
+            .commit()
+
+        dataBuilder.createTransaction()
+            .withItem(higherFrequencyDescription, "miscellaneous", BigDecimal(1000.00))
+            .repeatIntoDates(bucket1Dates)
+            .useDatesAsCreationDates(true)
+            .commit()
+
+        dataBuilder.createTransaction()
+            .withItem(lowerFrequencyDescription, "miscellaneous", BigDecimal(1000.00))
+            .repeatIntoDates(_bucket3Dates)
+            .useDatesAsCreationDates(true)
+            .commit()
+        dataBuilder.createTransaction()
+            .withItem(lowerFrequencyDescriptionB, "miscellaneous", BigDecimal(1000.00))
+            .repeatIntoDates(_bucket3Dates)
+            .useDatesAsCreationDates(true)
+            .commit()
+
+        val suggestions = transactionService.getGenericSuggestions(profileId,SuggestionsFieldType.DESCRIPTION, "c")
+        assertEquals(3, suggestions.size)
+        assertTrue(lowerFrequencyDescription in suggestions.take(2))
+        assertTrue(lowerFrequencyDescriptionB in suggestions.take(2))
+        assertEquals(higherFrequencyDescription, suggestions[2])
     }
 }

@@ -1,7 +1,7 @@
 package com.davidgrath.expensetrackerbackend.controller
 
-import com.davidgrath.expensetracker.generatedapi.api.AuthApi
-import com.davidgrath.expensetracker.generatedapi.model.SignUpRequest
+import com.davidgrath.expensetrackerbackend.generatedapi.api.AuthApi
+import com.davidgrath.expensetrackerbackend.generatedapi.model.SignUpRequest
 import com.davidgrath.expensetrackerbackend.configuration.CustomUserDetails
 import com.davidgrath.expensetrackerbackend.controller.exception.CustomHttpException
 import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
