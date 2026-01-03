@@ -69,12 +69,15 @@ dependencies {
 }
 
 group="com.davidgrath"
-version='0.1.0'//Fetch from artifact, append, "dev" maybe
+version=rootProject.file("app-version").text.trim() //Maybe append 'dev'
 
 base {
     archivesName = "expense-tracker-backend"
 }
 
+jar {
+    archiveVersion = ''
+}
 bootJar {
     archiveVersion = ''
 }
