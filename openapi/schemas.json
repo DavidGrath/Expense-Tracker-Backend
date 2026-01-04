@@ -589,6 +589,15 @@
             "minimum": 1,
             "default": 1
           },
+          "brand": {
+            "type": "string"
+          },
+          "variation": {
+            "type": "string"
+          },
+          "referenceNumber": {
+            "type": "string"
+          },
           "images": {
             "type": "array",
             "items": {
@@ -626,6 +635,15 @@
             "type": "integer",
             "minimum": 1,
             "default": 1
+          },
+          "brand": {
+            "type": "string"
+          },
+          "variation": {
+            "type": "string"
+          },
+          "referenceNumber": {
+            "type": "string"
           }
         },
         "required": ["amount", "description", "categoryId"]
@@ -668,27 +686,34 @@
         "properties": {
           "date": {
             "type": "string",
-            "format": "date",
-            "nullable": true
+            "format": "date"
           },
           "time": {
             "type": "string",
-            "format": "time",
-            "nullable": true
+            "format": "time"
           },
           "accountId": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "nullable": false
           },
           "debitOrCredit": {
-            "type": "boolean"
+            "type": "boolean",
+            "nullable": false
           },
           "note": {
             "type": "string",
             "maxLength": 400
           },
           "mode": {
-            "$ref": "#/components/schemas/TransactionMode"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TransactionMode"
+              },
+              {
+                "nullable": false
+              }
+            ]
           },
           "sellerId": {
             "type": "integer",
@@ -698,7 +723,8 @@
             "type": "integer",
             "format": "int64"
           }
-        }
+        },
+        "required": ["accountId", "debitOrCredit", "mode"]
       },
       "TransactionMode": {
         "type": "string",

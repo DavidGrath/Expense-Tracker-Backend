@@ -8,6 +8,7 @@ import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDetail
 import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraft
 import com.davidgrath.expensetrackerbackend.controller.exception.CustomHttpException
 import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
+import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import com.davidgrath.expensetrackerbackend.generatedapi.model.DocumentType
 import com.davidgrath.expensetrackerbackend.generatedapi.model.FileUploadRequest
 import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraftItemUpdateRequest
@@ -15,12 +16,21 @@ import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraftU
 import com.davidgrath.expensetrackerbackend.service.AccountService
 import com.davidgrath.expensetrackerbackend.service.CategoryService
 import com.davidgrath.expensetrackerbackend.service.ProfileService
+import com.davidgrath.expensetrackerbackend.service.SellerLocationService
+import com.davidgrath.expensetrackerbackend.service.SellerService
+import com.davidgrath.expensetrackerbackend.service.TransactionDraftService
 import com.davidgrath.expensetrackerbackend.service.TransactionService
 import com.davidgrath.expensetrackerbackend.service.UserService
+import com.davidgrath.expensetrackerbackend.utils.Constants
 import com.davidgrath.expensetrackerbackend.utils.accountPojoToAccount
+import com.davidgrath.expensetrackerbackend.utils.draftItemUpdateRequestToDraftItem
+import com.davidgrath.expensetrackerbackend.utils.file
 import com.davidgrath.expensetrackerbackend.utils.toApiMode
 import com.davidgrath.expensetrackerbackend.utils.toBoolean
+import com.davidgrath.expensetrackerbackend.utils.toDbMode
+import com.davidgrath.expensetrackerbackend.utils.transactionDraftToApiDraft
 import com.davidgrath.expensetrackerbackend.utils.transactionItemPojoToTransactionItem
+import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotNull
 import org.hibernate.validator.constraints.CodePointLength
@@ -34,8 +44,10 @@ import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.multipart.MultipartFile
 import java.time.DateTimeException
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.OffsetDateTime
 import java.time.ZoneId
+import java.time.zone.ZoneRulesException
 import java.util.UUID
 
 @RestController
@@ -44,6 +56,8 @@ open class TransactionsController: TransactionsApi {
     @Autowired
     lateinit var transactionService: TransactionService
     @Autowired
+    lateinit var transactionDraftService: TransactionDraftService
+    @Autowired
     lateinit var userService: UserService
     @Autowired
     lateinit var profileService: ProfileService
@@ -51,6 +65,13 @@ open class TransactionsController: TransactionsApi {
     lateinit var accountService: AccountService
     @Autowired
     lateinit var categoryService: CategoryService
+    @Autowired
+    lateinit var sellerService: SellerService
+    @Autowired
+    lateinit var sellerLocationService: SellerLocationService
+
+    @Autowired
+    lateinit var httpServletRequest: HttpServletRequest
 
     override fun transactionsIdDelete(id: @NotNull Long, profileId: @NotNull String): ResponseEntity<Void?>? {
         throw UnsupportedOperationException("Not implemented yet")
@@ -66,6 +87,10 @@ open class TransactionsController: TransactionsApi {
         val zone = try {
             ZoneId.of(basicTransactionCreateRequest!!.timeZone)
         } catch (e: DateTimeException) {
+            val exception = CustomHttpException(ErrorCode.TIME_ZONE_NOT_VALID, HttpStatus.BAD_REQUEST)
+            LOGGER.error("Bad time zone", exception)
+            throw exception
+        } catch (e: ZoneRulesException) {
             val exception = CustomHttpException(ErrorCode.TIME_ZONE_NOT_VALID, HttpStatus.BAD_REQUEST)
             LOGGER.error("Bad time zone", exception)
             throw exception
@@ -151,7 +176,37 @@ open class TransactionsController: TransactionsApi {
         profileId: @NotNull String,
         timeZone: @NotNull @Valid String
     ): ResponseEntity<Void?>? {
-        TODO("Not yet implemented")
+        val authentication = SecurityContextHolder.getContext().authentication
+        val principal = authentication.principal as Jwt
+        LOGGER.info("Username: {}", principal.subject)
+        val user = userService.getByUsername(principal.subject!!)
+        val userUuid = user!!.uuid!!
+        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+
+        if(!transactionDraftService.doesDraftExistForProfile(profile.id!!)) {
+            val exception = CustomHttpException(ErrorCode.DRAFT_DOES_NOT_EXIST, HttpStatus.NOT_FOUND)
+            LOGGER.error("Draft does not exist ", exception)
+            throw exception
+
+        }
+        if(!transactionDraftService.validateDraft(profile.id!!)) {
+            val exception = CustomHttpException(ErrorCode.DRAFT_NOT_VALID, HttpStatus.BAD_REQUEST)
+            LOGGER.error("Invalid draft ", exception)
+            throw exception
+        }
+        val zone = try {
+            ZoneId.of(timeZone)
+        } catch (e: DateTimeException) {
+            val exception = CustomHttpException(ErrorCode.TIME_ZONE_NOT_VALID, HttpStatus.BAD_REQUEST)
+            LOGGER.error("Bad time zone", exception)
+            throw exception
+        } catch (e: ZoneRulesException) {
+            val exception = CustomHttpException(ErrorCode.TIME_ZONE_NOT_VALID, HttpStatus.BAD_REQUEST)
+            LOGGER.error("Bad time zone", exception)
+            throw exception
+        }
+        transactionDraftService.finishDraft(profile.id!!, zone)
+        return ResponseEntity.ok().build()
     }
 
     override fun transactionsEarliestDateGet(
@@ -203,7 +258,25 @@ open class TransactionsController: TransactionsApi {
     }
 
     override fun transactionsDraftItemsPost(profileId: @NotNull String): ResponseEntity<UUID?>? {
-        TODO("Not yet implemented")
+        val authentication = SecurityContextHolder.getContext().authentication
+        val principal = authentication.principal as Jwt
+        LOGGER.info("Username: {}", principal.subject)
+        val user = userService.getByUsername(principal.subject!!)
+        val userUuid = user!!.uuid!!
+        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+
+        if(!transactionDraftService.doesDraftExistForProfile(profile.id!!)) {
+            val exception = CustomHttpException(ErrorCode.DRAFT_DOES_NOT_EXIST, HttpStatus.NOT_FOUND)
+            LOGGER.error("Draft does not exist ", exception)
+            throw exception
+        }
+        val uuid = transactionDraftService.addItemToDraft(profile.id!!)
+        if(uuid == null) {
+            val exception = CustomHttpException(ErrorCode.LIMITS_EXCEEDED, HttpStatus.BAD_REQUEST)
+            LOGGER.error("Too many draft items ", exception)
+            throw exception
+        }
+        return ResponseEntity.ok(uuid)
     }
 
     override fun transactionsDraftItemsUuidPut(
@@ -211,18 +284,139 @@ open class TransactionsController: TransactionsApi {
         uuid: @NotNull UUID,
         transactionDraftItemUpdateRequest: @Valid TransactionDraftItemUpdateRequest?
     ): ResponseEntity<TransactionDraft?>? {
-        TODO("Not yet implemented")
+        val authentication = SecurityContextHolder.getContext().authentication
+        val principal = authentication.principal as Jwt
+        LOGGER.info("Username: {}", principal.subject)
+        val user = userService.getByUsername(principal.subject!!)
+        val userUuid = user!!.uuid!!
+        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+
+        if(!transactionDraftService.doesDraftExistForProfile(profile.id!!)) {
+            val exception = CustomHttpException(ErrorCode.DRAFT_DOES_NOT_EXIST, HttpStatus.NOT_FOUND)
+            LOGGER.error("Draft does not exist ", exception)
+            throw exception
+
+        }
+        if(!categoryService.isCategoryForUser( user.id!!, transactionDraftItemUpdateRequest!!.categoryId)) {
+            val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
+            LOGGER.error("Category not for user", exception)
+            throw exception
+        }
+        if(!categoryService.isCategoryForProfile(profile.id!!, transactionDraftItemUpdateRequest!!.categoryId)) {
+            val exception = CustomHttpException(ErrorCode.ENTITY_NOT_IN_PROFILE, HttpStatus.BAD_REQUEST)
+            LOGGER.error("Category not in profile", exception)
+            throw exception
+        }
+        transactionDraftService.modifyDraftItem(profile.id!!, uuid, draftItemUpdateRequestToDraftItem(uuid, transactionDraftItemUpdateRequest))
+        val scheme = httpServletRequest.scheme
+        val host = httpServletRequest.serverName
+        val port = httpServletRequest.serverPort
+        val triple = Triple(scheme, host, port)
+        val draft = transactionDraftService.getDraft(profile.id!!)!!
+        val apiDraft = transactionDraftToApiDraft(draft, triple)
+        return ResponseEntity.ok(apiDraft)
     }
 
     override fun transactionsDraftPost(profileId: @NotNull String): ResponseEntity<TransactionDraft?>? {
-        TODO("Not yet implemented")
+        val authentication = SecurityContextHolder.getContext().authentication
+        val principal = authentication.principal as Jwt
+        LOGGER.info("Username: {}", principal.subject)
+        val user = userService.getByUsername(principal.subject!!)
+        val userUuid = user!!.uuid!!
+        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+
+        if(transactionDraftService.doesDraftExistForProfile(profile.id!!)) {
+            val exception = CustomHttpException(ErrorCode.DRAFT_ALREADY_EXISTS, HttpStatus.BAD_REQUEST)
+            LOGGER.error("Draft already exists ", exception)
+            throw exception
+        }
+        val account = accountService.getAccountsForProfile(profile.id)[0]
+        transactionDraftService.createDraft(profile.id!!, account.id!!)
+        val scheme = httpServletRequest.scheme
+        val host = httpServletRequest.serverName
+        val port = httpServletRequest.serverPort
+        val triple = Triple(scheme, host, port)
+        val draft = transactionDraftService.getDraft(profile.id!!)!!
+        val apiDraft = transactionDraftToApiDraft(draft, triple)
+        return ResponseEntity.ok(apiDraft)
     }
 
     override fun transactionsDraftPut(
         profileId: @NotNull String,
         transactionDraftUpdateRequest: @Valid TransactionDraftUpdateRequest?
     ): ResponseEntity<TransactionDraft?>? {
-        TODO("Not yet implemented")
+        val authentication = SecurityContextHolder.getContext().authentication
+        val principal = authentication.principal as Jwt
+        LOGGER.info("Username: {}", principal.subject)
+        val user = userService.getByUsername(principal.subject!!)
+        val userUuid = user!!.uuid!!
+        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+
+        if(!transactionDraftService.doesDraftExistForProfile(profile.id!!)) {
+            val exception = CustomHttpException(ErrorCode.DRAFT_DOES_NOT_EXIST, HttpStatus.NOT_FOUND)
+            LOGGER.error("Draft does not exist ", exception)
+            throw exception
+        }
+        val draft = transactionDraftService.getDraft(profile.id!!)!!
+        if(draft.accountId != transactionDraftUpdateRequest!!.accountId) {
+
+            if(!accountService.isAccountForUser(user.id!!, transactionDraftUpdateRequest.accountId)) {
+                val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
+                LOGGER.error("Account not for user", exception)
+                throw exception
+            }
+            if(!accountService.isAccountInProfile(profile.id!!, transactionDraftUpdateRequest!!.accountId)) {
+                val exception = CustomHttpException(ErrorCode.ENTITY_NOT_IN_PROFILE, HttpStatus.BAD_REQUEST)
+                LOGGER.error("Account not in profile", exception)
+                throw exception
+            }
+        }
+        transactionDraftService.setDate(profile.id!!, transactionDraftUpdateRequest.date)
+        transactionDraftService.setTime(profile.id!!, if(transactionDraftUpdateRequest.time == null) {
+            null
+        } else {
+            LocalTime.parse(transactionDraftUpdateRequest.time)
+        })
+        if(transactionDraftUpdateRequest!!.sellerId != null && draft.sellerId != transactionDraftUpdateRequest!!.sellerId) {
+
+            if(!sellerService.isSellerForUser(user.id!!, transactionDraftUpdateRequest.sellerId)) {
+                val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
+                LOGGER.error("Seller not for user", exception)
+                throw exception
+            }
+            if(!sellerService.isSellerInProfile(profile.id!!, transactionDraftUpdateRequest!!.accountId)) {
+                val exception = CustomHttpException(ErrorCode.ENTITY_NOT_IN_PROFILE, HttpStatus.BAD_REQUEST)
+                LOGGER.error("Seller not in profile", exception)
+                throw exception
+            }
+        }
+        transactionDraftService.setSeller(profile.id!!, transactionDraftUpdateRequest.sellerId)
+
+        if(transactionDraftUpdateRequest!!.sellerLocationId != null && draft.sellerLocationId != transactionDraftUpdateRequest!!.sellerLocationId) {
+
+            if(!sellerLocationService.isSellerLocationForUser(user.id!!, transactionDraftUpdateRequest.sellerLocationId)) {
+                val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
+                LOGGER.error("Seller location not for user", exception)
+                throw exception
+            }
+            if(!sellerLocationService.isSellerLocationInProfile(profile.id!!, transactionDraftUpdateRequest!!.sellerLocationId)) {
+                val exception = CustomHttpException(ErrorCode.ENTITY_NOT_IN_PROFILE, HttpStatus.BAD_REQUEST)
+                LOGGER.error("Seller location not in profile", exception)
+                throw exception
+            }
+        }
+        transactionDraftService.setSellerLocation(profile.id!!, transactionDraftUpdateRequest.sellerLocationId)
+
+        transactionDraftService.modifyDraft(profile.id!!, transactionDraftUpdateRequest.accountId!!, transactionDraftUpdateRequest.note,
+            mode = transactionDraftUpdateRequest.mode.toDbMode()?: TransactionMode.Other,
+            transactionDraftUpdateRequest.debitOrCredit!!)
+        val scheme = httpServletRequest.scheme
+        val host = httpServletRequest.serverName
+        val port = httpServletRequest.serverPort
+        val triple = Triple(scheme, host, port)
+        val newDraft = transactionDraftService.getDraft(profile.id!!)!!
+        val apiDraft = transactionDraftToApiDraft(newDraft, triple)
+        return ResponseEntity.ok(apiDraft)
     }
 
     override fun transactionsDraftDocumentsPositionDelete(
@@ -253,7 +447,24 @@ open class TransactionsController: TransactionsApi {
         uuid: @NotNull UUID,
         file: MultipartFile?
     ): ResponseEntity<TransactionDraft?>? {
-        TODO("Not yet implemented")
+        val authentication = SecurityContextHolder.getContext().authentication
+        val principal = authentication.principal as Jwt
+        LOGGER.info("Username: {}", principal.subject)
+        val user = userService.getByUsername(principal.subject!!)
+        val userUuid = user!!.uuid!!
+        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+
+        val host = httpServletRequest.serverName
+        if(file!!.size > Constants.Constraints.MAX_IMAGE_SIZE) {
+            val exception = CustomHttpException(ErrorCode.FILE_TOO_LARGE, HttpStatus.BAD_REQUEST)
+            LOGGER.error("File too large", exception)
+            throw exception
+        }
+        throw UnsupportedOperationException("Not yet")
+/*
+        val root = timeHandler.getRoot()
+        val file = file(root, Constants.FOLDER_NAME_USERS, userUuid, Constants.FOLDER_NAME_PROFILES, profileId,
+            Constants.FOLDER_NAME_DRAFT, Constants.SUBFOLDER_NAME_IMAGES, )*/
     }
 
     companion object {

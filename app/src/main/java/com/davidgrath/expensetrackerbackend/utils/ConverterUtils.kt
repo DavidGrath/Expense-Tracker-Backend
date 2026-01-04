@@ -1,5 +1,7 @@
 package com.davidgrath.expensetrackerbackend.utils
 
+import com.davidgrath.expensetrackerbackend.entities.TransactionDraft
+import com.davidgrath.expensetrackerbackend.entities.TransactionDraftItem
 import com.davidgrath.expensetrackerbackend.generatedapi.model.Account
 import com.davidgrath.expensetrackerbackend.generatedapi.model.AccountDetails
 import com.davidgrath.expensetrackerbackend.generatedapi.model.Category
@@ -13,7 +15,11 @@ import com.davidgrath.expensetrackerbackend.entities.views.CategoryWithStats
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.AccountPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.CategoryPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionItemPojo
+import com.davidgrath.expensetrackerbackend.generatedapi.model.DocumentType
+import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraftItemUpdateRequest
 import java.math.BigDecimal
+import java.net.URI
+import java.util.UUID
 
 fun Boolean.toByte(): Byte {
     return if(this) {
@@ -73,4 +79,30 @@ fun categoryPojoToCategory(categoryPojo: CategoryPojo): Category {
 }
 fun categoryWithStatsToApiCategory(categoryWithStats: CategoryWithStats): CategoryDetails {
     return CategoryDetails(categoryWithStats.id, categoryWithStats.name, categoryWithStats.isCustom, categoryWithStats.stringId, categoryWithStats.icon, categoryWithStats.transactionCount, categoryWithStats.itemCount)
+}
+
+fun draftItemUpdateRequestToDraftItem(uuid: UUID, transactionDraftItemUpdateRequest: TransactionDraftItemUpdateRequest): TransactionDraftItem {
+    val t = transactionDraftItemUpdateRequest
+    return TransactionDraftItem(uuid, null, t.categoryId, t.amount, t.description, null, null, null, t.quantity,
+        t.isReduction)
+}
+
+fun transactionDraftToApiDraft(draft: TransactionDraft, baseUrl: Triple<String, String, Int>): com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraft {
+    val documents = draft.documents.map {
+        val imageUrl = URI(baseUrl.first, null, baseUrl.second, baseUrl.third, "/files/" + it.path, null, null)
+        TransactionDraftFile(it.dbId, it.sizeBytes, imageUrl, it.mimeType, DocumentType.OTHER, it.sha256)
+    }
+    val items = draft.items.map { item ->
+        val images = item.images.map {
+            val imageUrl = URI(baseUrl.first, null, baseUrl.second, baseUrl.third, "/files/" + it.path, null, null)
+            TransactionDraftFile(it.dbId, it.sizeBytes, imageUrl, it.mimeType, DocumentType.OTHER, it.sha256)
+        }
+        com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraftItem(item.dbId, item.uuid, item.amount, item.description, item.category, item.isReduction,
+            item.quantity, item.brand, item.variation, item.referenceNumber, images, emptyList())
+    }
+    val apiDraft = com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraft(
+        items, emptyList(), documents, emptyList(), draft.customDate, draft.customTime?.toString(),
+        draft.dbOriginalDate, draft.dbOriginalTime?.toString(), draft.accountId, draft.debitOrCredit, draft.note, draft.mode.toApiMode(), draft.sellerId, draft.sellerLocationId
+    )
+    return apiDraft
 }

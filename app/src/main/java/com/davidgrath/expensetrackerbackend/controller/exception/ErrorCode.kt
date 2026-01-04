@@ -13,5 +13,6 @@ enum class ErrorCode(val code: String) {
     INVALID_INPUT("invalid_input"),
     DRAFT_ALREADY_EXISTS("draft_already_exists"),
     DRAFT_DOES_NOT_EXIST("draft_does_not_exist"),
-    FILE_TOO_LARGE("file_too_large")
+    FILE_TOO_LARGE("file_too_large"),
+    DRAFT_NOT_VALID("draft_not_valid")
 }

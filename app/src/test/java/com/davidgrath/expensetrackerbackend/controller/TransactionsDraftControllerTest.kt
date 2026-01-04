@@ -6,10 +6,15 @@ import com.davidgrath.expensetrackerbackend.configuration.TestConfiguration
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.controller.exception.ExceptionResponseHandler
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.SellerPojo
+import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraftUpdateRequest
+import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionMode
 import com.davidgrath.expensetrackerbackend.repository.AccountRepository
 import com.davidgrath.expensetrackerbackend.repository.CategoryRepository
 import com.davidgrath.expensetrackerbackend.repository.ProfileRepository
+import com.davidgrath.expensetrackerbackend.repository.SellerRepository
 import com.davidgrath.expensetrackerbackend.repository.UserRepository
+import com.davidgrath.expensetrackerbackend.service.TransactionDraftService
 import com.davidgrath.expensetrackerbackend.service.UserService
 import com.davidgrath.expensetrackerbackend.testutils.TestConstants
 import com.davidgrath.expensetrackerbackend.testutils.TestUtilComponent
@@ -25,7 +30,6 @@ import org.hamcrest.Matchers
 import org.junit.After
 import org.junit.Assert.assertTrue
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.slf4j.LoggerFactory
@@ -41,6 +45,8 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers
 import java.math.BigDecimal
+import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.util.Base64
 import java.util.Locale
 
@@ -68,6 +74,10 @@ class TransactionsDraftControllerTest {
     @Autowired
     lateinit var categoryRepository: CategoryRepository
     @Autowired
+    lateinit var transactionDraftService: TransactionDraftService
+    @Autowired
+    lateinit var sellerRepository: SellerRepository
+    @Autowired
     lateinit var timeHandler: TimeHandler
 
     @Value("\${jwt.signingkey}")
@@ -84,15 +94,55 @@ class TransactionsDraftControllerTest {
     }
 
     @Test
-    @Ignore("Next commit")
     fun givenItemCountIsMaxWhenAddItemThenBadRequest() {
-        assertTrue(false)
+        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
+
+        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
+        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
+
+        val remaining = Constants.Constraints.MAX_ITEMS_PER_TRANSACTION - 1
+
+        transactionDraftService.createDraft(profile.id!!, accountId)
+        for(i in 1..remaining) {
+            transactionDraftService.addItemToDraft(profile.id!!)
+        }
+
+        var response = mockMvc
+            .perform(
+                MockMvcRequestBuilders.post("/transactions/draft/items")
+                    .header("Authorization", "Bearer ${jws}")
+                    .header("Profile-Id", profile.stringId)
+            )
+            .andExpectAll(
+                MockMvcResultMatchers.status().isBadRequest,
+                MockMvcResultMatchers.jsonPath(
+                    "$.${Constants.CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE}", Matchers.equalTo(ErrorCode.LIMITS_EXCEEDED.code)
+                )
+            ).andReturn()
     }
 
     @Test
-    @Ignore("Next commit")
-    fun givenDraftNotExistWhenPerformAnyOtherOperationThanPostThenBadRequest() {
-        assertTrue(false)
+    fun givenDraftNotExistWhenPerformAnyOtherOperationThanPostThenNotFound() {
+        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
+
+        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
+        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
+        val misc = categoryRepository.findByProfileIdAndStringId(profile.id!!, "miscellaneous")
+
+        var response = mockMvc
+            .perform(
+                MockMvcRequestBuilders.post("/transactions/draft/items")
+                    .header("Authorization", "Bearer ${jws}")
+                    .header("Profile-Id", profile.stringId)
+            )
+            .andExpectAll(
+                MockMvcResultMatchers.status().isNotFound,
+                MockMvcResultMatchers.jsonPath(
+                    "$.${Constants.CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE}", Matchers.equalTo(ErrorCode.DRAFT_DOES_NOT_EXIST.code)
+                )
+            ).andReturn()
     }
 
     /**
@@ -100,16 +150,67 @@ class TransactionsDraftControllerTest {
      * the chances of me forgetting
      */
     @Test
-    @Ignore("Next commit")
-    fun givenAnyEntityNotBelongToUserWhenModifyDraftThenBadRequest() {
-        assertTrue(false)
+    fun givenAnyEntityNotBelongToUserWhenModifyDraftThenNotFound() {
+        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
+
+        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
+        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
+        val misc = categoryRepository.findByProfileIdAndStringId(profile.id!!, "miscellaneous")
+        val user2Id = userService.createUser("user2", "password", Locale.US)
+        val profile2 = profileRepository.findByStringId(user2Id, Constants.DEFAULT_PROFILE_ID)!!
+
+        val date = ZonedDateTime.now(timeHandler.getClock())
+        val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
+        val seller2Id = sellerRepository.insertSeller(SellerPojo(null, profile2.id!!, "Restaurant", utcDate))
+
+        transactionDraftService.createDraft(profile!!.id!!, accountId)
+
+        val draftUpdateRequest = TransactionDraftUpdateRequest(null, null, accountId, true, null, TransactionMode.OTHER, seller2Id, null)
+
+        val objectWriter: ObjectWriter = ObjectMapper().writer()
+        val json = objectWriter.writeValueAsString(draftUpdateRequest)
+        val response = mockMvc
+            .perform(
+                MockMvcRequestBuilders.put("/transactions/draft")
+                    .header("Authorization", "Bearer ${jws}")
+                    .header("Profile-Id", profile.stringId)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(json)
+            )
+            .andExpectAll(
+                MockMvcResultMatchers.status().isNotFound,
+                MockMvcResultMatchers.jsonPath(
+                    "$.${Constants.CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE}", Matchers.equalTo(ErrorCode.ENTITY_NOT_FOUND.code)
+                )
+            ).andReturn()
     }
 
     @Test
-    @Ignore("Next commit")
     fun givenDraftExistsWhenCreateDraftThenBadRequest() {
-        assertTrue(false)
+        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
+
+        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
+        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
+        val misc = categoryRepository.findByProfileIdAndStringId(profile.id!!, "miscellaneous")
+        transactionDraftService.createDraft(profile!!.id!!, accountId)
+
+        var response = mockMvc
+            .perform(
+                MockMvcRequestBuilders.post("/transactions/draft")
+                    .header("Authorization", "Bearer ${jws}")
+                    .header("Profile-Id", profile.stringId)
+            )
+            .andExpectAll(
+                MockMvcResultMatchers.status().isBadRequest,
+                MockMvcResultMatchers.jsonPath(
+                    "$.${Constants.CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE}", Matchers.equalTo(ErrorCode.DRAFT_ALREADY_EXISTS.code)
+                )
+            ).andReturn()
+
     }
+
 
 
     companion object {

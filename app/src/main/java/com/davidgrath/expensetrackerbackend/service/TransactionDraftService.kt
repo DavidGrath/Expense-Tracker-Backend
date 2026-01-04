@@ -9,6 +9,8 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.UserDraf
 import com.davidgrath.expensetrackerbackend.entities.TransactionDraft
 import com.davidgrath.expensetrackerbackend.entities.TransactionDraftFile
 import com.davidgrath.expensetrackerbackend.entities.TransactionDraftItem
+import com.davidgrath.expensetrackerbackend.entities.TransactionMode
+import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraftItemUpdateRequest
 import com.davidgrath.expensetrackerbackend.repository.CategoryRepository
 import com.davidgrath.expensetrackerbackend.repository.ItemImagesRepository
 import com.davidgrath.expensetrackerbackend.repository.SellerLocationRepository
@@ -77,24 +79,25 @@ class TransactionDraftService {
         }
     }
 
-    fun addItemToDraft(profileId: Long): Int {
+    fun addItemToDraft(profileId: Long): UUID? {
         val userDraft = userDraftRepository.getDraftByProfile(profileId)
         if(userDraft != null) {
             var transactionDraft = gson.fromJson(userDraft.draft.toString(), TransactionDraft::class.java)
             if(transactionDraft.items.size >= Constants.Constraints.MAX_ITEMS_PER_TRANSACTION) {
                 LOGGER.info("Too many items for draft")
-                return 0
+                return null
             } else {
+                val uuid = UUID.randomUUID()
                 val misc = categoryRepository.findByProfileIdAndStringId(profileId, "miscellaneous")!!
-                val item = TransactionDraftItem(UUID.randomUUID(), null, misc.id!!,BigDecimal.ZERO, "")
+                val item = TransactionDraftItem(uuid, null, misc.id!!,BigDecimal.ZERO, "")
                 transactionDraft = transactionDraft.copy(items = transactionDraft.items + item)
                 val jsonString = gson.toJson(transactionDraft)
                 val json = JSON.json(jsonString)
                 userDraftRepository.updateDraft(profileId, userDraft!!.id!!, json)
-                return 1
+                return uuid
             }
         } else {
-            return 0
+            return null
         }
     }
 
@@ -367,7 +370,7 @@ class TransactionDraftService {
         return valid
     }
 
-    fun setDate(profileId: Long, localDate: LocalDate) {
+    fun setDate(profileId: Long, localDate: LocalDate?) {
         val userDraft = userDraftRepository.getDraftByProfile(profileId)
         if(userDraft == null) {
             //TODO
@@ -381,7 +384,23 @@ class TransactionDraftService {
         userDraftRepository.updateDraft(profileId, userDraft!!.id!!, json)
     }
 
-    fun setTime(profileId: Long, localTime: LocalTime) {
+    fun modifyDraft(profileId: Long, accountId: Long, note: String?, mode: TransactionMode, debitOrCredit: Boolean) {
+        val userDraft = userDraftRepository.getDraftByProfile(profileId)
+        if(userDraft == null) {
+            //TODO
+        }
+
+        var transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
+        transactionDraft = transactionDraft.copy(accountId = accountId, debitOrCredit = debitOrCredit!!,
+            note = note,
+            mode = mode)
+
+        val jsonString = gson.toJson(transactionDraft)
+        val json = JSON.json(jsonString)
+        userDraftRepository.updateDraft(profileId, userDraft!!.id!!, json)
+    }
+
+    fun setTime(profileId: Long, localTime: LocalTime?) {
         val userDraft = userDraftRepository.getDraftByProfile(profileId)
         if(userDraft == null) {
             //TODO

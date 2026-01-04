@@ -1,6 +1,7 @@
 package com.davidgrath.expensetrackerbackend.repository
 
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.SellerPojo
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.PROFILE
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.SELLER
 import org.jooq.DSLContext
 import org.springframework.beans.factory.annotation.Autowired
@@ -25,6 +26,15 @@ class SellerRepository @Autowired constructor(open var dslContext: DSLContext) {
         val selectStep = dslContext.selectFrom(SELLER)
             .where(SELLER.ID.eq(id))
             .and(SELLER.PROFILE_ID.eq(profileId))
+        return selectStep.fetchOne()?.into(SellerPojo::class.java)
+    }
+
+    fun getByUserIdAndId(userId: Long, id: Long): SellerPojo? {
+        val selectStep = dslContext.select(SELLER.asterisk())
+            .from(SELLER)
+            .innerJoin(PROFILE).on(PROFILE.ID.eq(SELLER.PROFILE_ID))
+            .where(SELLER.ID.eq(id))
+            .and(PROFILE.USER_ID.eq(userId))
         return selectStep.fetchOne()?.into(SellerPojo::class.java)
     }
 
