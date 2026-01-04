@@ -75,7 +75,6 @@ class TransactionsControllerTest {
 
     @Before
     fun setUp() {
-//        userService.createUser("username", "password", Locale.US)
         tempInit(testUtilComponent, timeHandler)
     }
 

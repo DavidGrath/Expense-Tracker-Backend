@@ -87,12 +87,22 @@ open class TransactionRepository {
         return selectStep.fetchOne()?.value1()
     }
 
-    fun getByUserIdAndId(userId: Long, id: Long): TransactionPojo? {
+    /*fun getByUserIdAndId(userId: Long, id: Long): TransactionPojo? {
         val selectStep = dslContext.select(TRANSACTION.asterisk())
             .from(TRANSACTION)
             .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
             .innerJoin(PROFILE).on(PROFILE.ID.eq(ACCOUNT.PROFILE_ID))
             .where(PROFILE.USER_ID.eq(userId))
+            .and(TRANSACTION.ID.eq(id))
+
+        return selectStep.fetchOne()?.into(TransactionPojo::class.java)
+    }*/
+
+    fun getByProfileIdAndId(profileId: Long, id: Long): TransactionPojo? {
+        val selectStep = dslContext.select(TRANSACTION.asterisk())
+            .from(TRANSACTION)
+            .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
+            .where(ACCOUNT.PROFILE_ID.eq(profileId))
             .and(TRANSACTION.ID.eq(id))
 
         return selectStep.fetchOne()?.into(TransactionPojo::class.java)

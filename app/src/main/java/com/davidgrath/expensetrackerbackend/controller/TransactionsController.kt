@@ -8,6 +8,10 @@ import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDetail
 import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraft
 import com.davidgrath.expensetrackerbackend.controller.exception.CustomHttpException
 import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
+import com.davidgrath.expensetrackerbackend.generatedapi.model.DocumentType
+import com.davidgrath.expensetrackerbackend.generatedapi.model.FileUploadRequest
+import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraftItemUpdateRequest
+import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraftUpdateRequest
 import com.davidgrath.expensetrackerbackend.service.AccountService
 import com.davidgrath.expensetrackerbackend.service.CategoryService
 import com.davidgrath.expensetrackerbackend.service.ProfileService
@@ -27,10 +31,12 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.multipart.MultipartFile
 import java.time.DateTimeException
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.ZoneId
+import java.util.UUID
 
 @RestController
 open class TransactionsController: TransactionsApi {
@@ -119,7 +125,7 @@ open class TransactionsController: TransactionsApi {
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
         val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
-        val t = transactionService.getByUserIdAndId(user!!.id!!, id)
+        val t = transactionService.getByProfileIdAndId(profile.id!!, id)
         if(t == null) {
             val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
             LOGGER.error("Not found", exception)
@@ -141,8 +147,11 @@ open class TransactionsController: TransactionsApi {
         throw UnsupportedOperationException("Not implemented yet")
     }
 
-    override fun transactionsPost(profileId: @NotNull String, transactionDraft: @Valid TransactionDraft?): ResponseEntity<Void?>? {
-        throw UnsupportedOperationException("Not implemented yet")
+    override fun transactionsPost(
+        profileId: @NotNull String,
+        timeZone: @NotNull @Valid String
+    ): ResponseEntity<Void?>? {
+        TODO("Not yet implemented")
     }
 
     override fun transactionsEarliestDateGet(
@@ -187,6 +196,64 @@ open class TransactionsController: TransactionsApi {
 
         val suggestions = transactionService.getGenericSuggestions(profile.id!!, fieldType, query)
         return ResponseEntity.ok(suggestions)
+    }
+
+    override fun transactionsDraftGet(profileId: @NotNull String): ResponseEntity<TransactionDraft?>? {
+        TODO("Not yet implemented")
+    }
+
+    override fun transactionsDraftItemsPost(profileId: @NotNull String): ResponseEntity<UUID?>? {
+        TODO("Not yet implemented")
+    }
+
+    override fun transactionsDraftItemsUuidPut(
+        profileId: @NotNull String,
+        uuid: @NotNull UUID,
+        transactionDraftItemUpdateRequest: @Valid TransactionDraftItemUpdateRequest?
+    ): ResponseEntity<TransactionDraft?>? {
+        TODO("Not yet implemented")
+    }
+
+    override fun transactionsDraftPost(profileId: @NotNull String): ResponseEntity<TransactionDraft?>? {
+        TODO("Not yet implemented")
+    }
+
+    override fun transactionsDraftPut(
+        profileId: @NotNull String,
+        transactionDraftUpdateRequest: @Valid TransactionDraftUpdateRequest?
+    ): ResponseEntity<TransactionDraft?>? {
+        TODO("Not yet implemented")
+    }
+
+    override fun transactionsDraftDocumentsPositionDelete(
+        profileId: @NotNull String,
+        position: @NotNull Int
+    ): ResponseEntity<Void?>? {
+        TODO("Not yet implemented")
+    }
+
+    override fun transactionsDraftDocumentsPost(
+        profileId: @NotNull String,
+        type: @Valid DocumentType?,
+        document: @Valid FileUploadRequest?
+    ): ResponseEntity<TransactionDraft?>? {
+        TODO("Not yet implemented")
+    }
+
+    override fun transactionsDraftItemsUuidImagesPositionDelete(
+        profileId: @NotNull String,
+        uuid: @NotNull UUID,
+        position: @NotNull Int
+    ): ResponseEntity<Void?>? {
+        TODO("Not yet implemented")
+    }
+
+    override fun transactionsDraftItemsUuidImagesPost(
+        profileId: @NotNull String,
+        uuid: @NotNull UUID,
+        file: MultipartFile?
+    ): ResponseEntity<TransactionDraft?>? {
+        TODO("Not yet implemented")
     }
 
     companion object {

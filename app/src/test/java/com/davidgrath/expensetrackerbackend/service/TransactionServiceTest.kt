@@ -150,7 +150,7 @@ class TransactionServiceTest {
         val category = categoryRepository.findByProfileIdAndStringId(profileId, "miscellaneous")!!
         val transactionId = transactionService.addTransaction(profileId, accountId, false, BigDecimal.TEN, "Description", category.id!!,
             ZoneId.of("Etc/GMT-2"))
-        val transaction = transactionService.getByUserIdAndId(user.id!!, transactionId)!!
+        val transaction = transactionService.getByProfileIdAndId(profileId, transactionId)!!
         val expectedTime = LocalTime.parse("10:00")
         assertEquals(expectedTime, transaction.time)
     }

@@ -6,6 +6,7 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.TransactionIte
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.User
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.UserPojo
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.USER
 import com.davidgrath.expensetrackerbackend.service.UserService
 import org.jooq.DSLContext
 import org.slf4j.LoggerFactory
@@ -15,8 +16,6 @@ import org.springframework.stereotype.Repository
 @Repository
 class UserRepository @Autowired constructor(open var dslContext: DSLContext) {
 
-
-    var USER: User = User.USER
 
     fun insertUser(user: UserPojo): Long {
         val user = dslContext.newRecord(USER, user)

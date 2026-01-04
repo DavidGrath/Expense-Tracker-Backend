@@ -232,7 +232,8 @@ tasks.named("openApiGenerate") {
     // Mainly to use codepoint length
     // https://github.com/OpenAPITools/openapi-generator/blob/a9f439f1c62a3b90a12a05f1b1ecdacfebbc80d3/modules/openapi-generator/src/main/resources/JavaSpring/beanValidationCore.mustache
     templateDir = "${rootDir}/openapi/templates"
-    importMappings = ["Nullable": "org.jspecify.annotations.Nullable"]
+    typeMappings = ["file": "Resource"]
+    importMappings = ["Nullable": "org.jspecify.annotations.Nullable", "Resource":"org.springframework.core.io.Resource"]
 }
 compileKotlin {
     kotlinOptions {

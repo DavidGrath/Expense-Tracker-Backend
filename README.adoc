@@ -48,7 +48,8 @@ It restarts at "01" each day. Let me see you try and reach 100 commits in 24 hou
 * I use "supposed" because these haven't been implemented just yet
 * Fail any pushes if the version remains the same
 * Alternatively, or combined - increment the version number automatically in the pipeline
-* Also, let the Gradle project derive its version from the file
+* https://xkcd.com/838/ Log all attempts to access unauthorized entities along with the target entity IDs to the console. INFO level
+* Generate SchemaSpy to static webpage
 
 == Notes
 * The project uses an API-first approach, so the endpoints are derived from the link:openapi/openapi.json[OpenAPI specification]

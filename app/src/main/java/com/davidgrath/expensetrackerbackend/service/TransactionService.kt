@@ -117,13 +117,13 @@ class TransactionService {
         return filledSummary
     }
 
-//    fun getByProfileIdAndId(): TransactionPojo? {
-//
-//    }
-
-    fun getByUserIdAndId(userId: Long, id: Long): TransactionPojo? {
-        return transactionRepository.getByUserIdAndId(userId, id)
+    fun getByProfileIdAndId(profileId: Long, id: Long): TransactionPojo? {
+        return transactionRepository.getByProfileIdAndId(profileId, id)
     }
+
+    /*fun getByUserIdAndId(userId: Long, id: Long): TransactionPojo? {
+        return transactionRepository.getByUserIdAndId(userId, id)
+    }*/
 
     fun getTransactions(
         profileId: Long,

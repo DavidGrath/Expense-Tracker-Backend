@@ -547,6 +547,14 @@
           },
           "mode": {
             "$ref": "#/components/schemas/TransactionMode"
+          },
+          "sellerId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "sellerLocationId": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },
@@ -557,6 +565,10 @@
             "type": "integer",
             "format": "int64",
             "nullable": true
+          },
+          "uuid": {
+            "type": "string",
+            "format": "uuid"
           },
           "amount": {
             "type": "number"
@@ -592,6 +604,32 @@
         },
         "required": ["amount", "description", "categoryId"]
       },
+      "TransactionDraftItemUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "categoryId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "isReduction": {
+            "type": "boolean",
+            "default": false
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 1
+          }
+        },
+        "required": ["amount", "description", "categoryId"]
+      },
       "TransactionDraftFile": {
         "type": "object",
         "properties": {
@@ -619,6 +657,46 @@
                 "nullable": true
               }
             ]
+          },
+          "sha256": {
+            "type": "string"
+          }
+        }
+      },
+      "TransactionDraftUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "time": {
+            "type": "string",
+            "format": "time",
+            "nullable": true
+          },
+          "accountId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "debitOrCredit": {
+            "type": "boolean"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 400
+          },
+          "mode": {
+            "$ref": "#/components/schemas/TransactionMode"
+          },
+          "sellerId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "sellerLocationId": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },
@@ -816,6 +894,27 @@
             "type": "string"
           }
         }
+      },
+      "DocumentUploadRequest": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/DocumentType"
+          },
+          "document": {
+            "$ref": "#/components/schemas/FileUploadRequest"
+          }
+        }
+      },
+      "FileUploadRequest": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary"
+          }
+        },
+        "required": ["file"]
       }
     }
   }

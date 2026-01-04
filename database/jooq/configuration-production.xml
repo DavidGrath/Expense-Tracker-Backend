@@ -16,6 +16,11 @@
                     <converter>com.davidgrath.expensetrackerbackend.entities.TransactionModeConverter</converter>
                     <includeExpression>.*transaction\.mode.*</includeExpression>
                 </forcedType>
+                <forcedType>
+                    <userType>com.davidgrath.expensetrackerbackend.entities.UserDraftType</userType>
+                    <enumConverter>true</enumConverter>
+                    <includeExpression>.*user_draft\.draft_type.*</includeExpression>
+                </forcedType>
             </forcedTypes>
         </database>
         <target>

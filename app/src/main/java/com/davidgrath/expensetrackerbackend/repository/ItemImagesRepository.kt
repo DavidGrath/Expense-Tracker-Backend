@@ -8,6 +8,7 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.User
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionItemImagesPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.UserPojo
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION_ITEM_IMAGES
 import org.jooq.DSLContext
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Repository
@@ -17,7 +18,6 @@ open class ItemImagesRepository {
 
     @Autowired
     open lateinit var dslContext: DSLContext
-    open var TRANSACTION_ITEM_IMAGES: TransactionItemImages = TransactionItemImages.TRANSACTION_ITEM_IMAGES
 
     fun insertItemImage(transactionItemImages: TransactionItemImagesPojo): Long {
         val itemImageDb = dslContext.newRecord(TRANSACTION_ITEM_IMAGES, transactionItemImages)

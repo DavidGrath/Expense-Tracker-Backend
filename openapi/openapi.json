@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "ExTrack API",
-    "version": "0.2.3",
+    "version": "0.3.0",
     "description": "API for the client-server version of ExTrack. It's meant to mirror the offline version for the most part.  # Text Field recommended length limits: Short: 20, Medium: 50, Long: 100, Extra long: 400. Try and apply these to any schemas that have 'Request' in the name"
   },
   "security": [
@@ -105,23 +105,24 @@
     },
     "/transactions": {
       "post": {
+        "description": "Save the draft",
         "tags": [
           "transactions"
         ],
         "parameters": [
           {
             "$ref": "#/components/parameters/profileId"
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "./schemas.json/#/components/schemas/TransactionDraft"
-              }
+          },
+          {
+            "name": "timeZone",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "An IANA timezone"
             }
           }
-        },
+        ],
         "responses": {
           "200": {
             "description": "Transaction created successfully"
@@ -387,6 +388,289 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/transactions/draft": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/profileId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "transactions"
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas.json/#/components/schemas/TransactionDraft"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "transactions"
+        ],
+        "responses": {
+          "200": {
+            "description": "Draft created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas.json/#/components/schemas/TransactionDraft"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "If draft already exists"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "transactions"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "./schemas.json/#/components/schemas/TransactionDraftUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas.json/#/components/schemas/TransactionDraft"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transactions/draft/items": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/profileId"
+        }
+      ],
+      "post": {
+        "tags": [
+          "transactions"
+        ],
+        "responses": {
+          "200": {
+            "description": "A new item is added to the draft",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The maximum number of items in the draft has been reached"
+          }
+        }
+      }
+    },
+    "/transactions/draft/items/{uuid}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/profileId"
+        },
+        {
+          "name": "uuid",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "put": {
+        "tags": [
+          "transactions"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "./schemas.json/#/components/schemas/TransactionDraftItemUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas.json/#/components/schemas/TransactionDraft"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transactions/draft/items/{uuid}/images": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/profileId"
+        },
+        {
+          "name": "uuid",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "tags": [
+          "transactions"
+        ],
+        "requestBody": {
+          "description": " ",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "./schemas.json/#/components/schemas/FileUploadRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+        "200": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "./schemas.json/#/components/schemas/TransactionDraft"
+              }
+            }
+          }
+        }
+      }
+
+      }
+    },
+    "/transactions/draft/items/{uuid}/images/{position}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/profileId"
+        },
+        {
+          "name": "uuid",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "position",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "delete": {
+        "tags": [
+          "transactions"
+        ],
+        "responses": {
+          "200": {
+            "description": "Image deleted successfully"
+          },
+          "404": {
+            "description": "Image not found"
+          }
+        }
+      }
+    },
+    "/transactions/draft/documents": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/profileId"
+        }
+      ],
+      "post": {
+        "tags": [
+          "transactions"
+        ],
+        "requestBody": {
+          "description": " ",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "./schemas.json/#/components/schemas/DocumentUploadRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas.json/#/components/schemas/TransactionDraft"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transactions/draft/documents/{position}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/profileId"
+        },
+        {
+          "name": "position",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "delete": {
+        "tags": [
+          "transactions"
+        ],
+        "responses": {
+          "200": {
+            "description": "Document deleted successfully"
+          },
+          "404": {
+            "description": "Document not found"
           }
         }
       }

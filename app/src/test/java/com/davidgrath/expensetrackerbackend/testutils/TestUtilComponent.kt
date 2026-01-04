@@ -6,8 +6,11 @@ import com.davidgrath.expensetrackerbackend.repository.DocumentRepository
 import com.davidgrath.expensetrackerbackend.repository.ImageRepository
 import com.davidgrath.expensetrackerbackend.repository.ItemImagesRepository
 import com.davidgrath.expensetrackerbackend.repository.ProfileRepository
+import com.davidgrath.expensetrackerbackend.repository.SellerLocationRepository
+import com.davidgrath.expensetrackerbackend.repository.SellerRepository
 import com.davidgrath.expensetrackerbackend.repository.TransactionItemRepository
 import com.davidgrath.expensetrackerbackend.repository.TransactionRepository
+import com.davidgrath.expensetrackerbackend.repository.UserDraftRepository
 import com.davidgrath.expensetrackerbackend.repository.UserRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.TestComponent
@@ -34,8 +37,15 @@ class TestUtilComponent {
     lateinit var userRepository: UserRepository
     @Autowired
     lateinit var documentRepository: DocumentRepository
+    @Autowired
+    lateinit var userDraftRepository: UserDraftRepository
+    @Autowired
+    lateinit var sellerRepository: SellerRepository
+    @Autowired
+    lateinit var sellerLocationRepository: SellerLocationRepository
 
     fun deleteAll() {
+        userDraftRepository.deleteAllForTesting()
         itemImagesRepository.deleteAllForTesting()
         documentRepository.deleteAllForTesting()
         itemRepository.deleteAllForTesting()
@@ -43,6 +53,8 @@ class TestUtilComponent {
         categoryRepository.deleteAllForTesting()
         transactionRepository.deleteAllForTesting()
         accountRepository.deleteAllForTesting()
+        sellerLocationRepository.deleteAllForTesting()
+        sellerRepository.deleteAllForTesting()
         profileRepository.deleteAllForTesting()
         userRepository.deleteAllForTesting()
     }

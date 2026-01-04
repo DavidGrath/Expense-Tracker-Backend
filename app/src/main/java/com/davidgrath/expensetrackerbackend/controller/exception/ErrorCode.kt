@@ -10,5 +10,8 @@ enum class ErrorCode(val code: String) {
     CATEGORY_ICON_FORMAT_INCORRECT("category_icon_format_incorrect"),
     CATEGORY_ICON_NAME_INCORRECT("category_icon_name_incorrect"),
     CATEGORY_NOT_MODIFIABLE("category_not_modifiable"),
-    INVALID_INPUT("invalid_input")
+    INVALID_INPUT("invalid_input"),
+    DRAFT_ALREADY_EXISTS("draft_already_exists"),
+    DRAFT_DOES_NOT_EXIST("draft_does_not_exist"),
+    FILE_TOO_LARGE("file_too_large")
 }
