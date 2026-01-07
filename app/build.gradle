@@ -74,11 +74,28 @@ version=rootProject.file("app-version").text.trim() //Maybe append 'dev'
 base {
     archivesName = "expense-tracker-backend"
 }
-
+//TODO Having to do this 6 times feels unnecessary. Try and fix... or maybe use a different versioning system that doesn't generate invalid URLs
 jar {
     archiveVersion = ''
 }
+
+distTar {
+    archiveVersion = ''
+}
+
+distZip {
+    archiveVersion = ''
+}
+
 bootJar {
+    archiveVersion = ''
+}
+
+bootDistTar {
+    archiveVersion = ''
+}
+
+bootDistZip {
     archiveVersion = ''
 }
 // Apply a specific Java toolchain to ease working on different environments.
