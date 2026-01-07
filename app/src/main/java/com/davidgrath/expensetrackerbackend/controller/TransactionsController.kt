@@ -28,6 +28,7 @@ import com.davidgrath.expensetrackerbackend.utils.file
 import com.davidgrath.expensetrackerbackend.utils.toApiMode
 import com.davidgrath.expensetrackerbackend.utils.toBoolean
 import com.davidgrath.expensetrackerbackend.utils.toDbMode
+import com.davidgrath.expensetrackerbackend.utils.toDbType
 import com.davidgrath.expensetrackerbackend.utils.transactionDraftToApiDraft
 import com.davidgrath.expensetrackerbackend.utils.transactionItemPojoToTransactionItem
 import jakarta.servlet.http.HttpServletRequest
@@ -37,11 +38,14 @@ import org.hibernate.validator.constraints.CodePointLength
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.multipart.MultipartFile
+import java.io.File
+import java.nio.file.Files
 import java.time.DateTimeException
 import java.time.LocalDate
 import java.time.LocalTime
@@ -254,7 +258,26 @@ open class TransactionsController: TransactionsApi {
     }
 
     override fun transactionsDraftGet(profileId: @NotNull String): ResponseEntity<TransactionDraft?>? {
-        TODO("Not yet implemented")
+        val authentication = SecurityContextHolder.getContext().authentication
+        val principal = authentication.principal as Jwt
+        LOGGER.info("Username: {}", principal.subject)
+        val user = userService.getByUsername(principal.subject!!)
+        val userUuid = user!!.uuid!!
+        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+
+        if(!transactionDraftService.doesDraftExistForProfile(profile.id!!)) {
+            val exception = CustomHttpException(ErrorCode.DRAFT_DOES_NOT_EXIST, HttpStatus.NOT_FOUND)
+            LOGGER.error("Draft does not exist ", exception)
+            throw exception
+
+        }
+        val scheme = httpServletRequest.scheme
+        val host = httpServletRequest.serverName
+        val port = httpServletRequest.serverPort
+        val triple = Triple(scheme, host, port)
+        val draft = transactionDraftService.getDraft(profile.id!!)!!
+        val apiDraft = transactionDraftToApiDraft(draft, triple)
+        return ResponseEntity.ok(apiDraft)
     }
 
     override fun transactionsDraftItemsPost(profileId: @NotNull String): ResponseEntity<UUID?>? {
@@ -423,15 +446,78 @@ open class TransactionsController: TransactionsApi {
         profileId: @NotNull String,
         position: @NotNull Int
     ): ResponseEntity<Void?>? {
-        TODO("Not yet implemented")
+        val authentication = SecurityContextHolder.getContext().authentication
+        val principal = authentication.principal as Jwt
+        LOGGER.info("Username: {}", principal.subject)
+        val user = userService.getByUsername(principal.subject!!)
+        val userUuid = user!!.uuid!!
+        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+
+        if(!transactionDraftService.doesDraftExistForProfile(profile.id!!)) {
+            val exception = CustomHttpException(ErrorCode.DRAFT_DOES_NOT_EXIST, HttpStatus.NOT_FOUND)
+            LOGGER.error("Draft does not exist ", exception)
+            throw exception
+
+        }
+
+        val draft = transactionDraftService.getDraft(profile.id!!)!!
+        val documents = draft.documents
+        if(position >= documents.size) {
+            val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
+            LOGGER.error("Document {} does not exist ", position, exception)
+            throw exception
+        }
+        val ret = transactionDraftService.deleteDocument(profile.id, position)
+        return ResponseEntity.ok().build()
     }
 
     override fun transactionsDraftDocumentsPost(
         profileId: @NotNull String,
         type: @Valid DocumentType?,
-        document: @Valid FileUploadRequest?
+        document: MultipartFile?
     ): ResponseEntity<TransactionDraft?>? {
-        TODO("Not yet implemented")
+        val authentication = SecurityContextHolder.getContext().authentication
+        val principal = authentication.principal as Jwt
+        LOGGER.info("Username: {}", principal.subject)
+        val user = userService.getByUsername(principal.subject!!)
+        val userUuid = user!!.uuid!!
+        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+
+        LOGGER.debug("Document null: {}", document == null)
+        LOGGER.debug("Resource type: {}", document!!.resource!!.javaClass.typeName)
+        LOGGER.debug("Is open: {}", document!!.resource!!.isOpen)
+        LOGGER.debug("File: {}", document!!.resource!!.isFile)
+
+        if(document.size > Constants.Constraints.MAX_DOCUMENT_SIZE) {
+            val exception = CustomHttpException(ErrorCode.FILE_TOO_LARGE, HttpStatus.BAD_REQUEST)
+            LOGGER.error("File too large", exception)
+            throw exception
+        }
+        val tempFolder = Files.createTempDirectory("addDocument").toFile()
+        val tempFile = File(tempFolder, UUID.randomUUID().toString())
+        val inputStream = document.resource.inputStream
+        val outputStream = tempFile.outputStream()
+        inputStream.transferTo(outputStream)
+        inputStream.close()
+        outputStream.close()
+
+        val added = transactionDraftService.addDocumentToDraft(profile.id!!, type!!.toDbType(), tempFile, MediaType.APPLICATION_OCTET_STREAM_VALUE,
+            userUuid, profileId)
+
+        tempFolder.deleteRecursively()
+        if(!added) {
+            val exception = CustomHttpException(ErrorCode.INVALID_INPUT, HttpStatus.BAD_REQUEST)
+            LOGGER.error("One of multiple possible issues adding the image", exception)
+            throw exception
+        }
+        val scheme = httpServletRequest.scheme
+        val host = httpServletRequest.serverName
+        val port = httpServletRequest.serverPort
+        val triple = Triple(scheme, host, port)
+        LOGGER.debug("Baka: {}", triple)
+        val draft = transactionDraftService.getDraft(profile.id!!)!!
+        val apiDraft = transactionDraftToApiDraft(draft, triple)
+        return ResponseEntity.ok(apiDraft)
     }
 
     override fun transactionsDraftItemsUuidImagesPositionDelete(
@@ -439,7 +525,34 @@ open class TransactionsController: TransactionsApi {
         uuid: @NotNull UUID,
         position: @NotNull Int
     ): ResponseEntity<Void?>? {
-        TODO("Not yet implemented")
+        val authentication = SecurityContextHolder.getContext().authentication
+        val principal = authentication.principal as Jwt
+        LOGGER.info("Username: {}", principal.subject)
+        val user = userService.getByUsername(principal.subject!!)
+        val userUuid = user!!.uuid!!
+        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+
+        if(!transactionDraftService.doesDraftExistForProfile(profile.id!!)) {
+            val exception = CustomHttpException(ErrorCode.DRAFT_DOES_NOT_EXIST, HttpStatus.NOT_FOUND)
+            LOGGER.error("Draft does not exist ", exception)
+            throw exception
+
+        }
+
+        val draft = transactionDraftService.getDraft(profile.id!!)!!
+        val item = draft.items.find { it.uuid == uuid }
+        if(item == null) {
+            val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
+            LOGGER.error("Item {} does not exist ", uuid, exception)
+            throw exception
+        }
+        if(position >= item.images.size) {
+            val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
+            LOGGER.error("Image {} for item {} does not exist ", position, uuid, exception)
+            throw exception
+        }
+        val ret = transactionDraftService.deleteItemImage(profile.id, uuid, position)
+        return ResponseEntity.ok().build()
     }
 
     override fun transactionsDraftItemsUuidImagesPost(
@@ -463,11 +576,65 @@ open class TransactionsController: TransactionsApi {
             LOGGER.error("File too large", exception)
             throw exception
         }
-        throw UnsupportedOperationException("Not yet")
-/*
-        val root = timeHandler.getRoot()
-        val file = file(root, Constants.FOLDER_NAME_USERS, userUuid, Constants.FOLDER_NAME_PROFILES, profileId,
-            Constants.FOLDER_NAME_DRAFT, Constants.SUBFOLDER_NAME_IMAGES, )*/
+        val tempFolder = Files.createTempDirectory("addImages").toFile()
+        val tempFile = File(tempFolder, UUID.randomUUID().toString())
+        val inputStream = file.resource.inputStream
+        val outputStream = tempFile.outputStream()
+        inputStream.transferTo(outputStream)
+        inputStream.close()
+        outputStream.close()
+
+        val added = transactionDraftService.addImageToItem(profile.id!!, uuid, tempFile, file.contentType?: MediaType.APPLICATION_OCTET_STREAM_VALUE,
+            userUuid, profileId)
+
+        tempFolder.deleteRecursively()
+        if(!added) {
+            val exception = CustomHttpException(ErrorCode.INVALID_INPUT, HttpStatus.BAD_REQUEST)
+            LOGGER.error("One of multiple possible issues adding the image", exception)
+            throw exception
+        }
+        val scheme = httpServletRequest.scheme
+        val host = httpServletRequest.serverName
+        val port = httpServletRequest.serverPort
+        val triple = Triple(scheme, host, port)
+        LOGGER.debug("Baka: {}", triple)
+        val draft = transactionDraftService.getDraft(profile.id!!)!!
+        val apiDraft = transactionDraftToApiDraft(draft, triple)
+        return ResponseEntity.ok(apiDraft)
+    }
+
+    override fun transactionsDraftItemsUuidDelete(
+        profileId: @NotNull String,
+        uuid: @NotNull UUID
+    ): ResponseEntity<Void?>? {
+        val authentication = SecurityContextHolder.getContext().authentication
+        val principal = authentication.principal as Jwt
+        LOGGER.info("Username: {}", principal.subject)
+        val user = userService.getByUsername(principal.subject!!)
+        val userUuid = user!!.uuid!!
+        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+
+        if(!transactionDraftService.doesDraftExistForProfile(profile.id!!)) {
+            val exception = CustomHttpException(ErrorCode.DRAFT_DOES_NOT_EXIST, HttpStatus.NOT_FOUND)
+            LOGGER.error("Draft does not exist ", exception)
+            throw exception
+
+        }
+
+        val draft = transactionDraftService.getDraft(profile.id!!)!!
+        val item = draft.items.find { it.uuid == uuid }
+        if(item == null) {
+            val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
+            LOGGER.error("Item {} does not exist ", uuid, exception)
+            throw exception
+        }
+        if(draft.items.size == 1) {
+            val exception = CustomHttpException(ErrorCode.DRAFT_MUST_HAVE_AT_LEAST_ONE_ITEM, HttpStatus.BAD_REQUEST)
+            LOGGER.error("Only one item in draft ", exception)
+            throw exception
+        }
+        val ret = transactionDraftService.deleteItem(profile.id, uuid)
+        return ResponseEntity.ok().build()
     }
 
     companion object {

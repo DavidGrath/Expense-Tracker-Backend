@@ -4,9 +4,13 @@ import com.davidgrath.expensetrackerbackend.generatedapi.model.BasicTransactionC
 import com.davidgrath.expensetrackerbackend.configuration.SecurityConfiguration
 import com.davidgrath.expensetrackerbackend.configuration.TestConfiguration
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
+import com.davidgrath.expensetrackerbackend.configuration.WebMvcConfiguration
 import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.controller.exception.ExceptionResponseHandler
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.SellerPojo
+import com.davidgrath.expensetrackerbackend.generatedapi.model.DocumentType
+import com.davidgrath.expensetrackerbackend.generatedapi.model.FileUploadRequest
+import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraftItemUpdateRequest
 import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraftUpdateRequest
 import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionMode
 import com.davidgrath.expensetrackerbackend.repository.AccountRepository
@@ -37,6 +41,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.core.io.ByteArrayResource
 import org.springframework.http.MediaType
 import org.springframework.mock.web.MockMultipartFile
 import org.springframework.test.annotation.DirtiesContext
@@ -56,7 +61,8 @@ import java.util.Locale
 @WebMvcTest(TransactionsController::class)
 @ContextConfiguration(
     classes = [
-        TransactionsController::class, SecurityConfiguration::class, TestConfiguration::class, ExceptionResponseHandler::class, TestUtilComponent::class
+        TransactionsController::class, SecurityConfiguration::class, TestConfiguration::class, ExceptionResponseHandler::class,
+        TestUtilComponent::class, WebMvcConfiguration::class
     ])
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 class TransactionsDraftControllerTest {
@@ -95,6 +101,7 @@ class TransactionsDraftControllerTest {
         testUtilComponent.deleteAll()
     }
 
+    //Other count-based limitations were covered at the service level, so I'll just leave it at this
     @Test
     fun givenItemCountIsMaxWhenAddItemThenBadRequest() {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
@@ -210,10 +217,192 @@ class TransactionsDraftControllerTest {
                     "$.${Constants.CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE}", Matchers.equalTo(ErrorCode.DRAFT_ALREADY_EXISTS.code)
                 )
             ).andReturn()
-
     }
 
+    @Test
+    fun imageSizeFailTest() {
+        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
+        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
+        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
+        val misc = categoryRepository.findByProfileIdAndStringId(profile.id!!, "miscellaneous")
+        transactionDraftService.createDraft(profile!!.id!!, accountId)
+
+        val classLoader = TransactionsDraftControllerTest::class.java.classLoader!!
+        val resourceAbove3MiB = TestData.Resource.Images.TRAMPOLINE
+        val inStream = classLoader.getResourceAsStream(resourceAbove3MiB.resourceName)!!
+        val byteArray = inStream.readBytes()
+        inStream.close()
+
+        val draft = transactionDraftService.getDraft(profile.id!!)
+        val item = draft!!.items[0]
+        val uuid = item.uuid
+
+        LOGGER.debug("MediaType: {}", MediaType.IMAGE_JPEG.toString())
+        val mockFile = MockMultipartFile("file", null, MediaType.IMAGE_JPEG.type, byteArray)
+
+        var response = mockMvc
+            .perform(
+                MockMvcRequestBuilders.multipart("/transactions/draft/items/{uuid}/images", uuid)
+                    .file(mockFile)
+                    .header("Authorization", "Bearer ${jws}")
+                    .header("Profile-Id", profile.stringId)
+            )
+            .andExpectAll(
+                MockMvcResultMatchers.status().isBadRequest
+            ).andReturn()
+    }
+
+    @Test
+    fun imageSizePassTest() {
+        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
+
+        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
+        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
+        val misc = categoryRepository.findByProfileIdAndStringId(profile.id!!, "miscellaneous")
+        transactionDraftService.createDraft(profile!!.id!!, accountId)
+
+        val classLoader = TransactionsDraftControllerTest::class.java.classLoader!!
+        val resourceBetween1And3MiB = TestData.Resource.Images.SHIRT
+        val inStream = classLoader.getResourceAsStream(resourceBetween1And3MiB.resourceName)!!
+        val byteArray = inStream.readBytes()
+        inStream.close()
+
+        val draft = transactionDraftService.getDraft(profile.id!!)
+        val item = draft!!.items[0]
+        val uuid = item.uuid
+
+        val mockFile = MockMultipartFile("file", null, MediaType.IMAGE_JPEG.type, byteArray)
+
+        var response = mockMvc
+            .perform(
+                MockMvcRequestBuilders.multipart("/transactions/draft/items/{uuid}/images", uuid)
+                    .file(mockFile)
+                    .header("Authorization", "Bearer ${jws}")
+                    .header("Profile-Id", profile.stringId)
+            )
+            .andExpectAll(
+                MockMvcResultMatchers.status().isOk
+            ).andReturn()
+    }
+
+    @Test
+    fun documentSizePassTest() {
+        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
+
+        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
+        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
+        val misc = categoryRepository.findByProfileIdAndStringId(profile.id!!, "miscellaneous")
+        transactionDraftService.createDraft(profile!!.id!!, accountId)
+
+        val classLoader = TransactionsDraftControllerTest::class.java.classLoader!!
+        val resourceBetween1And3MiB = TestData.Resource.Images.SHIRT
+        val inStream = classLoader.getResourceAsStream(resourceBetween1And3MiB.resourceName)!!
+        val byteArray = inStream.readBytes()
+        inStream.close()
+
+
+        val mockFile = MockMultipartFile("document", null, MediaType.IMAGE_JPEG_VALUE, byteArray)
+
+        var response = mockMvc
+            .perform(
+                MockMvcRequestBuilders.multipart("/transactions/draft/documents")
+                    .file(mockFile)
+                    .param("type", DocumentType.OTHER.value)
+                    .header("Authorization", "Bearer ${jws}")
+                    .header("Profile-Id", profile.stringId)
+                    .content(byteArray)
+            )
+            .andExpectAll(
+                MockMvcResultMatchers.status().isOk
+            ).andReturn()
+    }
+
+    // Some cases are already covered at the service level tests, so I'll just be generic here
+    @Test
+    fun givenDraftHasErrorsWhenSaveThenFail() {
+        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
+
+        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
+        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
+        val misc = categoryRepository.findByProfileIdAndStringId(profile.id!!, "miscellaneous")
+        transactionDraftService.createDraft(profile!!.id!!, accountId)
+
+        var emptyDraftResponse = mockMvc
+            .perform(
+                MockMvcRequestBuilders.post("/transactions")
+                    .header("Authorization", "Bearer ${jws}")
+                    .header("Profile-Id", profile.stringId)
+            )
+            .andExpectAll(
+                MockMvcResultMatchers.status().isBadRequest, // Pass an array of `errorCode`s or just a general bad request?
+            ).andReturn()
+
+        val draft = transactionDraftService.getDraft(profile.id!!)
+        val item = draft!!.items[0]
+        val uuid = item.uuid
+
+        val itemUpdateRequest = TransactionDraftItemUpdateRequest(BigDecimal.TEN, " \t ", misc!!.id!!)
+
+        val objectWriter: ObjectWriter = ObjectMapper().writer()
+        val json = objectWriter.writeValueAsString(itemUpdateRequest)
+
+        mockMvc
+            .perform(
+                MockMvcRequestBuilders.put("/transactions/draft/items/{uuid}", uuid)
+                    .header("Authorization", "Bearer ${jws}")
+                    .header("Profile-Id", profile.stringId)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(json)
+            )
+            .andExpectAll(
+                MockMvcResultMatchers.status().isOk,
+            ).andReturn()
+
+        val badItemsRequest = mockMvc
+            .perform(
+                MockMvcRequestBuilders.post("/transactions")
+                    .header("Authorization", "Bearer ${jws}")
+                    .header("Profile-Id", profile.stringId)
+            )
+            .andExpectAll(
+                MockMvcResultMatchers.status().isBadRequest,
+            ).andReturn()
+    }
+
+    @Test
+    fun givenDraftHasOneItemWhenDeleteThenFail() {
+        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
+
+        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
+        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
+
+
+        transactionDraftService.createDraft(profile.id!!, accountId)
+
+        val draft = transactionDraftService.getDraft(profile.id!!)
+        val item = draft!!.items[0]
+        val uuid = item.uuid
+
+
+        mockMvc
+            .perform(
+                MockMvcRequestBuilders.delete("/transactions/draft/items/{uuid}", uuid)
+                    .header("Authorization", "Bearer ${jws}")
+                    .header("Profile-Id", profile.stringId)
+            )
+            .andExpectAll(
+                MockMvcResultMatchers.status().isBadRequest,
+                MockMvcResultMatchers.jsonPath(
+                    "$.${Constants.CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE}", Matchers.equalTo(ErrorCode.DRAFT_MUST_HAVE_AT_LEAST_ONE_ITEM.code)
+                )
+            ).andReturn()
+    }
 
     companion object {
         private val LOGGER = LoggerFactory.getLogger(TransactionsDraftControllerTest::class.java)

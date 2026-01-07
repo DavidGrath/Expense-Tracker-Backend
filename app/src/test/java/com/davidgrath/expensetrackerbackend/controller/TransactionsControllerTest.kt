@@ -4,6 +4,7 @@ import com.davidgrath.expensetrackerbackend.generatedapi.model.BasicTransactionC
 import com.davidgrath.expensetrackerbackend.configuration.SecurityConfiguration
 import com.davidgrath.expensetrackerbackend.configuration.TestConfiguration
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
+import com.davidgrath.expensetrackerbackend.configuration.WebMvcConfiguration
 import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.controller.exception.ExceptionResponseHandler
 import com.davidgrath.expensetrackerbackend.repository.AccountRepository
@@ -48,7 +49,8 @@ import java.util.Locale
 @WebMvcTest(TransactionsController::class)
 @ContextConfiguration(
     classes = [
-        TransactionsController::class, SecurityConfiguration::class, TestConfiguration::class, ExceptionResponseHandler::class, TestUtilComponent::class
+        TransactionsController::class, SecurityConfiguration::class, TestConfiguration::class, ExceptionResponseHandler::class,
+        TestUtilComponent::class, WebMvcConfiguration::class
     ])
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 class TransactionsControllerTest {

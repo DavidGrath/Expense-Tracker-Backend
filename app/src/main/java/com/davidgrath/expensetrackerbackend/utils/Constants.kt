@@ -18,8 +18,8 @@ class Constants {
 
     public class Constraints {
         companion object {
-            const val MAX_IMAGE_SIZE = 1024 * 1024L
-            const val MAX_DOCUMENT_SIZE = 1024 * 1024L
+            const val MAX_IMAGE_SIZE = 3 * 1024 * 1024L
+            const val MAX_DOCUMENT_SIZE = 3 * 1024 * 1024L
             const val MAX_TRANSACTIONS_PER_PROFILE = 5_000
             const val MAX_TRANSACTION_ITEMS_PER_PROFILE = 100_000
             const val MAX_ITEMS_PER_TRANSACTION = 20

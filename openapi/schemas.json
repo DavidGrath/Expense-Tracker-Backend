@@ -617,7 +617,8 @@
         "type": "object",
         "properties": {
           "amount": {
-            "type": "number"
+            "type": "number",
+            "minimum": 0
           },
           "description": {
             "type": "string",
@@ -928,7 +929,8 @@
             "$ref": "#/components/schemas/DocumentType"
           },
           "document": {
-            "$ref": "#/components/schemas/FileUploadRequest"
+            "type": "string",
+            "format": "binary"
           }
         }
       },

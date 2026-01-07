@@ -328,27 +328,27 @@ class TransactionDraftService {
         val items = draft.items
         var valid = true
         if(items.isEmpty()) {
-            LOGGER.info("validateDraft: Draft is empty, nothing to save")
+            LOGGER.info("Draft is empty, nothing to save")
             return false
         }
         for (item in items) {
             if (item.amount == null) {
-                LOGGER.info("validateDraft: An item has a null amount")
+                LOGGER.info("An item has a null amount")
                 valid = false
                 break
             }
             if (item.amount.compareTo(BigDecimal.ZERO) == 0) {
-                LOGGER.info("validateDraft: An item has a zero amount")
+                LOGGER.info("An item has a zero amount")
                 valid = false
                 break
             }
             if (item.description == null) {
-                LOGGER.info("validateDraft: An item has a null description")
+                LOGGER.info("An item has a null description")
                 valid = false
                 break
             }
             if (item.description.isBlank()) {
-                LOGGER.info("validateDraft: An item has a blank description")
+                LOGGER.info("An item has a blank description")
                 valid = false
                 break
             }
@@ -475,16 +475,18 @@ class TransactionDraftService {
         userDraftRepository.updateDraft(profileId, userDraft!!.id!!, json)
     }
 
-    fun addImageToItem(profileId: Long, uuid: UUID, tempFile: File, mimeType: String, userUuid: String, profileStringId: String) {
+    fun addImageToItem(profileId: Long, uuid: UUID, tempFile: File, mimeType: String, userUuid: String, profileStringId: String): Boolean {
         val userDraft = userDraftRepository.getDraftByProfile(profileId)
         if(userDraft == null) {
             //TODO
+            return false
         }
         var transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
         val items = transactionDraft.items
         val itemIndex = items.indexOfFirst { it.uuid == uuid }
         if(itemIndex == -1) {
             // TODO
+            return false
         }
         val item = items[itemIndex]
         val inputStream = tempFile.inputStream()
@@ -493,11 +495,11 @@ class TransactionDraftService {
         val image = item!!.images.find { it.sha256 == hash }
         if (image != null) {
             LOGGER.info("Image already exists for item {}", uuid)
-            return
+            return false
         }
         if (item.images.size >= Constants.Constraints.MAX_IMAGES_PER_ITEM) {
             LOGGER.info("Max image count reached for item {}", uuid)
-            return
+            return false
         }
         val im = imageRepository.findBySha256(profileId!!, hash)
         val draftPath = transactionDraft.imageHashes[hash]
@@ -533,13 +535,15 @@ class TransactionDraftService {
         val jsonString = gson.toJson(transactionDraft)
         val json = JSON.json(jsonString)
         userDraftRepository.updateDraft(profileId, userDraft!!.id!!, json)
+        return true
     }
 
-    fun addDocumentToDraft(profileId: Long, type: DocumentType, tempFile: File, mimeType: String, userUuid: String, profileStringId: String) {
+    fun addDocumentToDraft(profileId: Long, type: DocumentType, tempFile: File, mimeType: String, userUuid: String, profileStringId: String): Boolean {
 
         val userDraft = userDraftRepository.getDraftByProfile(profileId)
         if(userDraft == null) {
             //TODO
+            return false
         }
         val transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
 
@@ -553,11 +557,11 @@ class TransactionDraftService {
         val image = documents.find { it.sha256 == hash }
         if (image != null) {
             LOGGER.info("Document already exists for draft")
-            return
+            return false
         }
         if (documents.size >= Constants.Constraints.MAX_DOCUMENTS_PER_TRANSACTION) {
             LOGGER.info("Max document count reached for draft")
-            return
+            return false
         }
 
         val draftFile: TransactionDraftFile
@@ -581,6 +585,95 @@ class TransactionDraftService {
         val jsonString = gson.toJson(updatedDraft)
         val json = JSON.json(jsonString)
         userDraftRepository.updateDraft(profileId, userDraft!!.id!!, json)
+        return true
+    }
+
+    fun deleteItem(profileId: Long, uuid: UUID): Boolean {
+
+        val userDraft = userDraftRepository.getDraftByProfile(profileId)
+        if (userDraft == null) {
+            //TODO
+            return false
+        }
+        val transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
+
+        val currentList = transactionDraft.items
+
+        val itemPos = currentList.indexOfFirst { it.uuid == uuid }
+        if (itemPos == -1) {
+            return false
+        }
+        if(currentList.size == 1) {
+            LOGGER.info("Too few items")
+            return false
+        }
+
+        val newItems = currentList.toMutableList().apply {
+            removeAt(itemPos)
+        }
+        val updatedDraft = transactionDraft.copy(items = newItems)
+        val jsonString = gson.toJson(updatedDraft)
+        val json = JSON.json(jsonString)
+        userDraftRepository.updateDraft(profileId, userDraft!!.id!!, json)
+        return true
+
+    }
+
+    fun deleteItemImage(profileId: Long, uuid: UUID, imagePosition: Int): Boolean {
+        val userDraft = userDraftRepository.getDraftByProfile(profileId)
+        if (userDraft == null) {
+            //TODO
+            return false
+        }
+        val transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
+
+        val newItems = transactionDraft.items.toMutableList()
+
+        val itemPos = newItems.indexOfFirst { it.uuid == uuid }
+        if (itemPos == -1) {
+            return false
+        }
+
+        val item = newItems[itemPos]
+
+        val newImages = item.images.toMutableList()
+        if(imagePosition >= newImages.size) {
+            LOGGER.info("Image position out of bounds")
+            return false
+        }
+        newImages.removeAt(imagePosition)
+        LOGGER.info("Removed image at position {} for item {}", imagePosition, uuid)
+        val newItem = item.copy(images = newImages)
+        newItems[itemPos] = newItem
+        val updatedDraft = transactionDraft.copy(items = newItems)
+        val jsonString = gson.toJson(updatedDraft)
+        val json = JSON.json(jsonString)
+        userDraftRepository.updateDraft(profileId, userDraft!!.id!!, json)
+        return true
+    }
+
+    fun deleteDocument(profileId: Long, documentPosition: Int): Boolean {
+        val userDraft = userDraftRepository.getDraftByProfile(profileId)
+        if (userDraft == null) {
+            //TODO
+            return false
+        }
+        val transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
+
+        val newDocuments = transactionDraft.documents.toMutableList()
+
+        if(documentPosition >= newDocuments.size) {
+            LOGGER.info("Document position out of bounds")
+            return false
+        }
+        newDocuments.removeAt(documentPosition)
+        LOGGER.info("Removed document at position {}", documentPosition)
+
+        val updatedDraft = transactionDraft.copy(documents = newDocuments)
+        val jsonString = gson.toJson(updatedDraft)
+        val json = JSON.json(jsonString)
+        userDraftRepository.updateDraft(profileId, userDraft!!.id!!, json)
+        return true
     }
 
     private fun copyFileToDraft(file: File, mimeType: String, subfolder: String, userUuid: String, profileStringId: String): String {
