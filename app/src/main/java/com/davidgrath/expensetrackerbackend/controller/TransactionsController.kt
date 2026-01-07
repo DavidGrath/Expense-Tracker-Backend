@@ -10,7 +10,6 @@ import com.davidgrath.expensetrackerbackend.controller.exception.CustomHttpExcep
 import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import com.davidgrath.expensetrackerbackend.generatedapi.model.DocumentType
-import com.davidgrath.expensetrackerbackend.generatedapi.model.FileUploadRequest
 import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraftItemUpdateRequest
 import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraftUpdateRequest
 import com.davidgrath.expensetrackerbackend.service.AccountService

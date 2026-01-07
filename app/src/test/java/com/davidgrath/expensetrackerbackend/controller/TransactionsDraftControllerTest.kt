@@ -9,7 +9,6 @@ import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.controller.exception.ExceptionResponseHandler
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.SellerPojo
 import com.davidgrath.expensetrackerbackend.generatedapi.model.DocumentType
-import com.davidgrath.expensetrackerbackend.generatedapi.model.FileUploadRequest
 import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraftItemUpdateRequest
 import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraftUpdateRequest
 import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionMode
