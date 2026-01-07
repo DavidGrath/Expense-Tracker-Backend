@@ -12,9 +12,9 @@ data class TransactionDraft(
     /**
      * To prevent the user from adding duplicate images
      */
-    val imageHashes: Map<String, URI> = emptyMap(),
+    val imageHashes: Map<String, String> = emptyMap(),
     val documents: List<TransactionDraftFile> = emptyList(),
-    val documentHashes: Map<String, URI> = emptyMap(),
+    val documentHashes: Map<String, String> = emptyMap(),
     val note: String? = null,
     val deletedDbItems: List<TransactionDraftItem> = emptyList(),
     val deletedDbDocuments: List<TransactionDraftFile> = emptyList(),

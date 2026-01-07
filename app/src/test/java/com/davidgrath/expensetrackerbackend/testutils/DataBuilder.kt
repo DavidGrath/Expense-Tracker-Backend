@@ -1,7 +1,7 @@
 package com.davidgrath.expensetrackerbackend.testutils
 
-import com.davidgrath.expensetrackerbackend.generatedapi.model.DocumentType
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
+import com.davidgrath.expensetrackerbackend.entities.DocumentType
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import com.davidgrath.expensetrackerbackend.utils.file
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.AccountPojo
@@ -166,7 +166,7 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
                 val copied = resourceInputStream.copyTo(outputStream)
                 resourceInputStream.close()
                 outputStream.close()
-                val documentDb = DocumentPojo(null, profile.id!!, DocumentType.OTHER.toString(), file.length(), doc.sha256, "image/jpeg", "", "", LocalDateTime.now()) //TODO date time
+                val documentDb = DocumentPojo(null, profile.id!!, DocumentType.Other, file.length(), doc.sha256, "image/jpeg", "", "", LocalDateTime.now()) //TODO date time
                 val documentId = documentRepository.insertDocument(documentDb)
 //                sha256Map[doc.sha256] = imageId
 //                imageId

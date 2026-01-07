@@ -205,7 +205,7 @@ open class TransactionsController: TransactionsApi {
             LOGGER.error("Bad time zone", exception)
             throw exception
         }
-        transactionDraftService.finishDraft(profile.id!!, zone)
+        transactionDraftService.finishDraft(profile.id!!, userUuid, profileId, zone)
         return ResponseEntity.ok().build()
     }
 
@@ -454,7 +454,10 @@ open class TransactionsController: TransactionsApi {
         val userUuid = user!!.uuid!!
         val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
 
-        val host = httpServletRequest.serverName
+        LOGGER.debug("Resource type: {}", file!!.resource.javaClass.typeName)
+        LOGGER.debug("Is open: {}", file!!.resource.isOpen)
+        LOGGER.debug("File: {}", file!!.resource.isFile)
+
         if(file!!.size > Constants.Constraints.MAX_IMAGE_SIZE) {
             val exception = CustomHttpException(ErrorCode.FILE_TOO_LARGE, HttpStatus.BAD_REQUEST)
             LOGGER.error("File too large", exception)

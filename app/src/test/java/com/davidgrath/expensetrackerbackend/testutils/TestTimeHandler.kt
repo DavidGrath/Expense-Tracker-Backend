@@ -2,6 +2,7 @@ package com.davidgrath.expensetrackerbackend.testutils
 
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import java.io.File
+import java.nio.file.Files
 import java.time.Clock
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -13,7 +14,12 @@ class TestTimeHandler: TimeHandler {
     private var zoneId: ZoneId = ZoneId.of("UTC")
     private var clock =
         Clock.fixed(LocalDateTime.parse("2025-06-30T08:00:00.000").toInstant(ZoneOffset.UTC), ZoneId.of("UTC"))
-    private var file = File(".")
+    private var file: File
+
+    init {
+        file = Files.createTempDirectory("appRoot").toFile()
+        file.deleteOnExit()
+    }
 
     override fun getClock(): Clock {
         return clock

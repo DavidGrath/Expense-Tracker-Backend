@@ -10,22 +10,19 @@ import com.davidgrath.expensetrackerbackend.repository.*
 import com.davidgrath.expensetrackerbackend.utils.CATEGORY_IDS_ICONS_DEFAULT
 import com.davidgrath.expensetrackerbackend.utils.toByte
 import com.davidgrath.expensetrackerbackend.utils.Constants
+import com.davidgrath.expensetrackerbackend.utils.getSha256
 import io.jsonwebtoken.Jwts
-import io.jsonwebtoken.SignatureAlgorithm
 import org.junit.Assert
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.math.BigDecimal
 import java.security.KeyFactory
-import java.security.interfaces.ECPrivateKey
 import java.security.interfaces.RSAPrivateKey
 import java.security.spec.PKCS8EncodedKeySpec
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.util.*
-import javax.crypto.SecretKey
-import javax.crypto.spec.SecretKeySpec
 
 private val LOGGER = LoggerFactory.getLogger("com.davidgrath.expensetrackerbackend.testutils.TestUtils")
 
@@ -149,4 +146,37 @@ fun tempInitDefaultCategories(profileId: Long, categoryRepository: CategoryRepos
             LOGGER.info("Created default categories")
         }
 
+}
+
+fun copyControllerTempFile(tempFolder: File, classLoader: ClassLoader, vararg resources: TestData.Resource) {
+    for (resource in resources) {
+        val resourceInputStream = classLoader.getResourceAsStream(resource.resourceName)
+        val file = File(tempFolder, resource.fileName)
+        val outputStream = file.outputStream()
+        val bytes = resourceInputStream.copyTo(outputStream)
+        LOGGER.debug("Bytes copied: {}", bytes)
+        resourceInputStream.close()
+        outputStream.close()
+    }
+}
+
+fun getHashCount(sha256: String, folder: File): Int {
+    if(!folder.exists() || !folder.isDirectory) {
+        LOGGER.debug("Exists: {}", folder.exists())
+        LOGGER.debug("Is Dir: {}", folder.isDirectory())
+        LOGGER.info("Invalid folder: {}", folder.path)
+        return 0 //Maybe -1
+    }
+
+    var hashCount = 0
+    for(f in folder.listFiles()!!) {
+        LOGGER.info("F: ${f.absolutePath}")
+        val inputStream = f.inputStream()
+        val h = getSha256(inputStream)
+        if(h == sha256) {
+            hashCount++
+        }
+        inputStream.close()
+    }
+    return hashCount
 }

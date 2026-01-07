@@ -27,6 +27,11 @@
                     <enumConverter>true</enumConverter>
                     <includeExpression>.*user_draft\.draft_type.*</includeExpression>
                 </forcedType>
+                <forcedType>
+                    <userType>com.davidgrath.expensetrackerbackend.entities.DocumentType</userType>
+                    <enumConverter>true</enumConverter>
+                    <includeExpression>.*document\.type.*</includeExpression>
+                </forcedType>
             </forcedTypes>
         </database>
         <strategy>

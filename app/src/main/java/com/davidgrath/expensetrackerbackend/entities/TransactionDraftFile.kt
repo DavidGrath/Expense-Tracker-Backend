@@ -8,6 +8,7 @@ data class TransactionDraftFile(
     val mimeType: String,
     val sha256: String,
     val sizeBytes: Long,
+    val type: DocumentType?,
     /**
      * Should always be false if the item is new
      */

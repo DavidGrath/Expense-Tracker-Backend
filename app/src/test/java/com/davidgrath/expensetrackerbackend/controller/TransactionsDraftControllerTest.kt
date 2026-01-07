@@ -17,6 +17,7 @@ import com.davidgrath.expensetrackerbackend.repository.UserRepository
 import com.davidgrath.expensetrackerbackend.service.TransactionDraftService
 import com.davidgrath.expensetrackerbackend.service.UserService
 import com.davidgrath.expensetrackerbackend.testutils.TestConstants
+import com.davidgrath.expensetrackerbackend.testutils.TestData
 import com.davidgrath.expensetrackerbackend.testutils.TestUtilComponent
 import com.davidgrath.expensetrackerbackend.testutils.createBearerToken
 import com.davidgrath.expensetrackerbackend.testutils.getDefaultAccountId
@@ -37,6 +38,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.http.MediaType
+import org.springframework.mock.web.MockMultipartFile
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.ContextConfiguration

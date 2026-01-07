@@ -1,5 +1,6 @@
 package com.davidgrath.expensetrackerbackend.utils
 
+import com.davidgrath.expensetrackerbackend.entities.DocumentType
 import com.davidgrath.expensetrackerbackend.entities.TransactionDraft
 import com.davidgrath.expensetrackerbackend.entities.TransactionDraftItem
 import com.davidgrath.expensetrackerbackend.generatedapi.model.Account
@@ -15,7 +16,6 @@ import com.davidgrath.expensetrackerbackend.entities.views.CategoryWithStats
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.AccountPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.CategoryPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionItemPojo
-import com.davidgrath.expensetrackerbackend.generatedapi.model.DocumentType
 import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraftItemUpdateRequest
 import java.math.BigDecimal
 import java.net.URI
@@ -59,6 +59,24 @@ fun com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionMode?.toD
     }
 }
 
+fun DocumentType.toApiType(): com.davidgrath.expensetrackerbackend.generatedapi.model.DocumentType {
+    return when(this) {
+        DocumentType.BankStatement -> com.davidgrath.expensetrackerbackend.generatedapi.model.DocumentType.BANK_STATEMENT
+        DocumentType.Receipt -> com.davidgrath.expensetrackerbackend.generatedapi.model.DocumentType.RECEIPT
+        DocumentType.Invoice -> com.davidgrath.expensetrackerbackend.generatedapi.model.DocumentType.INVOICE
+        DocumentType.Other -> com.davidgrath.expensetrackerbackend.generatedapi.model.DocumentType.OTHER
+    }
+}
+
+fun com.davidgrath.expensetrackerbackend.generatedapi.model.DocumentType.toDbType(): DocumentType {
+    return when(this) {
+        com.davidgrath.expensetrackerbackend.generatedapi.model.DocumentType.BANK_STATEMENT -> DocumentType.BankStatement
+        com.davidgrath.expensetrackerbackend.generatedapi.model.DocumentType.RECEIPT -> DocumentType.Receipt
+        com.davidgrath.expensetrackerbackend.generatedapi.model.DocumentType.INVOICE -> DocumentType.Invoice
+        com.davidgrath.expensetrackerbackend.generatedapi.model.DocumentType.OTHER -> DocumentType.Other
+    }
+}
+
 fun accountWithStatsToAccountDetails(accountWithStats: AccountWithStats): AccountDetails {
     return AccountDetails(accountWithStats.id, accountWithStats.profileId, accountWithStats.currencyCode, accountWithStats.name, accountWithStats.transactionCount, accountWithStats.itemCount, accountWithStats.income, accountWithStats.expenses)
 }
@@ -89,13 +107,13 @@ fun draftItemUpdateRequestToDraftItem(uuid: UUID, transactionDraftItemUpdateRequ
 
 fun transactionDraftToApiDraft(draft: TransactionDraft, baseUrl: Triple<String, String, Int>): com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraft {
     val documents = draft.documents.map {
-        val imageUrl = URI(baseUrl.first, null, baseUrl.second, baseUrl.third, "/files/" + it.path, null, null)
-        TransactionDraftFile(it.dbId, it.sizeBytes, imageUrl, it.mimeType, DocumentType.OTHER, it.sha256)
+        val imageUrl = URI(baseUrl.first, null, baseUrl.second, baseUrl.third, "/files" + it.path, null, null)
+        TransactionDraftFile(it.dbId, it.sizeBytes, imageUrl, it.mimeType, com.davidgrath.expensetrackerbackend.generatedapi.model.DocumentType.OTHER, it.sha256)
     }
     val items = draft.items.map { item ->
         val images = item.images.map {
-            val imageUrl = URI(baseUrl.first, null, baseUrl.second, baseUrl.third, "/files/" + it.path, null, null)
-            TransactionDraftFile(it.dbId, it.sizeBytes, imageUrl, it.mimeType, DocumentType.OTHER, it.sha256)
+            val imageUrl = URI(baseUrl.first, null, baseUrl.second, baseUrl.third, "/files" + it.path, null, null)
+            TransactionDraftFile(it.dbId, it.sizeBytes, imageUrl, it.mimeType, com.davidgrath.expensetrackerbackend.generatedapi.model.DocumentType.OTHER, it.sha256)
         }
         com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraftItem(item.dbId, item.uuid, item.amount, item.description, item.category, item.isReduction,
             item.quantity, item.brand, item.variation, item.referenceNumber, images, emptyList())
