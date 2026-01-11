@@ -5,9 +5,11 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.Transaction
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.TransactionItem
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.TransactionItemImages
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.User
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ImagePojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionItemImagesPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.UserPojo
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.IMAGE
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION_ITEM_IMAGES
 import org.jooq.DSLContext
 import org.springframework.beans.factory.annotation.Autowired
@@ -23,6 +25,15 @@ open class ItemImagesRepository {
         val itemImageDb = dslContext.newRecord(TRANSACTION_ITEM_IMAGES, transactionItemImages)
         itemImageDb.store()
         return itemImageDb.id!!
+    }
+
+    fun findByItemId(profileId: Long, itemId: Long): List<ImagePojo> {
+        val selectStep = dslContext.select(IMAGE.asterisk())
+            .from(IMAGE)
+            .innerJoin(TRANSACTION_ITEM_IMAGES).on(TRANSACTION_ITEM_IMAGES.IMAGE_ID.eq(IMAGE.ID))
+            .where(IMAGE.PROFILE_ID.eq(profileId))
+            .and(TRANSACTION_ITEM_IMAGES.TRANSACTION_ITEM_ID.eq(itemId))
+        return selectStep.fetch().into(ImagePojo::class.java)
     }
 
     fun deleteAllForTesting(): Int {

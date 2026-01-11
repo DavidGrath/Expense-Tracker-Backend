@@ -35,6 +35,7 @@ open class ImageRepository {
         return selectStep.fetchOne()?.into(ImagePojo::class.java)
     }
 
+
     fun deleteAllForTesting(): Int {
         val delete = dslContext.deleteFrom(IMAGE).where("true")
         return delete.execute()

@@ -37,6 +37,17 @@ open class DocumentRepository {
         return selectStep.fetchOne()?.into(DocumentPojo::class.java)
     }
 
+    fun findByTransactionId(profileId: Long, transactionId: Long): List<DocumentPojo> {
+        val selectStep = dslContext.select(DOCUMENT.asterisk())
+            .from(DOCUMENT)
+            .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(DOCUMENT.TRANSACTION_ID))
+            .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
+            .where(DOCUMENT.TRANSACTION_ID.eq(transactionId))
+            .and(ACCOUNT.PROFILE_ID.eq(profileId))
+
+        return selectStep.fetch().into(DocumentPojo::class.java)
+    }
+
     fun getStats(profileId: Long): ImageDocumentStats {
         val selectStep = dslContext.select(
             DSL.count(DOCUMENT.ID).`as`("count"),

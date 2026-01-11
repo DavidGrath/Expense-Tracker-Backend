@@ -11,14 +11,18 @@ import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDetail
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import com.davidgrath.expensetrackerbackend.service.AccountService
 import com.davidgrath.expensetrackerbackend.service.CategoryService
+import com.davidgrath.expensetrackerbackend.service.DocumentService
+import com.davidgrath.expensetrackerbackend.service.ImageService
 import com.davidgrath.expensetrackerbackend.service.ProfileService
 import com.davidgrath.expensetrackerbackend.service.TransactionService
 import com.davidgrath.expensetrackerbackend.service.UserService
 import com.davidgrath.expensetrackerbackend.utils.accountPojoToAccount
+import com.davidgrath.expensetrackerbackend.utils.documentPojoToDocument
 import com.davidgrath.expensetrackerbackend.utils.toApiMode
 import com.davidgrath.expensetrackerbackend.utils.toBoolean
 import com.davidgrath.expensetrackerbackend.utils.toDbMode
 import com.davidgrath.expensetrackerbackend.utils.transactionItemPojoToTransactionItem
+import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotNull
 import org.slf4j.LoggerFactory
@@ -42,6 +46,13 @@ class StatisticsController: StatisticsApi {
     lateinit var accountService: AccountService
     @Autowired
     lateinit var categoryService: CategoryService
+    @Autowired
+    lateinit var imageService: ImageService
+    @Autowired
+    lateinit var documentService: DocumentService
+
+    @Autowired
+    lateinit var httpServletRequest: HttpServletRequest
 
     override fun statisticsTotalExpensesByCategoryPost(
         profileId: @NotNull String,
@@ -155,16 +166,23 @@ class StatisticsController: StatisticsApi {
         val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
         val transactions = transactionService.getTransactions(profile.id!!, statisticsFilter.from,
             statisticsFilter.to, statisticsFilter.accounts, statisticsFilter.includeDates, statisticsFilter.categories, modes, statisticsFilter.sellers)
+        val scheme = httpServletRequest.scheme
+        val host = httpServletRequest.serverName
+        val port = httpServletRequest.serverPort
+        val triple = Triple(scheme, host, port)
         val details = transactions.map { t ->
             val accountStats = accountService.getAccount(profile.id!!, t.accountId!!)!!
             val account = accountPojoToAccount(accountStats)
             val itemsPojo = transactionService.getItemsForTransaction(profile.id!!, t.id!!)
             val items = itemsPojo.map { item ->
+                val images = imageService.getImages(profile.id!!, item.id!!)
                 val category = categoryService.getByProfileIdAndId(profile.id!!, item.primaryCategoryId!!)
-                transactionItemPojoToTransactionItem(item, category!!)
+                transactionItemPojoToTransactionItem(item, triple, category!!, images)
             }
             val mode = t.mode.toApiMode()
-            val details = TransactionDetails(t.id, t.amount, account, items, emptyList<Document>(), t.datedAt, t.time?.toString(), t.debitOrCredit.toBoolean(), t.note, mode)
+            val documentsPojo = documentService.getDocumentsByTransactionId(profile.id!!, t.id!!)
+            val documents = documentsPojo.map { documentPojoToDocument(it, triple) }
+            val details = TransactionDetails(t.id, t.amount, account, items, documents, t.datedAt, t.time?.toString(), t.debitOrCredit.toBoolean(), t.note, mode)
             details
         }
         return ResponseEntity.ok(details)

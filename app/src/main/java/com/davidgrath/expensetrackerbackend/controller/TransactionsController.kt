@@ -14,6 +14,8 @@ import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraftI
 import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraftUpdateRequest
 import com.davidgrath.expensetrackerbackend.service.AccountService
 import com.davidgrath.expensetrackerbackend.service.CategoryService
+import com.davidgrath.expensetrackerbackend.service.DocumentService
+import com.davidgrath.expensetrackerbackend.service.ImageService
 import com.davidgrath.expensetrackerbackend.service.ProfileService
 import com.davidgrath.expensetrackerbackend.service.SellerLocationService
 import com.davidgrath.expensetrackerbackend.service.SellerService
@@ -22,8 +24,8 @@ import com.davidgrath.expensetrackerbackend.service.TransactionService
 import com.davidgrath.expensetrackerbackend.service.UserService
 import com.davidgrath.expensetrackerbackend.utils.Constants
 import com.davidgrath.expensetrackerbackend.utils.accountPojoToAccount
+import com.davidgrath.expensetrackerbackend.utils.documentPojoToDocument
 import com.davidgrath.expensetrackerbackend.utils.draftItemUpdateRequestToDraftItem
-import com.davidgrath.expensetrackerbackend.utils.file
 import com.davidgrath.expensetrackerbackend.utils.toApiMode
 import com.davidgrath.expensetrackerbackend.utils.toBoolean
 import com.davidgrath.expensetrackerbackend.utils.toDbMode
@@ -49,7 +51,6 @@ import java.nio.file.Files
 import java.time.DateTimeException
 import java.time.LocalDate
 import java.time.LocalTime
-import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.zone.ZoneRulesException
 import java.util.UUID
@@ -73,6 +74,10 @@ open class TransactionsController: TransactionsApi {
     lateinit var sellerService: SellerService
     @Autowired
     lateinit var sellerLocationService: SellerLocationService
+    @Autowired
+    lateinit var imageService: ImageService
+    @Autowired
+    lateinit var documentService: DocumentService
 
     @Autowired
     lateinit var httpServletRequest: HttpServletRequest
@@ -131,16 +136,24 @@ open class TransactionsController: TransactionsApi {
         val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
         val transactions = transactionService.getTransactions(profile.id!!, fromDate, toDate,
             accountIds as List<Long>, emptyList(), emptyList(), emptyList(), emptyList())
+        val scheme = httpServletRequest.scheme
+        val host = httpServletRequest.serverName
+        val port = httpServletRequest.serverPort
+        val triple = Triple(scheme, host, port)
         val details = transactions.map { t ->
             val accountStats = accountService.getAccount(profile.id!!, t.accountId!!)!!
             val account = accountPojoToAccount(accountStats)
             val itemsPojo = transactionService.getItemsForTransaction(profile.id!!, t.id!!)
             val items = itemsPojo.map { item ->
+                val images = imageService.getImages(profile.id!!, item.id!!)
                 val category = categoryService.getByProfileIdAndId(profile.id!!, item.primaryCategoryId!!)
-                transactionItemPojoToTransactionItem(item, category!!)
+                transactionItemPojoToTransactionItem(item, triple, category!!, images)
             }
             val mode = t.mode.toApiMode()
-            val details = TransactionDetails(t.id, t.amount, account, items, emptyList<Document>(), t.datedAt, null, t.debitOrCredit.toBoolean(), t.note, mode)
+            val documentsPojo = documentService.getDocumentsByTransactionId(profile.id!!, t.id!!)
+            val documents = documentsPojo.map { documentPojoToDocument(it, triple) }
+            val time = t.time?.toString()
+            val details = TransactionDetails(t.id, t.amount, account, items, documents, t.datedAt, time, t.debitOrCredit.toBoolean(), t.note, mode)
             details
         }
         return ResponseEntity.ok(details)
@@ -163,12 +176,19 @@ open class TransactionsController: TransactionsApi {
         val accountStats = accountService.getAccount(profile.id!!,t.accountId!!)!!
         val account = accountPojoToAccount(accountStats)
         val itemsPojo = transactionService.getItemsForTransaction(profile.id!!,t.id!!)
+        val scheme = httpServletRequest.scheme
+        val host = httpServletRequest.serverName
+        val port = httpServletRequest.serverPort
+        val triple = Triple(scheme, host, port)
         val items = itemsPojo.map { item ->
+            val images = imageService.getImages(profile.id!!, item.id!!)
             val category = categoryService.getByProfileIdAndId(profile.id!!, item.primaryCategoryId!!)
-            transactionItemPojoToTransactionItem(item, category!!)
+            transactionItemPojoToTransactionItem(item, triple,category!!, images)
         }
         val mode = t.mode.toApiMode()
-        val details = TransactionDetails(t.id, t.amount, account, items, emptyList<Document>(), t.datedAt, null, t.debitOrCredit.toBoolean(), t.note, mode)
+        val documentsPojo = documentService.getDocumentsByTransactionId(profile.id!!, t.id!!)
+        val documents = documentsPojo.map { documentPojoToDocument(it, triple) }
+        val details = TransactionDetails(t.id, t.amount, account, items, documents, t.datedAt, null, t.debitOrCredit.toBoolean(), t.note, mode)
         return ResponseEntity.ok(details)
     }
 
