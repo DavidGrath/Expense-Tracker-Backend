@@ -6,11 +6,13 @@ import com.davidgrath.expensetrackerbackend.repository.DocumentRepository
 import com.davidgrath.expensetrackerbackend.repository.ImageRepository
 import com.davidgrath.expensetrackerbackend.repository.ItemImagesRepository
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 
 @Service
 class DocumentService {
 
+    @Autowired
     lateinit var documentRepository: DocumentRepository
 
     fun getDocumentsByTransactionId(profileId: Long, transactionId: Long): List<DocumentPojo> {
