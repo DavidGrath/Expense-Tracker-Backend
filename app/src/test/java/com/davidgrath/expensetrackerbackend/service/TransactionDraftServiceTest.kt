@@ -444,7 +444,7 @@ class TransactionDraftServiceTest {
         val draftImage = File(draftImagesFolder, "45402cd3-2452-4804-981a-7ea5515dec74.jpg")
         tempFile.copyTo(draftImage)
 
-        val path = "/${Constants.FOLDER_NAME_USERS}/${user.uuid}/${Constants.FOLDER_NAME_PROFILES}/${profile.stringId}/${Constants.FOLDER_NAME_DRAFT}/${Constants.SUBFOLDER_NAME_IMAGES}/${tempFile.name}"
+        val path = "/${Constants.FOLDER_NAME_PROFILES}/${profile.stringId}/${Constants.FOLDER_NAME_DRAFT}/${Constants.SUBFOLDER_NAME_IMAGES}/${tempFile.name}"
 
         // Populate hashmap with unused image
         val map = mapOf(resource.sha256 to path)
@@ -600,7 +600,7 @@ class TransactionDraftServiceTest {
         val inputStream = tempFile.inputStream()
         val hash = getSha256(inputStream)
         inputStream.close()
-        val path = "/${Constants.FOLDER_NAME_USERS}/${user.uuid}/${Constants.FOLDER_NAME_PROFILES}/${profile.stringId}/${Constants.FOLDER_NAME_DRAFT}/${Constants.SUBFOLDER_NAME_IMAGES}/${tempFile.name}"
+        val path = "/${Constants.FOLDER_NAME_PROFILES}/${profile.stringId}/${Constants.FOLDER_NAME_DRAFT}/${Constants.SUBFOLDER_NAME_IMAGES}/${tempFile.name}"
         val draftFile = TransactionDraftFile(null, path, "image/jpeg", hash, tempFile.length(), null,false)
         //Deletes the temp file
         createTransactionWithImage(profileId, user.uuid!!, profile.stringId!!, accountId, tempFile,draftFile)
@@ -656,7 +656,7 @@ class TransactionDraftServiceTest {
         val draftDocument = File(draftDocumentsFolder, "45402cd3-2452-4804-981a-7ea5515dec74.jpg")
         tempFile.copyTo(draftDocument)
 
-        val path = "/${Constants.FOLDER_NAME_USERS}/${user.uuid}/${Constants.FOLDER_NAME_PROFILES}/${profile.stringId}/${Constants.FOLDER_NAME_DRAFT}/${Constants.SUBFOLDER_NAME_DOCUMENTS}/2025/06/30/${tempFile.name}"
+        val path = "/${Constants.FOLDER_NAME_PROFILES}/${profile.stringId}/${Constants.FOLDER_NAME_DRAFT}/${Constants.SUBFOLDER_NAME_DOCUMENTS}/2025/06/30/${tempFile.name}"
 
         // Populate hashmap with unused document
         val map = mapOf(resource.sha256 to path)
@@ -770,7 +770,7 @@ class TransactionDraftServiceTest {
         val itemId = transactionItemRepository.insertTransactionItem(item)
         //TODO make this more convenient
         val newFileName = "${UUID.randomUUID()}.jpg"
-        val newPath = "/${Constants.FOLDER_NAME_USERS}/$userUuid/${Constants.FOLDER_NAME_PROFILES}/$profileStringId/${Constants.FOLDER_NAME_DATA}/${Constants.SUBFOLDER_NAME_IMAGES}/${newFileName}"
+        val newPath = "/${Constants.FOLDER_NAME_PROFILES}/$profileStringId/${Constants.FOLDER_NAME_DATA}/${Constants.SUBFOLDER_NAME_IMAGES}/${newFileName}"
         val destination = file(timeHandler.getRoot(), Constants.FOLDER_NAME_USERS, userUuid, Constants.FOLDER_NAME_PROFILES,profileStringId, Constants.FOLDER_NAME_DATA, Constants.SUBFOLDER_NAME_IMAGES, newFileName)
 
         tempFile.copyTo(destination)
@@ -801,7 +801,7 @@ class TransactionDraftServiceTest {
         val itemId = transactionItemRepository.insertTransactionItem(item)
         //TODO make this more convenient
         val newFileName = "${UUID.randomUUID()}.jpg"
-        val newPath = "/${Constants.FOLDER_NAME_USERS}/$userUuid/${Constants.FOLDER_NAME_PROFILES}/$profileStringId/${Constants.FOLDER_NAME_DATA}/${Constants.SUBFOLDER_NAME_DOCUMENTS}/${newFileName}"
+        val newPath = "/${Constants.FOLDER_NAME_PROFILES}/$profileStringId/${Constants.FOLDER_NAME_DATA}/${Constants.SUBFOLDER_NAME_DOCUMENTS}/${newFileName}"
         val destination = file(timeHandler.getRoot(), Constants.FOLDER_NAME_USERS, userUuid, Constants.FOLDER_NAME_PROFILES,profileStringId, Constants.FOLDER_NAME_DATA, Constants.SUBFOLDER_NAME_DOCUMENTS, newFileName)
 
         val tempFile = File(tempFolder, resource.fileName)

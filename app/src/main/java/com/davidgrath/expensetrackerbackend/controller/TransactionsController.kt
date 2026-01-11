@@ -44,6 +44,7 @@ import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.multipart.MultipartFile
 import java.io.File
+import java.net.URI
 import java.nio.file.Files
 import java.time.DateTimeException
 import java.time.LocalDate
@@ -474,7 +475,7 @@ open class TransactionsController: TransactionsApi {
         profileId: @NotNull String,
         type: @Valid DocumentType?,
         document: MultipartFile?
-    ): ResponseEntity<TransactionDraft?>? {
+    ): ResponseEntity<URI?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
         LOGGER.info("Username: {}", principal.subject)
@@ -500,11 +501,11 @@ open class TransactionsController: TransactionsApi {
         inputStream.close()
         outputStream.close()
 
-        val added = transactionDraftService.addDocumentToDraft(profile.id!!, type!!.toDbType(), tempFile, MediaType.APPLICATION_OCTET_STREAM_VALUE,
+        val path = transactionDraftService.addDocumentToDraft(profile.id!!, type!!.toDbType(), tempFile, MediaType.APPLICATION_OCTET_STREAM_VALUE,
             userUuid, profileId)
 
         tempFolder.deleteRecursively()
-        if(!added) {
+        if(path == null) {
             val exception = CustomHttpException(ErrorCode.INVALID_INPUT, HttpStatus.BAD_REQUEST)
             LOGGER.error("One of multiple possible issues adding the image", exception)
             throw exception
@@ -514,9 +515,8 @@ open class TransactionsController: TransactionsApi {
         val port = httpServletRequest.serverPort
         val triple = Triple(scheme, host, port)
         LOGGER.debug("Baka: {}", triple)
-        val draft = transactionDraftService.getDraft(profile.id!!)!!
-        val apiDraft = transactionDraftToApiDraft(draft, triple)
-        return ResponseEntity.ok(apiDraft)
+        val uri = URI(triple.first, null, triple.second, triple.third, "/files" + path, null, null)
+        return ResponseEntity.ok(uri)
     }
 
     override fun transactionsDraftItemsUuidImagesPositionDelete(

@@ -171,10 +171,10 @@ class TransactionDraftService {
                     continue
                 }
 
-                val draftFile = File(timeHandler.getRoot(), image.path.substring(1))
+                val draftFile = File(timeHandler.getRoot(), Constants.FOLDER_NAME_USERS + "/${userUuid}" + image.path)
 
                 val path = fileService.moveFileToMain(timeHandler.getRoot(), userUuid, profileStringId, draftFile, Constants.SUBFOLDER_NAME_IMAGES, null)
-                val mainFile = File(timeHandler.getRoot(), path.substring(1))
+                val mainFile = File(timeHandler.getRoot(), Constants.FOLDER_NAME_USERS + "/${userUuid}" + path)
 
                 val length = mainFile.length()
                 val document = ImagePojo(null, profileId, length, image.sha256, image.mimeType, "", path, utcDate.toLocalDateTime())
@@ -244,10 +244,10 @@ class TransactionDraftService {
                 LOGGER.info("Created new transaction")
 
                     draft.documents.map { document ->
-                    val draftFile = File(timeHandler.getRoot(), document.path.substring(1))
+                    val draftFile = File(timeHandler.getRoot(), Constants.FOLDER_NAME_USERS + "/${userUuid}" + document.path)
                         val localDate = draft.customDate ?: LocalDate.now(timeHandler.getClock())
                     val path = fileService.moveFileToMain(timeHandler.getRoot(), userUuid, profileStringId, draftFile, Constants.SUBFOLDER_NAME_DOCUMENTS, localDate)
-                    val mainFile = File(timeHandler.getRoot(), path.substring(1))
+                    val mainFile = File(timeHandler.getRoot(), Constants.FOLDER_NAME_USERS + "/${userUuid}" + path)
 
                     val length = mainFile.length()
                     val document = DocumentPojo(null, transactionId, document.type!!, length, document.sha256, document.mimeType, "", path, utcDate.toLocalDateTime())
@@ -508,7 +508,7 @@ class TransactionDraftService {
             LOGGER.info("File does not exist for image")
             if(draftPath == null) {
                 val filename = copyFileToDraft(tempFile, mimeType, Constants.SUBFOLDER_NAME_IMAGES, userUuid, profileStringId)
-                val path = "/users/${userUuid}/profiles/${profileStringId}/${Constants.FOLDER_NAME_DRAFT}/${Constants.SUBFOLDER_NAME_IMAGES}/${filename}"
+                val path = "/profiles/${profileStringId}/${Constants.FOLDER_NAME_DRAFT}/${Constants.SUBFOLDER_NAME_IMAGES}/${filename}"
                 draftFile = TransactionDraftFile(null, path, mimeType, hash, tempFile.length(), null, false)
             } else {
                 LOGGER.info("Image already exists in draft. Adding to item {}", uuid)
@@ -538,12 +538,12 @@ class TransactionDraftService {
         return true
     }
 
-    fun addDocumentToDraft(profileId: Long, type: DocumentType, tempFile: File, mimeType: String, userUuid: String, profileStringId: String): Boolean {
+    fun addDocumentToDraft(profileId: Long, type: DocumentType, tempFile: File, mimeType: String, userUuid: String, profileStringId: String): String? {
 
         val userDraft = userDraftRepository.getDraftByProfile(profileId)
         if(userDraft == null) {
             //TODO
-            return false
+            return null
         }
         val transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
 
@@ -557,25 +557,27 @@ class TransactionDraftService {
         val image = documents.find { it.sha256 == hash }
         if (image != null) {
             LOGGER.info("Document already exists for draft")
-            return false
+            return null
         }
         if (documents.size >= Constants.Constraints.MAX_DOCUMENTS_PER_TRANSACTION) {
             LOGGER.info("Max document count reached for draft")
-            return false
+            return null
         }
 
         val draftFile: TransactionDraftFile
+        val path: String
         var draftPath = newHashes[hash]
 
         if (draftPath == null) {
             LOGGER.info("File does not exist in draft for document")
             val filename = copyFileToDraft(tempFile, mimeType, Constants.SUBFOLDER_NAME_DOCUMENTS, userUuid, profileStringId)
-            val path = "/users/${userUuid}/profiles/${profileStringId}/${Constants.FOLDER_NAME_DRAFT}/${Constants.SUBFOLDER_NAME_DOCUMENTS}/${filename}"
+            path = "/profiles/${profileStringId}/${Constants.FOLDER_NAME_DRAFT}/${Constants.SUBFOLDER_NAME_DOCUMENTS}/${filename}"
             draftFile = TransactionDraftFile(null, path, mimeType, hash, tempFile.length(), type,false)
 
             newHashes[hash] = path
         } else {
             LOGGER.info("File already exists in draft for document")
+            path = draftPath
             draftFile = TransactionDraftFile(null, draftPath, mimeType, hash, tempFile.length(), type,false)
         }
 
@@ -585,7 +587,7 @@ class TransactionDraftService {
         val jsonString = gson.toJson(updatedDraft)
         val json = JSON.json(jsonString)
         userDraftRepository.updateDraft(profileId, userDraft!!.id!!, json)
-        return true
+        return path
     }
 
     fun deleteItem(profileId: Long, uuid: UUID): Boolean {

@@ -943,6 +943,19 @@
           }
         },
         "required": ["file"]
+      },
+      "ImageDocumentStats": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalSizeBytes": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
       }
     }
   }

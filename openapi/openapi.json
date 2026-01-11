@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "ExTrack API",
-    "version": "0.3.2",
+    "version": "0.3.3",
     "description": "API for the client-server version of ExTrack. It's meant to mirror the offline version for the most part.  # Text Field recommended length limits: Short: 20, Medium: 50, Long: 100, Extra long: 400. Try and apply these to any schemas that have 'Request' in the name"
   },
   "security": [
@@ -648,11 +648,12 @@
         },
         "responses": {
           "200": {
-            "description": "",
+            "description": "The URL",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "./schemas.json/#/components/schemas/TransactionDraft"
+                  "type": "string",
+                  "format": "uri"
                 }
               }
             }
@@ -1596,10 +1597,34 @@
         }
       }
     },
-    "/images": {
+    "/documents/stats": {
       "get": {
         "tags": [
           "documents"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/profileId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas.json/#/components/schemas/ImageDocumentStats"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/images": {
+      "get": {
+        "tags": [
+          "images"
         ],
         "parameters": [
           {
@@ -1650,6 +1675,30 @@
               "application/json": {
                 "schema": {
                   "$ref": "./schemas.json/#/components/schemas/ImageDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/images/stats": {
+      "get": {
+        "tags": [
+          "images"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/profileId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas.json/#/components/schemas/ImageDocumentStats"
                 }
               }
             }

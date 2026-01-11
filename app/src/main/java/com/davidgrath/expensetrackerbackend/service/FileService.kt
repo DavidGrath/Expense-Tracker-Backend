@@ -57,13 +57,13 @@ class FileService {
             val month = String.format("%02d", date!!.monthValue)
             val day = String.format("%02d", date!!.dayOfMonth)
 
-            path = "/users/${userUuid}/profiles/${profileStringId}/${Constants.FOLDER_NAME_DATA}/${Constants.SUBFOLDER_NAME_DOCUMENTS}/${year}/${month}/${day}/${sourceFile.name}"
+            path = "/profiles/${profileStringId}/${Constants.FOLDER_NAME_DATA}/${Constants.SUBFOLDER_NAME_DOCUMENTS}/${year}/${month}/${day}/${sourceFile.name}"
             destination = file(root,
                 Constants.FOLDER_NAME_USERS, userUuid,
                 Constants.FOLDER_NAME_PROFILES, profileStringId,
                 Constants.FOLDER_NAME_DATA, Constants.SUBFOLDER_NAME_DOCUMENTS, year, month, day, sourceFile.name)
         } else if (subfolder == Constants.SUBFOLDER_NAME_IMAGES) {
-            path = "/users/${userUuid}/profiles/${profileStringId}/${Constants.FOLDER_NAME_DATA}/${Constants.SUBFOLDER_NAME_IMAGES}/${sourceFile.name}"
+            path = "/profiles/${profileStringId}/${Constants.FOLDER_NAME_DATA}/${Constants.SUBFOLDER_NAME_IMAGES}/${sourceFile.name}"
             destination = file(root,
                 Constants.FOLDER_NAME_USERS, userUuid,
                 Constants.FOLDER_NAME_PROFILES, profileStringId,
