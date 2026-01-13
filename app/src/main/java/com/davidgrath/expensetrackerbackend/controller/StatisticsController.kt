@@ -8,6 +8,8 @@ import com.davidgrath.expensetrackerbackend.generatedapi.model.TotalAmountByCate
 import com.davidgrath.expensetrackerbackend.generatedapi.model.TotalAmountByDate
 import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDetails
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
+import com.davidgrath.expensetrackerbackend.generatedapi.model.TotalAmountPerCategory
+import com.davidgrath.expensetrackerbackend.generatedapi.model.TotalAmountPerCategoryItemSummary
 import com.davidgrath.expensetrackerbackend.service.AccountService
 import com.davidgrath.expensetrackerbackend.service.CategoryService
 import com.davidgrath.expensetrackerbackend.service.DocumentService
@@ -23,6 +25,8 @@ import com.davidgrath.expensetrackerbackend.utils.toDbMode
 import com.davidgrath.expensetrackerbackend.utils.transactionItemPojoToTransactionItem
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
+import jakarta.validation.constraints.Max
+import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotNull
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -32,6 +36,7 @@ import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.bind.annotation.RestController
 import java.math.BigDecimal
 
+//TODO General ownership check for all IDs in Statistics filter
 @RestController
 class StatisticsController: StatisticsApi {
 
@@ -201,6 +206,86 @@ class StatisticsController: StatisticsApi {
         val counts = transactionService.getTransactionAndItemCount(profile.id!!, statisticsFilter.from,
             statisticsFilter.to, statisticsFilter.accounts, statisticsFilter.includeDates, statisticsFilter.categories, modes, statisticsFilter.sellers)
         return ResponseEntity.ok(StatsTransactionAndItemCount(counts.transactionCount, counts.itemCount))
+    }
+
+    override fun statisticsCumSumExpensesByDatePost(
+        profileId: @NotNull String,
+        statisticsFilter: @Valid StatisticsFilter?
+    ): ResponseEntity<List<TotalAmountByDate?>?>? {
+        val authentication = SecurityContextHolder.getContext().authentication
+        val principal = authentication.principal as Jwt
+        LOGGER.info("Username: {}", principal.subject)
+        val user = userService.getByUsername(principal.subject!!)
+        val userUuid = user!!.uuid!!
+        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
+        val total = transactionService.getCumSumByDate(profile.id!!, true, statisticsFilter.from,
+            statisticsFilter.to, statisticsFilter.accounts, statisticsFilter.includeDates, statisticsFilter.categories, modes, statisticsFilter.sellers)
+        val mapped = total.map { TotalAmountByDate(it.aggregateDate, it.sum) }
+        return ResponseEntity.ok(mapped)
+    }
+
+    override fun statisticsCumSumIncomeByDatePost(
+        profileId: @NotNull String,
+        statisticsFilter: @Valid StatisticsFilter?
+    ): ResponseEntity<List<TotalAmountByDate?>?>? {
+        val authentication = SecurityContextHolder.getContext().authentication
+        val principal = authentication.principal as Jwt
+        LOGGER.info("Username: {}", principal.subject)
+        val user = userService.getByUsername(principal.subject!!)
+        val userUuid = user!!.uuid!!
+        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
+        val total = transactionService.getTotalAmountByDate(profile.id!!, false, statisticsFilter.from,
+            statisticsFilter.to, statisticsFilter.accounts, statisticsFilter.includeDates, statisticsFilter.categories, modes, statisticsFilter.sellers)
+        val mapped = total.map { TotalAmountByDate(it.aggregateDate, it.sum) }
+        return ResponseEntity.ok(mapped)
+    }
+
+    override fun statisticsTopNExpensesPerCategoryPost(
+        profileId: @NotNull String,
+        n: @NotNull @Min(
+            value = 1
+        ) @Max(value = 3) @Valid Int,
+        statisticsFilter: @Valid StatisticsFilter?
+    ): ResponseEntity<List<TotalAmountPerCategory>?>? {
+        val authentication = SecurityContextHolder.getContext().authentication
+        val principal = authentication.principal as Jwt
+        LOGGER.info("Username: {}", principal.subject)
+        val user = userService.getByUsername(principal.subject!!)
+        val userUuid = user!!.uuid!!
+        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
+        val total = transactionService.getTopNDebitPerCategory(profile.id!!, n,statisticsFilter.from,
+            statisticsFilter.to, statisticsFilter.accounts, statisticsFilter.includeDates, statisticsFilter.categories, modes, statisticsFilter.sellers)
+        val mapped = total.groupBy {it.categoryId}.map { (id, t) ->
+            val c = t[0]
+            TotalAmountPerCategory(Category(id, c.name, c.isCustom, c.stringId, c.categoryIcon), c.sum, t.map {
+                TotalAmountPerCategoryItemSummary(it.itemId, it.itemAmount, it.itemDescription) }) }
+        return ResponseEntity.ok(mapped)
+    }
+
+    override fun statisticsTopNIncomePerCategoryPost(
+        profileId: @NotNull String,
+        n: @NotNull @Min(
+            value = 1
+        ) @Max(value = 3) @Valid Int,
+        statisticsFilter: @Valid StatisticsFilter?
+    ): ResponseEntity<List<TotalAmountPerCategory>?>? {
+        val authentication = SecurityContextHolder.getContext().authentication
+        val principal = authentication.principal as Jwt
+        LOGGER.info("Username: {}", principal.subject)
+        val user = userService.getByUsername(principal.subject!!)
+        val userUuid = user!!.uuid!!
+        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
+        val total = transactionService.getTopNCreditPerCategory(profile.id!!, n,statisticsFilter.from,
+            statisticsFilter.to, statisticsFilter.accounts, statisticsFilter.includeDates, statisticsFilter.categories, modes, statisticsFilter.sellers)
+        val mapped = total.groupBy {it.categoryId}.map { (id, t) ->
+            val c = t[0]
+            TotalAmountPerCategory(Category(id, c.name, c.isCustom, c.stringId, c.categoryIcon), c.sum, t.map {
+                TotalAmountPerCategoryItemSummary(it.itemId, it.itemAmount, it.itemDescription) }) }
+        return ResponseEntity.ok(mapped)
     }
 
     companion object {

@@ -3,6 +3,7 @@ package com.davidgrath.expensetrackerbackend.repository
 import com.davidgrath.expensetrackerbackend.entities.views.ItemSumByCategory
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import com.davidgrath.expensetrackerbackend.entities.views.DateAmountSummary
+import com.davidgrath.expensetrackerbackend.entities.views.TopItemSumByCategory
 import com.davidgrath.expensetrackerbackend.entities.views.TransactionAndItemCount
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionItemPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionPojo
@@ -13,6 +14,7 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRA
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION_ITEM
 import com.davidgrath.expensetrackerbackend.utils.toByte
 import org.jooq.DSLContext
+import org.jooq.Field
 import org.jooq.impl.DSL
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -287,6 +289,113 @@ open class TransactionRepository {
             selectStep = selectStep.and(TRANSACTION.ACCOUNT_ID.`in`(accountIds))
         }
         return selectStep.fetchOne()?.value1()
+    }
+
+    fun getTransactionCumSumByDate(
+        profileId: Long, debitOrCredit: Boolean,
+        fromDate: LocalDate? = null, toDate: LocalDate? = null,
+        accountIds: List<Long>,
+        dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>
+    ): List<DateAmountSummary> {
+
+        val window = DSL.orderBy(TRANSACTION.DATED_AT).rangeBetweenUnboundedPreceding().andCurrentRow()
+        var selectStep = dslContext.select(
+            TRANSACTION.DATED_AT.`as`("aggregateDate"),
+            DSL.sum(TRANSACTION.AMOUNT).over(window)
+                .`as`("sum"))
+            .from(TRANSACTION)
+            .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
+            .where(ACCOUNT.PROFILE_ID.eq(profileId))
+            .and(TRANSACTION.DEBIT_OR_CREDIT.eq(debitOrCredit.toByte()))
+        if(fromDate != null) {
+            selectStep = selectStep.and(TRANSACTION.DATED_AT.greaterOrEqual(fromDate))
+        }
+        if(toDate != null) {
+            selectStep = selectStep.and(TRANSACTION.DATED_AT.lessOrEqual(toDate))
+        }
+        if(accountIds.isNotEmpty()) {
+            selectStep = selectStep.and(TRANSACTION.ACCOUNT_ID.`in`(accountIds))
+        }
+        if(dates.isNotEmpty()) {
+            selectStep = selectStep.and(TRANSACTION.DATED_AT.`in`(dates))
+        }
+        if(categories.isNotEmpty()) {
+            selectStep = selectStep.and(TRANSACTION.ID.`in`(
+                dslContext.select(TRANSACTION.ID).from(TRANSACTION).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.TRANSACTION_ID.eq(TRANSACTION.ID)).where(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.`in`(categories))
+            ))
+        }
+        if(modes.isNotEmpty()) {
+            selectStep = selectStep.and(TRANSACTION.MODE.`in`(modes))
+        }
+        if(sellers.isNotEmpty()) {
+            selectStep = selectStep.and(TRANSACTION.SELLER_ID.`in`(sellers))
+        }
+        val alias = selectStep.asTable("x")
+            val selectFrom = dslContext.select(
+                alias.field("aggregateDate"),
+                DSL.max(alias.field("sum"))).from(alias)
+        val seekStep =  selectFrom
+            .groupBy(alias.field("aggregateDate"))
+            .orderBy(alias.field("aggregateDate"))
+
+        return seekStep.fetch().into(DateAmountSummary::class.java)
+    }
+
+
+    fun getTopNExpensesByCategory(
+        profileId: Long, debitOrCredit: Boolean, n: Int,
+        fromDate: LocalDate? = null, toDate: LocalDate? = null,
+        accountIds: List<Long>,
+        dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>
+    ): List<TopItemSumByCategory> {
+
+        val window = DSL.partitionBy(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID).orderBy(TRANSACTION_ITEM.AMOUNT.desc())
+            .rowsBetweenUnboundedPreceding().andUnboundedFollowing()
+        val sum = DSL.sum(TRANSACTION_ITEM.AMOUNT).over(window).`as`("sum")
+
+        val rank = DSL.denseRank().over(window).`as`("denseRank")
+        var selectStep = dslContext.select(
+            TRANSACTION_ITEM.ID.`as`("itemId"),TRANSACTION_ITEM.DESCRIPTION.`as`("itemDescription"),
+            TRANSACTION_ITEM.AMOUNT.`as`("itemAmount"), rank,
+            CATEGORY.ID.`as`("categoryId"),
+            CATEGORY.STRING_ID, CATEGORY.IS_CUSTOM, CATEGORY.NAME,
+            sum,
+            CATEGORY.ICON.`as`("categoryIcon")
+        )
+            .from(TRANSACTION_ITEM)
+            .innerJoin(CATEGORY).on(CATEGORY.ID.eq(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID))
+            .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(TRANSACTION_ITEM.TRANSACTION_ID))
+            .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
+            .where(ACCOUNT.PROFILE_ID.eq(profileId))
+            .and(TRANSACTION.DEBIT_OR_CREDIT.eq(debitOrCredit.toByte()))
+        if(fromDate != null) {
+            selectStep = selectStep.and(TRANSACTION.DATED_AT.greaterOrEqual(fromDate))
+        }
+        if(toDate != null) {
+            selectStep = selectStep.and(TRANSACTION.DATED_AT.lessOrEqual(toDate))
+        }
+        if(accountIds.isNotEmpty()) {
+            selectStep = selectStep.and(TRANSACTION.ACCOUNT_ID.`in`(accountIds))
+        }
+        if(dates.isNotEmpty()) {
+            selectStep = selectStep.and(TRANSACTION.DATED_AT.`in`(dates))
+        }
+        if(categories.isNotEmpty()) {
+            selectStep = selectStep.and(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.`in`(categories))
+
+        }
+        if(modes.isNotEmpty()) {
+            selectStep = selectStep.and(TRANSACTION.MODE.`in`(modes))
+        }
+        if(sellers.isNotEmpty()) {
+            selectStep = selectStep.and(TRANSACTION.SELLER_ID.`in`(sellers))
+        }
+
+        val seekStep = selectStep
+            .orderBy(sum.desc())
+        val alias = seekStep.asTable()
+        val finalSelect = dslContext.selectFrom(alias).where(rank.lessOrEqual(n))
+        return finalSelect.fetch().into(TopItemSumByCategory::class.java)
     }
     //endregion
 

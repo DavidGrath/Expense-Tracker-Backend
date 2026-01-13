@@ -109,9 +109,9 @@ class TransactionRepositoryTest {
         val firstSum = sums.find { it.aggregateDate.compareTo(firstTransactionDate) == 0 }!!
         val secondSum = sums.find { it.aggregateDate.compareTo(secondTransactionDate) == 0 }!!
         val thirdSum = sums.find { it.aggregateDate.compareTo(thirdTransactionDate) == 0 }!!
-        assertEquals(0, BigDecimal(110.00).compareTo(firstSum.sum))
-        assertEquals(0, BigDecimal(300.00).compareTo(secondSum.sum))
-        assertEquals(0, BigDecimal(1200.00).compareTo(thirdSum.sum))
+        assertEqualsBD(BigDecimal(110.00), firstSum.sum)
+        assertEqualsBD(BigDecimal(300.00), secondSum.sum)
+        assertEqualsBD(BigDecimal(1200.00), thirdSum.sum)
 
         val boundSums = transactionRepository.getTransactionSumByDate(profile.id!!, true, firstTransactionDate, fourthTransactionDate, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
         val fourthSum = boundSums.find { it.aggregateDate.compareTo(fifthTransactionDate) == 0 }
@@ -165,10 +165,10 @@ class TransactionRepositoryTest {
 
         val firstSum = transactionRepository.getTransactionSum(profile!!.id!!, true, firstTransactionDate, null, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
 
-        assertEquals(0, BigDecimal(2610.00).compareTo(firstSum))
+        assertEqualsBD(BigDecimal(2610.00), firstSum)
 
         val secondSum = transactionRepository.getTransactionSum(profile.id!!, true, firstTransactionDate, fourthTransactionDate, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
-        assertEquals(0, BigDecimal(1610.00).compareTo(secondSum))
+        assertEqualsBD(BigDecimal(1610.00), secondSum)
     }
 
     @Test
@@ -335,6 +335,108 @@ class TransactionRepositoryTest {
         assertEquals(secondTransactionDate, earliestDateNewAccount)
         val earliestDateEmptyAccount: LocalDate? = transactionRepository.getEarliestTransactionDate(profile.id!!, listOf(emptyAccountId))
         assertNull(earliestDateEmptyAccount)
+    }
+
+    @Test
+    fun cumSumByDateTest() {
+
+        val folder = Files.createTempDirectory("temp").toFile()
+        folder.deleteOnExit()
+
+        val firstTransactionDate = LocalDate.parse("2025-01-01")
+        val secondTransactionDate = LocalDate.parse("2025-01-02")
+        val thirdTransactionDate = LocalDate.parse("2025-01-04")
+        val fourthTransactionDate = LocalDate.parse("2025-01-04")
+        val fifthTransactionDate = LocalDate.parse("2025-01-05")
+
+        val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
+        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
+        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)
+
+        val dataBuilder = DataBuilder(folder, timeHandler, null, Constants.DEFAULT_PROFILE_ID, testUtilComponent)
+        dataBuilder.createTransaction()
+            .withItem("Description", "miscellaneous", BigDecimal(110.00))
+            .atDate(firstTransactionDate)
+            .commit()
+        dataBuilder.createTransaction()
+            .withItem("Description", "miscellaneous", BigDecimal(300.00))
+            .atDate(secondTransactionDate)
+            .commit()
+        dataBuilder.createTransaction()
+            .withItem("Description", "miscellaneous", BigDecimal(450.00))
+            .atDate(thirdTransactionDate)
+            .commit()
+        dataBuilder.createTransaction()
+            .withItem("Description", "miscellaneous", BigDecimal(750.00))
+            .atDate(fourthTransactionDate)
+            .commit()
+        dataBuilder.createTransaction()
+            .withItem("Description", "miscellaneous", BigDecimal(1_000.00))
+            .atDate(fifthTransactionDate)
+            .commit()
+
+        val sums = transactionRepository.getTransactionCumSumByDate(profile!!.id!!, true, firstTransactionDate, null, emptyList(), emptyList(), emptyList() , emptyList(),  emptyList())
+        val firstSum = sums.find { it.aggregateDate.compareTo(firstTransactionDate) == 0 }!!
+        val secondSum = sums.find { it.aggregateDate.compareTo(secondTransactionDate) == 0 }!!
+        val thirdSum = sums.find { it.aggregateDate.compareTo(thirdTransactionDate) == 0 }!!
+        assertEquals(4, sums.size)
+        assertEqualsBD(BigDecimal(110.00), firstSum.sum)
+        assertEqualsBD(BigDecimal(410.00), secondSum.sum)
+        assertEqualsBD(BigDecimal(1610.00), thirdSum.sum)
+    }
+
+    @Test
+    fun topNExpensesPerCategoryTest() {
+        val folder = Files.createTempDirectory("temp").toFile()
+        folder.deleteOnExit()
+
+        val firstTransactionDate = LocalDate.parse("2025-01-01")
+        val secondTransactionDate = LocalDate.parse("2025-01-02")
+        val thirdTransactionDate = LocalDate.parse("2025-01-04")
+        val fourthTransactionDate = LocalDate.parse("2025-01-04")
+        val fifthTransactionDate = LocalDate.parse("2025-01-05")
+
+        val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
+        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
+        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)
+
+        val dataBuilder = DataBuilder(folder, timeHandler, null, Constants.DEFAULT_PROFILE_ID, testUtilComponent)
+        dataBuilder.createTransaction()
+            .withItem("Description", "miscellaneous", BigDecimal(110.00))
+            .atDate(firstTransactionDate)
+            .commit()
+        dataBuilder.createTransaction()
+            .withItem("Description", "miscellaneous", BigDecimal(300.00))
+            .withItem("Description 2", "miscellaneous", BigDecimal(20.00))
+            .withItem("Description 3", "miscellaneous", BigDecimal(10.00))
+            .atDate(secondTransactionDate)
+            .commit()
+        dataBuilder.createTransaction()
+            .withItem("Description", "food", BigDecimal(450.00))
+            .atDate(thirdTransactionDate)
+            .commit()
+        dataBuilder.createTransaction()
+            .withItem("Description", "miscellaneous", BigDecimal(750.00))
+            .atDate(fourthTransactionDate)
+            .commit()
+        dataBuilder.createTransaction()
+            .withItem("Description", "food", BigDecimal(1_000.00))
+            .atDate(fifthTransactionDate)
+            .commit()
+
+        val sums = transactionRepository.getTopNExpensesByCategory(profile!!.id!!, true, 3, firstTransactionDate, null, emptyList(), emptyList(), emptyList() , emptyList(),  emptyList())
+        val firstSum = sums[0]
+        val thirdSum = sums[2]
+
+        assertEquals(5, sums.size)
+        assertEquals("food", firstSum.stringId)
+        assertEqualsBD(BigDecimal(1_450), firstSum.sum)
+        assertEqualsBD(BigDecimal(1_000), firstSum.itemAmount)
+
+        assertEquals("miscellaneous", thirdSum.stringId)
+        assertEqualsBD(BigDecimal(1_190), thirdSum.sum)
+        assertEqualsBD(BigDecimal(750), thirdSum.itemAmount)
+
     }
 
     companion object {

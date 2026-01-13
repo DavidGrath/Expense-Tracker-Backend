@@ -4,6 +4,7 @@ import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import com.davidgrath.expensetrackerbackend.entities.views.DateAmountSummary
 import com.davidgrath.expensetrackerbackend.entities.views.ItemSumByCategory
+import com.davidgrath.expensetrackerbackend.entities.views.TopItemSumByCategory
 import com.davidgrath.expensetrackerbackend.entities.views.TransactionAndItemCount
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionItemPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionPojo
@@ -109,9 +110,9 @@ class TransactionService {
             currentDate = currentDate.plusDays(1)
         }
         if (zeroCount > 0) {
-            LOGGER.info("getTotalAmountByDate: Filled {} empty dates with zeroes", zeroCount)
+            LOGGER.info("Filled {} empty dates with zeroes", zeroCount)
         }
-        LOGGER.info("getTotalAmountByDate: Item Count: {}", newList.size)
+        LOGGER.info("Item Count: {}", newList.size)
         val filledSummary = newList.toList()
 
         return filledSummary
@@ -166,6 +167,22 @@ class TransactionService {
                                 accountIds: List<Long>,
                                 dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>): List<ItemSumByCategory> {
         val list = transactionRepository.getSumByCategory(profileId, false, fromDate, toDate, accountIds, dates, categories, modes, sellers)
+        LOGGER.info("List size: {}", list.size)
+        return list
+    }
+
+    fun getTopNDebitPerCategory(profileId: Long, n: Int, fromDate: LocalDate?, toDate: LocalDate?,
+                                accountIds: List<Long>,
+                                dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>): List<TopItemSumByCategory> {
+        val list = transactionRepository.getTopNExpensesByCategory(profileId, true, n, fromDate, toDate, accountIds, dates, categories, modes, sellers)
+        LOGGER.info("List size: {}", list.size)
+        return list
+    }
+
+    fun getTopNCreditPerCategory(profileId: Long, n: Int, fromDate: LocalDate?, toDate: LocalDate?,
+                                accountIds: List<Long>,
+                                dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>): List<TopItemSumByCategory> {
+        val list = transactionRepository.getTopNExpensesByCategory(profileId, false, n, fromDate, toDate, accountIds, dates, categories, modes, sellers)
         LOGGER.info("List size: {}", list.size)
         return list
     }
@@ -247,6 +264,65 @@ class TransactionService {
         val duration = end - start
         LOGGER.info("getGenericSuggestions time: {} ms", duration)
         return sorted.map { it.second }.take(5)
+    }
+
+    fun getCumSumByDate(
+        profileId: Long, debitOrCredit: Boolean, fromDate: LocalDate?, toDate: LocalDate? = null,
+        accountIds: List<Long>, dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>
+    ): List<DateAmountSummary> {
+        val originalSummary =
+            transactionRepository.getTransactionCumSumByDate(
+                profileId, debitOrCredit, fromDate, toDate,
+                accountIds, dates, categories, modes, sellers
+            )
+
+        var emptyCount = 0
+        var lastAmount = BigDecimal.ZERO
+        val start = if (fromDate == null) {
+            LocalDate.now(timeHandler.getClock())
+        } else {
+            fromDate
+        }
+        val end = if (toDate == null) {
+            LocalDate.now(timeHandler.getClock())
+        } else {
+            toDate
+        }
+        var currentDate = start
+
+        val newList = arrayListOf<DateAmountSummary>()
+
+        val listSize = originalSummary.size
+        var existingDateIndex = if (listSize > 0) 0 else -1
+        while (currentDate <= end) {
+            if (existingDateIndex != -1) {
+                if (existingDateIndex < listSize) {
+                    val summary = originalSummary[existingDateIndex]
+                    if (summary.aggregateDate == currentDate) {
+                        newList.add(summary)
+                        lastAmount = summary.sum
+                        existingDateIndex += 1
+                    } else {
+                        newList.add(DateAmountSummary(currentDate, lastAmount))
+                        emptyCount++
+                    }
+                } else {
+                    newList.add(DateAmountSummary(currentDate, lastAmount))
+                    emptyCount++
+                }
+            } else {
+                newList.add(DateAmountSummary(currentDate, lastAmount))
+                emptyCount++
+            }
+            currentDate = currentDate.plusDays(1)
+        }
+        if (emptyCount > 0) {
+            LOGGER.info("Filled {} empty dates", emptyCount)
+        }
+        LOGGER.info("Item Count: {}", newList.size)
+        val filledSummary = newList.toList()
+
+        return filledSummary
     }
 
 
