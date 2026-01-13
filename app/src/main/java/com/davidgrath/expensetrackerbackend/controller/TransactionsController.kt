@@ -520,7 +520,7 @@ open class TransactionsController: TransactionsApi {
         inputStream.close()
         outputStream.close()
 
-        val path = transactionDraftService.addDocumentToDraft(profile.id!!, type!!.toDbType(), tempFile, MediaType.APPLICATION_OCTET_STREAM_VALUE,
+        val path = transactionDraftService.addDocumentToDraft(profile.id!!, type!!.toDbType(), tempFile, document.contentType?: MediaType.APPLICATION_OCTET_STREAM_VALUE,
             userUuid, profileId)
 
         tempFolder.deleteRecursively()
