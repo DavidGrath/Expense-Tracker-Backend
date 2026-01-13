@@ -602,7 +602,7 @@ open class TransactionsController: TransactionsApi {
         inputStream.transferTo(outputStream)
         inputStream.close()
         outputStream.close()
-
+        //TODO Validate for images or PDFs
         val added = transactionDraftService.addImageToItem(profile.id!!, uuid, tempFile, file.contentType?: MediaType.APPLICATION_OCTET_STREAM_VALUE,
             userUuid, profileId)
 

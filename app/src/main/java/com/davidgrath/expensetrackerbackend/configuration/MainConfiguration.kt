@@ -25,7 +25,9 @@ import java.security.KeyFactory
 import java.security.interfaces.RSAPublicKey
 import java.security.spec.X509EncodedKeySpec
 import java.sql.SQLException
+import java.time.Duration
 import java.time.ZoneId
+import java.time.temporal.ChronoUnit
 import java.util.Base64
 import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
@@ -55,6 +57,7 @@ class MainConfiguration {
         hikariConfig.username = username
         hikariConfig.password = password
         hikariConfig.addDataSourceProperty("connectionTimeZone", ZoneId.systemDefault())
+        hikariConfig.maxLifetime = Duration.ofMinutes(10).toMillis()
         return HikariDataSource(hikariConfig)
     }
 
