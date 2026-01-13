@@ -13,12 +13,16 @@ import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionItem
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import com.davidgrath.expensetrackerbackend.entities.views.AccountWithStats
 import com.davidgrath.expensetrackerbackend.entities.views.CategoryWithStats
+import com.davidgrath.expensetrackerbackend.entities.views.DocumentWithTransactionDateAndOrdinal
+import com.davidgrath.expensetrackerbackend.entities.views.ImageWithStats
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.AccountPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.CategoryPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.DocumentPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ImagePojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionItemPojo
 import com.davidgrath.expensetrackerbackend.generatedapi.model.Document
+import com.davidgrath.expensetrackerbackend.generatedapi.model.DocumentDetails
+import com.davidgrath.expensetrackerbackend.generatedapi.model.ImageDetails
 import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraftItemUpdateRequest
 import java.net.URI
 import java.util.UUID
@@ -102,7 +106,15 @@ fun documentPojoToDocument(document: DocumentPojo, baseUrl: Triple<String, Strin
     val documentUrl = URI(baseUrl.first, null, baseUrl.second, baseUrl.third, "/files" + document.path, null, null)
     return Document(document.id, document.transactionId, document.sizeBytes, documentUrl, document.mimeType, document.type!!.toApiType())
 }
+fun documentPojoToDocumentDetails(document: DocumentWithTransactionDateAndOrdinal, baseUrl: Triple<String, String, Int>): DocumentDetails {
+    val documentUrl = URI(baseUrl.first, null, baseUrl.second, baseUrl.third, "/files" + document.path, null, null)
+    return DocumentDetails(document.id, document.transactionId, document.sizeBytes, documentUrl, document.mimeType, document.type!!.toApiType(), document.transactionDatedAt)
+}
 
+fun imageWithStatsToImageDetails(image: ImageWithStats, baseUrl: Triple<String, String, Int>): ImageDetails {
+    val imageUrl = URI(baseUrl.first, null, baseUrl.second, baseUrl.third, "/files" + image.path, null, null)
+    return ImageDetails(image.id, image.sizeBytes, imageUrl, image.mimeType, image.transactionCount, image.itemCount)
+}
 fun categoryPojoToCategory(categoryPojo: CategoryPojo): Category {
     return Category(categoryPojo.id, categoryPojo.name, categoryPojo.isCustom.toBoolean(), categoryPojo.stringId, categoryPojo.icon)
 }

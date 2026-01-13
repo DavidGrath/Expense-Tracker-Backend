@@ -4,6 +4,7 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.SellerPo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.PROFILE
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.SELLER
 import org.jooq.DSLContext
+import org.jooq.impl.DSL
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 
@@ -36,6 +37,29 @@ class SellerRepository @Autowired constructor(open var dslContext: DSLContext) {
             .where(SELLER.ID.eq(id))
             .and(PROFILE.USER_ID.eq(userId))
         return selectStep.fetchOne()?.into(SellerPojo::class.java)
+    }
+
+    fun getAll(profileId: Long): List<SellerPojo> {
+        val selectStep = dslContext.select(SELLER.asterisk())
+            .from(SELLER)
+            .where(SELLER.PROFILE_ID.eq(profileId))
+        return selectStep.fetch().into(SellerPojo::class.java)
+    }
+
+    //TODO Replace get with count queries for when I want to check limits, and also getAll with get all ID queries for when I want to check for existence by user
+    fun countAll(profileId: Long): Int {
+        val selectStep = dslContext.select(DSL.count(SELLER.ID))
+            .from(SELLER)
+            .where(SELLER.PROFILE_ID.eq(profileId))
+        return selectStep.fetchOne()!!.value1()
+    }
+
+    fun updateSeller(profileId: Long, id: Long, name: String): Int {
+        val updateStep = dslContext.update(SELLER)
+            .set(SELLER.NAME, name)
+            .where(SELLER.ID.eq(id))
+            .and(SELLER.PROFILE_ID.eq(profileId))
+        return updateStep.execute()
     }
 
 

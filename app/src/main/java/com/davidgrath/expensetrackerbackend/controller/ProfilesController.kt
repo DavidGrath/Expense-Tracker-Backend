@@ -22,7 +22,15 @@ class ProfilesController: ProfilesApi{
     lateinit var userService: UserService
 
     override fun profilesGet(): ResponseEntity<List<Profile?>?>? {
-        TODO("Not yet implemented")
+        val authentication = SecurityContextHolder.getContext().authentication
+        val principal = authentication.principal as Jwt
+        LOGGER.info("Username: {}", principal.subject)
+        val user = userService.getByUsername(principal.subject!!)
+        val profilePojos = profileService.getAllByUserId(user!!.id!!)!!
+        val profiles = profilePojos.map {
+            Profile(it.id, it.stringId, it.name)
+        }
+        return ResponseEntity.ok(profiles)
     }
 
     override fun profilesStringIdGet(stringId: @NotNull String): ResponseEntity<Profile?>? {

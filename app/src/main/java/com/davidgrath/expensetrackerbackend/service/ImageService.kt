@@ -1,5 +1,7 @@
 package com.davidgrath.expensetrackerbackend.service
 
+import com.davidgrath.expensetrackerbackend.entities.views.ImageDocumentStats
+import com.davidgrath.expensetrackerbackend.entities.views.ImageWithStats
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ImagePojo
 import com.davidgrath.expensetrackerbackend.repository.ImageRepository
 import com.davidgrath.expensetrackerbackend.repository.ItemImagesRepository
@@ -12,11 +14,42 @@ class ImageService {
 
     @Autowired
     lateinit var itemImagesRepository: ItemImagesRepository
+    @Autowired
+    lateinit var imageRepository: ImageRepository
 
-    fun getImages(profileId: Long, itemId: Long): List<ImagePojo> {
+    fun getImagesForItem(profileId: Long, itemId: Long): List<ImagePojo> {
         val images = itemImagesRepository.findByItemId(profileId, itemId)
         LOGGER.info("Images size: {}", images.size)
         return images
+    }
+
+    fun getAllImages(profileId: Long): List<ImageWithStats> {
+        val images = imageRepository.findAll(profileId)
+        LOGGER.info("Images size: {}", images.size)
+        return images
+    }
+
+    //TODO Generic ownership check framework
+    fun isImageForProfile(profileId: Long, imageId: Long): Boolean {
+        val image = imageRepository.findByProfileIdAndId(profileId, imageId)
+        val value = image != null
+        LOGGER.info("Image for profile: {}", value)
+        return value
+    }
+
+    fun isImageForUser(userId: Long, imageId: Long): Boolean {
+        val image = imageRepository.findByUserIdAndId(userId, imageId)
+        val value = image != null
+        LOGGER.info("Image for user: {}", value)
+        return value
+    }
+
+    fun getByProfileIdAndId(profileId: Long, imageId: Long): ImageWithStats? {
+        return imageRepository.findByProfileIdAndId(profileId, imageId)
+    }
+
+    fun getImageStats(profileId: Long): ImageDocumentStats {
+        return imageRepository.getOverallStats(profileId)
     }
 
     companion object {

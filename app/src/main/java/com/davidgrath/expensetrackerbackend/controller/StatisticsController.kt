@@ -2,7 +2,6 @@ package com.davidgrath.expensetrackerbackend.controller
 
 import com.davidgrath.expensetrackerbackend.generatedapi.api.StatisticsApi
 import com.davidgrath.expensetrackerbackend.generatedapi.model.Category
-import com.davidgrath.expensetrackerbackend.generatedapi.model.Document
 import com.davidgrath.expensetrackerbackend.generatedapi.model.StatisticsFilter
 import com.davidgrath.expensetrackerbackend.generatedapi.model.StatsTransactionAndItemCount
 import com.davidgrath.expensetrackerbackend.generatedapi.model.TotalAmountByCategory
@@ -175,7 +174,7 @@ class StatisticsController: StatisticsApi {
             val account = accountPojoToAccount(accountStats)
             val itemsPojo = transactionService.getItemsForTransaction(profile.id!!, t.id!!)
             val items = itemsPojo.map { item ->
-                val images = imageService.getImages(profile.id!!, item.id!!)
+                val images = imageService.getImagesForItem(profile.id!!, item.id!!)
                 val category = categoryService.getByProfileIdAndId(profile.id!!, item.primaryCategoryId!!)
                 transactionItemPojoToTransactionItem(item, triple, category!!, images)
             }

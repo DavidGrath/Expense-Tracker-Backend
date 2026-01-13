@@ -5,6 +5,7 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.PRO
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.SELLER
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.SELLER_LOCATION
 import org.jooq.DSLContext
+import org.jooq.impl.DSL
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 
@@ -42,6 +43,41 @@ class SellerLocationRepository @Autowired constructor(open var dslContext: DSLCo
             .and(PROFILE.USER_ID.eq(userId))
         return selectStep.fetchOne()?.into(SellerLocationPojo::class.java)
     }
+
+    fun getByProfileIdAndSellerId(profileId: Long, sellerId: Long): List<SellerLocationPojo> {
+        val selectStep = dslContext.select(SELLER_LOCATION.asterisk())
+            .from(SELLER_LOCATION)
+            .innerJoin(SELLER).on(SELLER.ID.eq(SELLER_LOCATION.SELLER_ID))
+            .where(SELLER_LOCATION.SELLER_ID.eq(sellerId))
+            .and(SELLER.PROFILE_ID.eq(profileId))
+
+        return selectStep.fetch().into(SellerLocationPojo::class.java)
+    }
+
+    fun countByProfileIdAndSellerId(profileId: Long, sellerId: Long): Int {
+        val selectStep = dslContext.select(DSL.count(SELLER_LOCATION.ID))
+            .from(SELLER_LOCATION)
+            .innerJoin(SELLER).on(SELLER.ID.eq(SELLER_LOCATION.SELLER_ID))
+            .where(SELLER_LOCATION.SELLER_ID.eq(sellerId))
+            .and(SELLER.PROFILE_ID.eq(profileId))
+
+        return selectStep.fetchOne()!!.value1()
+    }
+
+    // endregion
+
+    // region Update
+
+    fun updateSellerLocation(profileId: Long, id: Long, location: String): Int {
+        val updateStep = dslContext.update(SELLER_LOCATION)
+            .set(SELLER_LOCATION.LOCATION, location)
+            .from(SELLER_LOCATION.innerJoin(SELLER).on(SELLER.ID.eq(SELLER_LOCATION.SELLER_ID)))
+            .where(SELLER_LOCATION.ID.eq(id))
+            .and(SELLER.PROFILE_ID.eq(profileId))
+        return updateStep.execute()
+    }
+
+    // endregion
 
 
     fun deleteAllForTesting(): Int {

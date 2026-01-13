@@ -597,15 +597,11 @@ class TransactionDraftServiceTest {
         copyControllerTempFile(tempFolder, classLoader, resource)
         val tempFile = File(tempFolder, resource.fileName)
 
-        val inputStream = tempFile.inputStream()
-        val hash = getSha256(inputStream)
-        inputStream.close()
+
         val path = "/${Constants.FOLDER_NAME_PROFILES}/${profile.stringId}/${Constants.FOLDER_NAME_DRAFT}/${Constants.SUBFOLDER_NAME_IMAGES}/${tempFile.name}"
-        val draftFile = TransactionDraftFile(null, path, "image/jpeg", hash, tempFile.length(), null,false)
-        //Deletes the temp file
-        createTransactionWithImage(profileId, user.uuid!!, profile.stringId!!, accountId, tempFile,draftFile)
-        //Recreate the temp file that was just deleted
-        copyControllerTempFile(tempFolder, classLoader, resource)
+
+        createTransactionWithImage(profileId, user.uuid!!, profile.stringId!!, accountId, classLoader, resource)
+
 
         val draftImagesFolder = file(timeHandler.getRoot(),
             Constants.FOLDER_NAME_USERS, user.uuid!!,
@@ -750,7 +746,7 @@ class TransactionDraftServiceTest {
         assertEquals(1, getHashCount(resource.sha256, draftDocumentsFolder))
     }
 
-    fun createTransactionWithImage(profileId: Long, userUuid: String, profileStringId: String, accountId: Long, tempFile: File, draftFile: TransactionDraftFile) {
+    fun createTransactionWithImage(profileId: Long, userUuid: String, profileStringId: String, accountId: Long, classLoader: ClassLoader, resource: TestData.Resource): Long {
         val amount = BigDecimal.TEN
         val account = accountRepository.findByProfileIdAndId(profileId, accountId)!!
 
@@ -771,46 +767,28 @@ class TransactionDraftServiceTest {
         //TODO make this more convenient
         val newFileName = "${UUID.randomUUID()}.jpg"
         val newPath = "/${Constants.FOLDER_NAME_PROFILES}/$profileStringId/${Constants.FOLDER_NAME_DATA}/${Constants.SUBFOLDER_NAME_IMAGES}/${newFileName}"
-        val destination = file(timeHandler.getRoot(), Constants.FOLDER_NAME_USERS, userUuid, Constants.FOLDER_NAME_PROFILES,profileStringId, Constants.FOLDER_NAME_DATA, Constants.SUBFOLDER_NAME_IMAGES, newFileName)
+        val destinationFolder = file(timeHandler.getRoot(), Constants.FOLDER_NAME_USERS, userUuid, Constants.FOLDER_NAME_PROFILES,profileStringId, Constants.FOLDER_NAME_DATA, Constants.SUBFOLDER_NAME_IMAGES)
+        destinationFolder.mkdirs()
+        val destination = File(destinationFolder, newFileName)
 
-        tempFile.copyTo(destination)
-        tempFile.delete()
-        val image = ImagePojo(null, profileId, draftFile.sizeBytes, draftFile.sha256, draftFile.mimeType, "", newPath, MOCKED_DATE.atTime(MOCKED_TIME))
+        val inputStream = classLoader.getResourceAsStream(resource.resourceName)
+        val outputStream = destination.outputStream()
+        inputStream.copyTo(outputStream)
+        inputStream.close()
+        outputStream.close()
+        val hashStream = destination.inputStream()
+
+        val hash = getSha256(hashStream)
+        hashStream.close()
+
+        val image = ImagePojo(null, profileId, destination.length(), hash, "image/jpeg", "", newPath, MOCKED_DATE.atTime(MOCKED_TIME))
         val imageId = imageRepository.insertImage(image)
         val itemImage = TransactionItemImagesPojo(null, itemId, imageId, MOCKED_DATE.atTime(MOCKED_TIME))
         itemImagesRepository.insertItemImage(itemImage)
+        return imageId
     }
 
-    fun createTransactionWithDocument(profileId: Long, userUuid: String, profileStringId: String, accountId: Long, tempFolder: File, resource: TestData.Resource) {
-        val amount = BigDecimal.TEN
-        val account = accountRepository.findByProfileIdAndId(profileId, accountId)!!
 
-        val maxOrdinal = transactionRepository.getMaxOrdinalInDayForAccount(profileId, accountId, MOCKED_DATE)?: 0
-        var transactionOrdinal = maxOrdinal + 1
-
-        val transaction = TransactionPojo(null, accountId, amount, account.currencyCode,
-            null, true.toByte(), MOCKED_DATE, transactionOrdinal,
-            TransactionMode.Other, null, null, null, MOCKED_DATE.atTime(MOCKED_TIME), MOCKED_TIME)
-
-        val transactionId = transactionRepository.insertTransaction(transaction)
-        val misc = categoryRepository.findByProfileIdAndStringId(profileId, "miscellaneous")!!
-
-        val item = TransactionItemPojo(null, transactionId, "Basic", amount, misc.id!!, 1, 1, null,
-            null, null, false.toByte(),
-            MOCKED_DATE.atTime(MOCKED_TIME))
-        val itemId = transactionItemRepository.insertTransactionItem(item)
-        //TODO make this more convenient
-        val newFileName = "${UUID.randomUUID()}.jpg"
-        val newPath = "/${Constants.FOLDER_NAME_PROFILES}/$profileStringId/${Constants.FOLDER_NAME_DATA}/${Constants.SUBFOLDER_NAME_DOCUMENTS}/${newFileName}"
-        val destination = file(timeHandler.getRoot(), Constants.FOLDER_NAME_USERS, userUuid, Constants.FOLDER_NAME_PROFILES,profileStringId, Constants.FOLDER_NAME_DATA, Constants.SUBFOLDER_NAME_DOCUMENTS, newFileName)
-
-        val tempFile = File(tempFolder, resource.fileName)
-        val length = tempFile.length()
-        tempFile.copyTo(destination)
-        tempFile.delete()
-        val document = DocumentPojo(null, transactionId, DocumentType.Other, length, resource.sha256, "image/jpeg", "", newPath, MOCKED_DATE.atTime(MOCKED_TIME))
-        val documentId = documentRepository.insertDocument(document)
-    }
 
     companion object {
         val MOCKED_DATE = LocalDate.of(2025, 6, 30)

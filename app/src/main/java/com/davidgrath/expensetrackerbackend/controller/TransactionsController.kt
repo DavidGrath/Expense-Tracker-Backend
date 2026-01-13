@@ -2,7 +2,6 @@ package com.davidgrath.expensetrackerbackend.controller
 
 import com.davidgrath.expensetrackerbackend.generatedapi.api.TransactionsApi
 import com.davidgrath.expensetrackerbackend.generatedapi.model.BasicTransactionCreateRequest
-import com.davidgrath.expensetrackerbackend.generatedapi.model.Document
 import com.davidgrath.expensetrackerbackend.generatedapi.model.SuggestionsFieldType
 import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDetails
 import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraft
@@ -145,7 +144,7 @@ open class TransactionsController: TransactionsApi {
             val account = accountPojoToAccount(accountStats)
             val itemsPojo = transactionService.getItemsForTransaction(profile.id!!, t.id!!)
             val items = itemsPojo.map { item ->
-                val images = imageService.getImages(profile.id!!, item.id!!)
+                val images = imageService.getImagesForItem(profile.id!!, item.id!!)
                 val category = categoryService.getByProfileIdAndId(profile.id!!, item.primaryCategoryId!!)
                 transactionItemPojoToTransactionItem(item, triple, category!!, images)
             }
@@ -181,7 +180,7 @@ open class TransactionsController: TransactionsApi {
         val port = httpServletRequest.serverPort
         val triple = Triple(scheme, host, port)
         val items = itemsPojo.map { item ->
-            val images = imageService.getImages(profile.id!!, item.id!!)
+            val images = imageService.getImagesForItem(profile.id!!, item.id!!)
             val category = categoryService.getByProfileIdAndId(profile.id!!, item.primaryCategoryId!!)
             transactionItemPojoToTransactionItem(item, triple,category!!, images)
         }
