@@ -236,7 +236,7 @@ class StatisticsController: StatisticsApi {
         val userUuid = user!!.uuid!!
         val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
         val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
-        val total = transactionService.getTotalAmountByDate(profile.id!!, false, statisticsFilter.from,
+        val total = transactionService.getCumSumByDate(profile.id!!, false, statisticsFilter.from,
             statisticsFilter.to, statisticsFilter.accounts, statisticsFilter.includeDates, statisticsFilter.categories, modes, statisticsFilter.sellers)
         val mapped = total.map { TotalAmountByDate(it.aggregateDate, it.sum) }
         return ResponseEntity.ok(mapped)
