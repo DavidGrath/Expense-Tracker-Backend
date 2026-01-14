@@ -7,5 +7,6 @@ export SPRING_PROFILES_ACTIVE={{deployment_environment}}
 export OTEL_EXPORTER_OTLP_ENDPOINT=http://telemetry.davidgrath.com:4318
 export OTEL_RESOURCE_ATTRIBUTES=deployment.environment.name={{deployment_environment}},deployment.environment={{deployment_environment}},service.version=$APP_VERSION
 export OTEL_METRIC_EXPORT_INTERVAL=5000
+export OTEL_INSTRUMENTATION_HTTP_SERVER_EMIT_EXPERIMENTAL_TELEMETRY=true
 # java -jar "/opt/server_apps/expense_tracker/expense-tracker-backend.jar"
 java -jar "/opt/expense_tracker/expense-tracker-backend.jar"
