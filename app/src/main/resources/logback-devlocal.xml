@@ -31,6 +31,8 @@
             <outputPatternAsHeader>true</outputPatternAsHeader>
         </encoder>
     </appender>
+    <logger name="org.apache.tomcat.util.threads" level="DEBUG" additivity="false"/>
+    <logger name="org.apache.catalina.connector.CoyoteAdapter" level="DEBUG" additivity="false"/>
     <logger name="com.davidgrath" level="DEBUG" additivity="false">
         <appender-ref ref="STDOUT" />
         <appender-ref ref="logfile" />
