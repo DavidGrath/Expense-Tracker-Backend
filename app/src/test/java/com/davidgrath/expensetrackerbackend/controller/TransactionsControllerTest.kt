@@ -267,7 +267,7 @@ class TransactionsControllerTest {
      * and it took roughly 1m20s, so this test is the result of that.
      */
     @Test
-    //TODO Ignore this on the next commit, because it will add unnecessary time to regular test runs
+    @Ignore("It will add unnecessary time to regular test runs")
     fun getTransactionsTimeTest() {
         val tempFolder = Files.createTempDirectory("temp").toFile()
         tempFolder.deleteOnExit()
