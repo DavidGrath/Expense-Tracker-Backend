@@ -8,6 +8,8 @@ import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraft
 import com.davidgrath.expensetrackerbackend.controller.exception.CustomHttpException
 import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.DocumentPojo
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ImagePojo
 import com.davidgrath.expensetrackerbackend.generatedapi.model.DocumentType
 import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraftItemUpdateRequest
 import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraftUpdateRequest
@@ -135,8 +137,21 @@ open class TransactionsController: TransactionsApi {
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
         val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+
         val transactions = transactionService.getTransactionsWithItems(profile.id!!, fromDate, toDate,
             accountIds as List<Long>, emptyList(), emptyList(), emptyList(), emptyList())
+
+        val documentPojos = documentService.getDocumentsFiltered(profile.id!!, fromDate, toDate,
+            accountIds as List<Long>, emptyList(), emptyList(), emptyList(), emptyList())
+
+        val documentsMap = documentPojos.groupBy { it.transactionId }
+
+
+        val imagePojos = imageService.getImagesFiltered(profile.id!!, fromDate, toDate,
+            accountIds as List<Long>, emptyList(), emptyList(), emptyList(), emptyList())
+
+        val imagesMap = imagePojos.groupBy { it.itemId }
+
         val scheme = httpServletRequest.scheme
         val host = httpServletRequest.serverName
         val port = httpServletRequest.serverPort
@@ -150,20 +165,24 @@ open class TransactionsController: TransactionsApi {
             val account = accountPojoToAccount(t)
 
 
-            val images = if(t.itemImageCount > 0) {
+            val imagePojos = imagesMap[t.itemId]?:emptyList()
+            /*val images = if(t.itemImageCount > 0) {
                 imageService.getImagesForItem(profile.id!!, t.itemId!!)
             } else {
                 emptyList()
-            }
+            }*/
+            val images = imagePojos.map { ImagePojo(it.id, it.profileId, it.sizeBytes, it.sha_256, it.mimeType, it.uri, it.path, it.createdAt) }
 
             items.add(transactionWithItemToTransactionItem(t, triple, images))
 
             val mode = t.transactionMode.toApiMode()
-            val documentsPojo = if(t.documentCount > 0) {
+            /*val documentsPojo = if(t.documentCount > 0) {
                 documentService.getDocumentsByTransactionId(profile.id!!, t.transactionId!!)
             } else {
                 emptyList()
-            }
+            }*/
+
+            val documentsPojo = documentsMap[t.transactionId]?: emptyList()
             val documents = documentsPojo.map { documentPojoToDocument(it, triple) }
             val time = t.transactionTime?.toString()
             val next = i + 1

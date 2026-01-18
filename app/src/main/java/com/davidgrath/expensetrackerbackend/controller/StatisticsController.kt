@@ -8,6 +8,7 @@ import com.davidgrath.expensetrackerbackend.generatedapi.model.TotalAmountByCate
 import com.davidgrath.expensetrackerbackend.generatedapi.model.TotalAmountByDate
 import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDetails
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ImagePojo
 import com.davidgrath.expensetrackerbackend.generatedapi.model.TotalAmountPerCategory
 import com.davidgrath.expensetrackerbackend.generatedapi.model.TotalAmountPerCategoryItemSummary
 import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionItem
@@ -172,6 +173,16 @@ class StatisticsController: StatisticsApi {
         val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
         val transactions = transactionService.getTransactionsWithItems(profile.id!!, statisticsFilter.from,
             statisticsFilter.to, statisticsFilter.accounts, statisticsFilter.includeDates, statisticsFilter.categories, modes, statisticsFilter.sellers)
+
+        val documentPojos = documentService.getDocumentsFiltered(profile.id!!, statisticsFilter.from,
+            statisticsFilter.to, statisticsFilter.accounts, statisticsFilter.includeDates, statisticsFilter.categories, modes, statisticsFilter.sellers)
+
+        val documentsMap = documentPojos.groupBy { it.transactionId }
+
+        val imagePojos = imageService.getImagesFiltered(profile.id!!, statisticsFilter.from,
+            statisticsFilter.to, statisticsFilter.accounts, statisticsFilter.includeDates, statisticsFilter.categories, modes, statisticsFilter.sellers)
+        val imagesMap = imagePojos.groupBy { it.itemId }
+
         val scheme = httpServletRequest.scheme
         val host = httpServletRequest.serverName
         val port = httpServletRequest.serverPort
@@ -186,20 +197,25 @@ class StatisticsController: StatisticsApi {
             val account = accountPojoToAccount(t)
 
 
-            val images = if(t.itemImageCount > 0) {
+
+            val imagePojos = imagesMap[t.itemId]?:emptyList()
+            /*val images = if(t.itemImageCount > 0) {
                 imageService.getImagesForItem(profile.id!!, t.itemId!!)
             } else {
                 emptyList()
-            }
+            }*/
+            val images = imagePojos.map { ImagePojo(it.id, it.profileId, it.sizeBytes, it.sha_256, it.mimeType, it.uri, it.path, it.createdAt) }
 
             items.add(transactionWithItemToTransactionItem(t, triple, images))
 
             val mode = t.transactionMode.toApiMode()
-            val documentsPojo = if(t.documentCount > 0) {
+            /*val documentsPojo = if(t.documentCount > 0) {
                 documentService.getDocumentsByTransactionId(profile.id!!, t.transactionId!!)
             } else {
                 emptyList()
-            }
+            }*/
+
+            val documentsPojo = documentsMap[t.transactionId]?: emptyList()
             val documents = documentsPojo.map { documentPojoToDocument(it, triple) }
             val time = t.transactionTime?.toString()
             val next = i + 1

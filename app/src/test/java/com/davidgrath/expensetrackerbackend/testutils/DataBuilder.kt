@@ -158,19 +158,10 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
             val sha256Map = mutableMapOf<String, Long>()
             val classLoader = TransactionItemBuilderImpl::class.java.classLoader
             val mainImagesFolder = file(root, Constants.FOLDER_NAME_USERS, userUuid, Constants.FOLDER_NAME_PROFILES, profileUuid, Constants.FOLDER_NAME_DATA, Constants.SUBFOLDER_NAME_IMAGES)
+            mainImagesFolder.mkdirs()
             val mainDocumentsFolder = file(root, Constants.FOLDER_NAME_USERS, userUuid, Constants.FOLDER_NAME_PROFILES, profileUuid, Constants.FOLDER_NAME_DATA, Constants.SUBFOLDER_NAME_DOCUMENTS)
-            documents.forEach { doc ->
-                val resourceInputStream = classLoader.getResourceAsStream(doc.resourceName)
-                val file = File(mainDocumentsFolder, doc.fileName)
-                val outputStream = file.outputStream()
-                val copied = resourceInputStream.copyTo(outputStream)
-                resourceInputStream.close()
-                outputStream.close()
-                val documentDb = DocumentPojo(null, profile.id!!, DocumentType.Other, file.length(), doc.sha256, "image/jpeg", "", "", LocalDateTime.now()) //TODO date time
-                val documentId = documentRepository.insertDocument(documentDb)
-//                sha256Map[doc.sha256] = imageId
-//                imageId
-            }
+            mainDocumentsFolder.mkdirs()
+
 
             val ids = repeats.map { repeatDate ->
                 if(useDatesAsCreationDates) {
@@ -179,6 +170,19 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
                 val ordinal = transactionRepository.getMaxOrdinalInDayForAccount(profile.id!!, account.id!!, repeatDate)?: 0
                 val transaction = TransactionPojo(null, account.id!!, sum, account.currencyCode, null, debitOrCredit.toByte(), repeatDate, ordinal + 1, TransactionMode.Other,null, null, null, dateTime)
                 val transactionId = transactionRepository.insertTransaction(transaction)
+
+                documents.forEach { doc ->
+                    val resourceInputStream = classLoader.getResourceAsStream(doc.resourceName)
+                    val file = File(mainDocumentsFolder, doc.fileName)
+                    val outputStream = file.outputStream()
+                    val copied = resourceInputStream.copyTo(outputStream)
+                    resourceInputStream.close()
+                    outputStream.close()
+                    val documentDb = DocumentPojo(null, transactionId, DocumentType.Other, file.length(), doc.sha256, "image/jpeg", "", "", LocalDateTime.now()) //TODO date time
+                    val documentId = documentRepository.insertDocument(documentDb)
+//                sha256Map[doc.sha256] = imageId
+//                imageId
+                }
 
                 items.forEachIndexed { index, item ->
                     val correctedItem = item.copy(transactionId = transactionId, createdAt = dateTime, ordinal = index + 1)

@@ -131,7 +131,7 @@ open class TransactionRepository {
         if(toDate != null) {
             selectStep = selectStep.and(TRANSACTION.DATED_AT.lessOrEqual(toDate))
         }
-        if(accountIds.isNotEmpty()) {
+        if(accountIds.isNotEmpty()) { //TODO AccountIds should contain at least 1 account. Verify from the frontend
             selectStep = selectStep.and(TRANSACTION.ACCOUNT_ID.`in`(accountIds))
         }
         if(dates.isNotEmpty()) {

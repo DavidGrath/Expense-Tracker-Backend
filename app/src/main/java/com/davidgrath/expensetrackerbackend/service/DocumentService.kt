@@ -1,5 +1,6 @@
 package com.davidgrath.expensetrackerbackend.service
 
+import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import com.davidgrath.expensetrackerbackend.entities.views.DocumentWithTransactionDateAndOrdinal
 import com.davidgrath.expensetrackerbackend.entities.views.ImageDocumentStats
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.CategoryPojo
@@ -11,6 +12,7 @@ import com.davidgrath.expensetrackerbackend.repository.ItemImagesRepository
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
+import java.time.LocalDate
 
 @Service
 class DocumentService {
@@ -20,6 +22,16 @@ class DocumentService {
 
     fun getDocumentsByTransactionId(profileId: Long, transactionId: Long): List<DocumentPojo> {
         val documents = documentRepository.findByTransactionId(profileId, transactionId)
+        LOGGER.info("Documents size: {}", documents.size)
+        return documents
+    }
+
+    fun getDocumentsFiltered(
+        profileId: Long,
+        fromDate: LocalDate? = null, toDate: LocalDate? = null,
+        accountIds: List<Long>,
+        dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>): List<DocumentPojo> {
+        val documents = documentRepository.findDocumentsFiltered(profileId, fromDate, toDate, accountIds, dates, categories, modes, sellers)
         LOGGER.info("Documents size: {}", documents.size)
         return documents
     }

@@ -15,6 +15,7 @@ import com.davidgrath.expensetrackerbackend.repository.UserRepository
 import com.davidgrath.expensetrackerbackend.service.UserService
 import com.davidgrath.expensetrackerbackend.testutils.DataBuilder
 import com.davidgrath.expensetrackerbackend.testutils.TestConstants
+import com.davidgrath.expensetrackerbackend.testutils.TestData
 import com.davidgrath.expensetrackerbackend.testutils.TestUtilComponent
 import com.davidgrath.expensetrackerbackend.testutils.createBearerToken
 import com.davidgrath.expensetrackerbackend.testutils.getDefaultAccountId
@@ -265,9 +266,11 @@ class TransactionsControllerTest {
      * Background: I started running some insertion scripts with JMeter, and later opened the Android app with the same user and got a timeout, based on OkHttp's default of 10 seconds.
      * I inspected it with Tempo, and found that from the 777 single-item transactions I inserted that day, I got a trace with 3,891 spans, only 3 of which were not DB operations (span.db.operation != nil)
      * and it took roughly 1m20s, so this test is the result of that.
+     * UPDATE: My p95 improved, but the requests still take up to 23.6 seconds because of the documents.
+     * I tried using withDocument to be able to test my N+1 problem fix with the documents, but my before and after are PT5.3328895S and PT2.4806974S, so I can't really tell
      */
     @Test
-    @Ignore("It will add unnecessary time to regular test runs")
+//    @Ignore("It will add unnecessary time to regular test runs")
     fun getTransactionsTimeTest() {
         val tempFolder = Files.createTempDirectory("temp").toFile()
         tempFolder.deleteOnExit()
@@ -279,8 +282,12 @@ class TransactionsControllerTest {
 
         val insertionStartTime = System.nanoTime()
         dataBuilder.createTransaction()
-            .withItem("Desc", "miscellaneous", BigDecimal(1000.00))
+            .withDetailedItem()
+            .mainDetails("Desc", "miscellaneous", BigDecimal(1000.00))
+            .withImages(TestData.Resource.Images.BREAD, TestData.Resource.Images.SHIRT)
+            .build()
             .repeatIntoDates(dates.toList())
+            .withDocument(TestData.Resource.Documents.EVIDENCE_IMAGE)
             .commit()
         val insertionEndTime = System.nanoTime()
         val dur = Duration.ofNanos(insertionEndTime - insertionStartTime)

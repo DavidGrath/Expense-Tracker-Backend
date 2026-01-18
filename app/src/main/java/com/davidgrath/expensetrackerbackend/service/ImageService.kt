@@ -1,6 +1,8 @@
 package com.davidgrath.expensetrackerbackend.service
 
+import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import com.davidgrath.expensetrackerbackend.entities.views.ImageDocumentStats
+import com.davidgrath.expensetrackerbackend.entities.views.ImageWithItemId
 import com.davidgrath.expensetrackerbackend.entities.views.ImageWithStats
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ImagePojo
 import com.davidgrath.expensetrackerbackend.repository.ImageRepository
@@ -8,6 +10,7 @@ import com.davidgrath.expensetrackerbackend.repository.ItemImagesRepository
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
+import java.time.LocalDate
 
 @Service
 class ImageService {
@@ -19,6 +22,16 @@ class ImageService {
 
     fun getImagesForItem(profileId: Long, itemId: Long): List<ImagePojo> {
         val images = itemImagesRepository.findByItemId(profileId, itemId)
+        LOGGER.info("Images size: {}", images.size)
+        return images
+    }
+
+    fun getImagesFiltered(
+        profileId: Long,
+        fromDate: LocalDate? = null, toDate: LocalDate? = null,
+        accountIds: List<Long>,
+        dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>): List<ImageWithItemId> {
+        val images = itemImagesRepository.findAllFiltered(profileId, fromDate, toDate, accountIds, dates, categories, modes, sellers)
         LOGGER.info("Images size: {}", images.size)
         return images
     }
