@@ -5,13 +5,17 @@ import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import com.davidgrath.expensetrackerbackend.entities.views.DateAmountSummary
 import com.davidgrath.expensetrackerbackend.entities.views.TopItemSumByCategory
 import com.davidgrath.expensetrackerbackend.entities.views.TransactionAndItemCount
+import com.davidgrath.expensetrackerbackend.entities.views.TransactionWithItemAndAccount
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionItemPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.ACCOUNT
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.CATEGORY
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.DOCUMENT
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.IMAGE
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.PROFILE
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION_ITEM
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION_ITEM_IMAGES
 import com.davidgrath.expensetrackerbackend.utils.toByte
 import org.jooq.DSLContext
 import org.jooq.Field
@@ -148,6 +152,72 @@ open class TransactionRepository {
         return seekStep.fetch().into(TransactionPojo::class.java)
     }
 
+    fun getTransactionsWithItems(
+        profileId: Long,
+        fromDate: LocalDate? = null, toDate: LocalDate? = null,
+        accountIds: List<Long>,
+        dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>
+    ): List<TransactionWithItemAndAccount> {
+        val transactionItemId = TRANSACTION_ITEM.ID.`as`("itemId")
+        var selectStep = dslContext.select(
+            TRANSACTION.ID.`as`("transactionId"),
+            TRANSACTION.AMOUNT.`as`("transactionAmount"),
+            TRANSACTION.REFERENCE_NUMBER.`as`("transactionReferenceNumber"),
+            TRANSACTION.DEBIT_OR_CREDIT.`as`("transactionDebitOrCredit"),
+            TRANSACTION.DATED_AT.`as`("transactionDatedAt"),
+            TRANSACTION.TIME.`as`("transactionTime"),
+            TRANSACTION.MODE.`as`("transactionMode"),
+            TRANSACTION.NOTE.`as`("transactionNote"),
+                (dslContext.select(DSL.count(DOCUMENT.ID)).from(DOCUMENT).where(DOCUMENT.TRANSACTION_ID.eq(TRANSACTION.ID))).asField<Int>("documentCount"),
+            TRANSACTION.ACCOUNT_ID.`as`("accountId"),
+            ACCOUNT.PROFILE_ID.`as`("accountProfileId"),
+            ACCOUNT.CURRENCY_CODE.`as`("accountCurrencyCode"),
+            ACCOUNT.NAME.`as`("accountName"),
+            transactionItemId,
+            (dslContext.select(DSL.count(IMAGE.ID)).from(IMAGE).innerJoin(TRANSACTION_ITEM_IMAGES).on(TRANSACTION_ITEM_IMAGES.IMAGE_ID.eq(IMAGE.ID)).where(TRANSACTION_ITEM_IMAGES.TRANSACTION_ITEM_ID.eq(TRANSACTION_ITEM.ID)).asField<Int>("itemImageCount")),
+            TRANSACTION_ITEM.DESCRIPTION.`as`("itemDescription"),
+            TRANSACTION_ITEM.AMOUNT.`as`("itemAmount"),
+            TRANSACTION_ITEM.QUANTITY.`as`("itemQuantity"),
+            TRANSACTION_ITEM.BRAND.`as`("itemBrand"),
+            TRANSACTION_ITEM.VARIATION.`as`("itemVariation"),
+            TRANSACTION_ITEM.REFERENCE_NUMBER.`as`("itemReferenceNumber"),
+            TRANSACTION_ITEM.IS_REDUCTION.`as`("itemIsReduction"),
+            (dslContext.select(CATEGORY.ID).from(CATEGORY).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.eq(CATEGORY.ID)).where(TRANSACTION_ITEM.ID.eq(transactionItemId)).asField<Long>("categoryId")),
+            (dslContext.select(CATEGORY.NAME).from(CATEGORY).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.eq(CATEGORY.ID)).where(TRANSACTION_ITEM.ID.eq(transactionItemId)).asField<String>("categoryName")),
+            (dslContext.select(CATEGORY.IS_CUSTOM).from(CATEGORY).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.eq(CATEGORY.ID)).where(TRANSACTION_ITEM.ID.eq(transactionItemId)).asField<Byte>("categoryIsCustom")),
+            (dslContext.select(CATEGORY.STRING_ID).from(CATEGORY).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.eq(CATEGORY.ID)).where(TRANSACTION_ITEM.ID.eq(transactionItemId)).asField<String>("categoryStringId")),
+            (dslContext.select(CATEGORY.ICON).from(CATEGORY).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.eq(CATEGORY.ID)).where(TRANSACTION_ITEM.ID.eq(transactionItemId)).asField<String>("categoryIcon")),
+        )
+            .from(TRANSACTION)
+            .innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.TRANSACTION_ID.eq(TRANSACTION.ID))
+            .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
+            .where(ACCOUNT.PROFILE_ID.eq(profileId))
+        if(fromDate != null) {
+            selectStep = selectStep.and(TRANSACTION.DATED_AT.greaterOrEqual(fromDate))
+        }
+        if(toDate != null) {
+            selectStep = selectStep.and(TRANSACTION.DATED_AT.lessOrEqual(toDate))
+        }
+        if(accountIds.isNotEmpty()) {
+            selectStep = selectStep.and(TRANSACTION.ACCOUNT_ID.`in`(accountIds))
+        }
+        if(dates.isNotEmpty()) {
+            selectStep = selectStep.and(TRANSACTION.DATED_AT.`in`(dates))
+        }
+        if(categories.isNotEmpty()) {
+            selectStep = selectStep.and(TRANSACTION.ID.`in`(
+                dslContext.select(TRANSACTION.ID).from(TRANSACTION).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.TRANSACTION_ID.eq(TRANSACTION.ID)).where(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.`in`(categories))
+            ))
+        }
+        if(modes.isNotEmpty()) {
+            selectStep = selectStep.and(TRANSACTION.MODE.`in`(modes))
+        }
+        if(sellers.isNotEmpty()) {
+            selectStep = selectStep.and(TRANSACTION.SELLER_ID.`in`(sellers))
+        }
+        val seekStep = selectStep.orderBy(TRANSACTION.DATED_AT, TRANSACTION.ID)
+        return seekStep.fetch().into(TransactionWithItemAndAccount::class.java)
+    }
 
     fun getTransactionSum(
         profileId: Long,

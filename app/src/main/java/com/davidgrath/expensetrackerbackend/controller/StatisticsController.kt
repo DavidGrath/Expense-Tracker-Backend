@@ -10,6 +10,7 @@ import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDetail
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import com.davidgrath.expensetrackerbackend.generatedapi.model.TotalAmountPerCategory
 import com.davidgrath.expensetrackerbackend.generatedapi.model.TotalAmountPerCategoryItemSummary
+import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionItem
 import com.davidgrath.expensetrackerbackend.service.AccountService
 import com.davidgrath.expensetrackerbackend.service.CategoryService
 import com.davidgrath.expensetrackerbackend.service.DocumentService
@@ -23,6 +24,7 @@ import com.davidgrath.expensetrackerbackend.utils.toApiMode
 import com.davidgrath.expensetrackerbackend.utils.toBoolean
 import com.davidgrath.expensetrackerbackend.utils.toDbMode
 import com.davidgrath.expensetrackerbackend.utils.transactionItemPojoToTransactionItem
+import com.davidgrath.expensetrackerbackend.utils.transactionWithItemToTransactionItem
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Max
@@ -168,27 +170,52 @@ class StatisticsController: StatisticsApi {
         val user = userService.getByUsername(principal.subject!!)
         val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
         val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
-        val transactions = transactionService.getTransactions(profile.id!!, statisticsFilter.from,
+        val transactions = transactionService.getTransactionsWithItems(profile.id!!, statisticsFilter.from,
             statisticsFilter.to, statisticsFilter.accounts, statisticsFilter.includeDates, statisticsFilter.categories, modes, statisticsFilter.sellers)
         val scheme = httpServletRequest.scheme
         val host = httpServletRequest.serverName
         val port = httpServletRequest.serverPort
         val triple = Triple(scheme, host, port)
-        val details = transactions.map { t ->
-            val accountStats = accountService.getAccount(profile.id!!, t.accountId!!)!!
-            val account = accountPojoToAccount(accountStats)
-            val itemsPojo = transactionService.getItemsForTransaction(profile.id!!, t.id!!)
-            val items = itemsPojo.map { item ->
-                val images = imageService.getImagesForItem(profile.id!!, item.id!!)
-                val category = categoryService.getByProfileIdAndId(profile.id!!, item.primaryCategoryId!!)
-                transactionItemPojoToTransactionItem(item, triple, category!!, images)
+
+        val details = arrayListOf<TransactionDetails>()
+
+        val length = transactions.size
+        var items = arrayListOf<TransactionItem>()
+        transactions.forEachIndexed { i, t ->
+
+            val account = accountPojoToAccount(t)
+
+
+            val images = if(t.itemImageCount > 0) {
+                imageService.getImagesForItem(profile.id!!, t.itemId!!)
+            } else {
+                emptyList()
             }
-            val mode = t.mode.toApiMode()
-            val documentsPojo = documentService.getDocumentsByTransactionId(profile.id!!, t.id!!)
+
+            items.add(transactionWithItemToTransactionItem(t, triple, images))
+
+            val mode = t.transactionMode.toApiMode()
+            val documentsPojo = if(t.documentCount > 0) {
+                documentService.getDocumentsByTransactionId(profile.id!!, t.transactionId!!)
+            } else {
+                emptyList()
+            }
             val documents = documentsPojo.map { documentPojoToDocument(it, triple) }
-            val details = TransactionDetails(t.id, t.amount, account, items, documents, t.datedAt, t.time?.toString(), t.debitOrCredit.toBoolean(), t.note, mode)
-            details
+            val time = t.transactionTime?.toString()
+            val next = i + 1
+            if(next >= length) {
+                val detail = TransactionDetails(t.transactionId, t.transactionAmount, account, items, documents, t.transactionDatedAt, time, t.transactionDebitOrCredit.toBoolean(), t.transactionNote, mode)
+                details.add(detail)
+                items = arrayListOf()
+            } else {
+                if(transactions[next].transactionId != t.transactionId) {
+                    val detail = TransactionDetails(t.transactionId, t.transactionAmount, account, items, documents, t.transactionDatedAt, time, t.transactionDebitOrCredit.toBoolean(), t.transactionNote, mode)
+                    details.add(detail)
+                    items = arrayListOf()
+                }
+            }
         }
+
         return ResponseEntity.ok(details)
     }
 

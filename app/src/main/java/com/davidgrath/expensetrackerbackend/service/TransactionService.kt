@@ -6,6 +6,7 @@ import com.davidgrath.expensetrackerbackend.entities.views.DateAmountSummary
 import com.davidgrath.expensetrackerbackend.entities.views.ItemSumByCategory
 import com.davidgrath.expensetrackerbackend.entities.views.TopItemSumByCategory
 import com.davidgrath.expensetrackerbackend.entities.views.TransactionAndItemCount
+import com.davidgrath.expensetrackerbackend.entities.views.TransactionWithItemAndAccount
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionItemPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionPojo
 import com.davidgrath.expensetrackerbackend.generatedapi.model.SuggestionsFieldType
@@ -133,6 +134,22 @@ class TransactionService {
         dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>
     ): List<TransactionPojo> {
         val list = transactionRepository.getTransactions(profileId, fromDate, toDate, accountIds, dates, categories, modes, sellers)
+        LOGGER.info("getTransactions: Fetched {} items", list.size)
+        return list
+    }
+
+
+    fun getTransactionsWithItems(
+        profileId: Long,
+        fromDate: LocalDate? = null, toDate: LocalDate? = null,
+        accountIds: List<Long>,
+        dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>
+    ): List<TransactionWithItemAndAccount> {
+        val start = System.nanoTime()
+        val list = transactionRepository.getTransactionsWithItems(profileId, fromDate, toDate, accountIds, dates, categories, modes, sellers)
+        val end = System.nanoTime()
+        val duration = Duration.ofNanos(end - start)
+        LOGGER.info("Time taken: {}", duration)
         LOGGER.info("getTransactions: Fetched {} items", list.size)
         return list
     }

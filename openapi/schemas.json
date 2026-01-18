@@ -93,8 +93,20 @@
           "category": {
             "$ref": "#/components/schemas/Category"
           },
+          "quantity": {
+            "type": "integer"
+          },
           "isReduction": {
             "type": "boolean"
+          },
+          "brand": {
+            "type": "string"
+          },
+          "variation": {
+            "type": "string"
+          },
+          "referenceNumber": {
+            "type": "string"
           },
           "images": {
             "type": "array",

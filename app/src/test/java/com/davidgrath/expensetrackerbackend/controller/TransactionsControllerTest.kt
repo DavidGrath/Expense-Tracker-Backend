@@ -7,11 +7,13 @@ import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.configuration.WebMvcConfiguration
 import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.controller.exception.ExceptionResponseHandler
+import com.davidgrath.expensetrackerbackend.generatedapi.api.TransactionsApi
 import com.davidgrath.expensetrackerbackend.repository.AccountRepository
 import com.davidgrath.expensetrackerbackend.repository.CategoryRepository
 import com.davidgrath.expensetrackerbackend.repository.ProfileRepository
 import com.davidgrath.expensetrackerbackend.repository.UserRepository
 import com.davidgrath.expensetrackerbackend.service.UserService
+import com.davidgrath.expensetrackerbackend.testutils.DataBuilder
 import com.davidgrath.expensetrackerbackend.testutils.TestConstants
 import com.davidgrath.expensetrackerbackend.testutils.TestUtilComponent
 import com.davidgrath.expensetrackerbackend.testutils.createBearerToken
@@ -35,14 +37,15 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.http.MediaType
 import org.springframework.test.annotation.DirtiesContext
-import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers
 import java.math.BigDecimal
-import java.util.Base64
+import java.nio.file.Files
+import java.time.Duration
+import java.time.LocalDate
 import java.util.Locale
 
 @RunWith(SpringRunner::class)
@@ -256,6 +259,61 @@ class TransactionsControllerTest {
                     "$.$CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE", Matchers.equalToIgnoringCase(ErrorCode.TIME_ZONE_NOT_VALID.code)
                 )
             ).andReturn()
+    }
+
+    /**
+     * Background: I started running some insertion scripts with JMeter, and later opened the Android app with the same user and got a timeout, based on OkHttp's default of 10 seconds.
+     * I inspected it with Tempo, and found that from the 777 single-item transactions I inserted that day, I got a trace with 3,891 spans, only 3 of which were not DB operations (span.db.operation != nil)
+     * and it took roughly 1m20s, so this test is the result of that.
+     */
+    @Test
+    //TODO Ignore this on the next commit, because it will add unnecessary time to regular test runs
+    fun getTransactionsTimeTest() {
+        val tempFolder = Files.createTempDirectory("temp").toFile()
+        tempFolder.deleteOnExit()
+        val dataBuilder = DataBuilder(tempFolder, timeHandler, null, Constants.DEFAULT_PROFILE_ID, testUtilComponent)
+        val repetitionCount = 1_000
+        val dates = Array(repetitionCount - 1) { //The builder inserts with an initial date no matter what. Maybe I should change that behaviour
+            LocalDate.now(timeHandler.getClock())
+        }
+
+        val insertionStartTime = System.nanoTime()
+        dataBuilder.createTransaction()
+            .withItem("Desc", "miscellaneous", BigDecimal(1000.00))
+            .repeatIntoDates(dates.toList())
+            .commit()
+        val insertionEndTime = System.nanoTime()
+        val dur = Duration.ofNanos(insertionEndTime - insertionStartTime)
+        LOGGER.debug("Insertion time: {}", dur.toString())
+
+        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
+
+        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
+        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
+        val misc = categoryRepository.findByProfileIdAndStringId(profile.id!!, "miscellaneous")
+
+
+        val startTimeNanos = System.nanoTime()
+        var response = mockMvc
+            .perform(
+                MockMvcRequestBuilders.get(TransactionsApi.PATH_TRANSACTIONS_GET)
+                    .param("accountIds", accountId.toString())
+                    .header("Authorization", "Bearer ${jws}")
+                    .header("Profile-Id", profile.stringId)
+            )
+            .andExpectAll(
+                MockMvcResultMatchers.status().isOk,
+                MockMvcResultMatchers.jsonPath(
+                    "$", Matchers.hasSize<Int>(repetitionCount)
+                )
+            ).andReturn()
+        val endTimeNanos = System.nanoTime()
+        val d = endTimeNanos - startTimeNanos
+        val duration = Duration.ofNanos(d)
+        LOGGER.debug("Request time: {}", duration.toString())
+        val durationSeconds = Duration.ofNanos(d).toSeconds()
+        assertTrue(durationSeconds <= 10)
     }
 
     companion object {

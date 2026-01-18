@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "ExTrack API",
-    "version": "0.3.4",
+    "version": "0.3.5",
     "description": "API for the client-server version of ExTrack. It's meant to mirror the offline version for the most part.  # Text Field recommended length limits: Short: 20, Medium: 50, Long: 100, Extra long: 400. Try and apply these to any schemas that have 'Request' in the name"
   },
   "security": [

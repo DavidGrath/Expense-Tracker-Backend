@@ -15,6 +15,7 @@ import com.davidgrath.expensetrackerbackend.entities.views.AccountWithStats
 import com.davidgrath.expensetrackerbackend.entities.views.CategoryWithStats
 import com.davidgrath.expensetrackerbackend.entities.views.DocumentWithTransactionDateAndOrdinal
 import com.davidgrath.expensetrackerbackend.entities.views.ImageWithStats
+import com.davidgrath.expensetrackerbackend.entities.views.TransactionWithItemAndAccount
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.AccountPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.CategoryPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.DocumentPojo
@@ -89,8 +90,21 @@ fun accountWithStatsToAccountDetails(accountWithStats: AccountWithStats): Accoun
 
 fun accountPojoToAccount(accountPojo: AccountPojo): Account {
     return Account(accountPojo.id, accountPojo.profileId, accountPojo.currencyCode, accountPojo.name)
-
 }
+fun accountPojoToAccount(accountPojo: TransactionWithItemAndAccount): Account {
+    return Account(accountPojo.accountId, accountPojo.accountProfileId, accountPojo.accountCurrencyCode, accountPojo.accountName)
+}
+fun transactionWithItemToTransactionItem(transactionWithItem: TransactionWithItemAndAccount, baseUrl: Triple<String, String, Int>, images: List<ImagePojo>): TransactionItem {
+    val imagesApi = images.map {
+        val imageUrl = URI(baseUrl.first, null, baseUrl.second, baseUrl.third, "/files" + it.path, null, null)
+        Image(it.id, it.sizeBytes, imageUrl, it.mimeType)
+    }
+    return TransactionItem(
+        transactionWithItem.itemId, transactionWithItem.itemAmount, transactionWithItem.itemDescription, transactionWithItemToCategory(transactionWithItem),
+        transactionWithItem.itemQuantity, transactionWithItem.itemIsReduction.toBoolean(), transactionWithItem.itemBrand, transactionWithItem.itemVariation, transactionWithItem.itemReferenceNumber, imagesApi
+        )
+}
+
 fun transactionItemPojoToTransactionItem(transactionItemPojo: TransactionItemPojo, baseUrl: Triple<String, String, Int>, categoryPojo: CategoryPojo, images: List<ImagePojo>): TransactionItem {
     val imagesApi = images.map {
         val imageUrl = URI(baseUrl.first, null, baseUrl.second, baseUrl.third, "/files" + it.path, null, null)
@@ -98,7 +112,7 @@ fun transactionItemPojoToTransactionItem(transactionItemPojo: TransactionItemPoj
     }
     return TransactionItem(
         transactionItemPojo.id, transactionItemPojo.amount, transactionItemPojo.description, categoryPojoToCategory(categoryPojo),
-        transactionItemPojo.isReduction.toBoolean(), imagesApi
+        transactionItemPojo.quantity, transactionItemPojo.isReduction.toBoolean(), transactionItemPojo.brand, transactionItemPojo.variation, transactionItemPojo.referenceNumber, imagesApi
         )
 }
 
@@ -114,6 +128,9 @@ fun documentPojoToDocumentDetails(document: DocumentWithTransactionDateAndOrdina
 fun imageWithStatsToImageDetails(image: ImageWithStats, baseUrl: Triple<String, String, Int>): ImageDetails {
     val imageUrl = URI(baseUrl.first, null, baseUrl.second, baseUrl.third, "/files" + image.path, null, null)
     return ImageDetails(image.id, image.sizeBytes, imageUrl, image.mimeType, image.transactionCount, image.itemCount)
+}
+fun transactionWithItemToCategory(categoryPojo: TransactionWithItemAndAccount): Category {
+    return Category(categoryPojo.categoryId, categoryPojo.categoryName, categoryPojo.categoryIsCustom.toBoolean(), categoryPojo.categoryStringId, categoryPojo.categoryIcon)
 }
 fun categoryPojoToCategory(categoryPojo: CategoryPojo): Category {
     return Category(categoryPojo.id, categoryPojo.name, categoryPojo.isCustom.toBoolean(), categoryPojo.stringId, categoryPojo.icon)
