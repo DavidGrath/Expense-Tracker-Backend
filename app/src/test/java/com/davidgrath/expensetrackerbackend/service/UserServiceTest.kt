@@ -2,7 +2,7 @@ package com.davidgrath.expensetrackerbackend.service
 
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.repository.*
-import com.davidgrath.expensetrackerbackend.configuration.TestConfiguration
+import com.davidgrath.expensetrackerbackend.configuration.TestRunConfiguration
 import com.davidgrath.expensetrackerbackend.testutils.TestUtilComponent
 import com.davidgrath.expensetrackerbackend.testutils.tempInit
 import com.davidgrath.expensetrackerbackend.utils.Constants
@@ -14,7 +14,6 @@ import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ContextConfiguration
-import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.junit4.SpringRunner
 import java.util.Locale
 
@@ -22,7 +21,7 @@ import java.util.Locale
 @RunWith(SpringRunner::class)
 @ContextConfiguration(
     classes = [
-        TestConfiguration::class,
+        TestRunConfiguration::class,
         TransactionService::class,
         TransactionRepository::class
     ])

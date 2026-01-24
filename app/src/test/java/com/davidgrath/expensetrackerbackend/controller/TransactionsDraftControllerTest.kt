@@ -1,8 +1,7 @@
 package com.davidgrath.expensetrackerbackend.controller
 
-import com.davidgrath.expensetrackerbackend.generatedapi.model.BasicTransactionCreateRequest
 import com.davidgrath.expensetrackerbackend.configuration.SecurityConfiguration
-import com.davidgrath.expensetrackerbackend.configuration.TestConfiguration
+import com.davidgrath.expensetrackerbackend.configuration.TestRunConfiguration
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.configuration.WebMvcConfiguration
 import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
@@ -26,13 +25,11 @@ import com.davidgrath.expensetrackerbackend.testutils.createBearerToken
 import com.davidgrath.expensetrackerbackend.testutils.getDefaultAccountId
 import com.davidgrath.expensetrackerbackend.testutils.tempInit
 import com.davidgrath.expensetrackerbackend.utils.Constants
-import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.JWT_ALG
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.ObjectWriter
 import org.hamcrest.Matchers
 import org.junit.After
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -40,11 +37,9 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
-import org.springframework.core.io.ByteArrayResource
 import org.springframework.http.MediaType
 import org.springframework.mock.web.MockMultipartFile
 import org.springframework.test.annotation.DirtiesContext
-import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.test.web.servlet.MockMvc
@@ -53,14 +48,13 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers
 import java.math.BigDecimal
 import java.time.ZoneId
 import java.time.ZonedDateTime
-import java.util.Base64
 import java.util.Locale
 
 @RunWith(SpringRunner::class)
 @WebMvcTest(TransactionsController::class)
 @ContextConfiguration(
     classes = [
-        TransactionsController::class, SecurityConfiguration::class, TestConfiguration::class, ExceptionResponseHandler::class,
+        TransactionsController::class, SecurityConfiguration::class, TestRunConfiguration::class, ExceptionResponseHandler::class,
         TestUtilComponent::class, WebMvcConfiguration::class
     ])
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)

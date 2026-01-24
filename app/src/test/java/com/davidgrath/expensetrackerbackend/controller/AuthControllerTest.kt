@@ -3,7 +3,7 @@ package com.davidgrath.expensetrackerbackend.controller
 import com.davidgrath.expensetrackerbackend.generatedapi.model.SignUpRequest
 import com.davidgrath.expensetrackerbackend.configuration.SecurityConfiguration
 import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
-import com.davidgrath.expensetrackerbackend.configuration.TestConfiguration
+import com.davidgrath.expensetrackerbackend.configuration.TestRunConfiguration
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.controller.exception.ExceptionResponseHandler
 import com.davidgrath.expensetrackerbackend.service.UserService
@@ -13,7 +13,6 @@ import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.CUSTOM_PRO
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.JWT_ALG
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.ObjectWriter
-import io.jsonwebtoken.Jwts
 import org.hamcrest.Matchers
 import org.junit.After
 import org.junit.Assert.*
@@ -26,24 +25,19 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.http.MediaType
 import org.springframework.test.annotation.DirtiesContext
-import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers
-import java.time.LocalDateTime
-import java.time.ZoneId
 import java.util.*
-import javax.crypto.SecretKey
-import javax.crypto.spec.SecretKeySpec
 
 
 @RunWith(SpringRunner::class)
 @WebMvcTest(AuthController::class)
 @ContextConfiguration(
     classes = [
-        AuthController::class, SecurityConfiguration::class, TestConfiguration::class, TestAuthController::class, ExceptionResponseHandler::class, TestUtilComponent::class
+        AuthController::class, SecurityConfiguration::class, TestRunConfiguration::class, TestAuthController::class, ExceptionResponseHandler::class, TestUtilComponent::class
     ])
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 class AuthControllerTest {

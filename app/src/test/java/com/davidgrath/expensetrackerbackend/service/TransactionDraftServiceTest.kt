@@ -1,11 +1,9 @@
 package com.davidgrath.expensetrackerbackend.service
 
-import com.davidgrath.expensetrackerbackend.configuration.TestConfiguration
+import com.davidgrath.expensetrackerbackend.configuration.TestRunConfiguration
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.entities.DocumentType
-import com.davidgrath.expensetrackerbackend.entities.TransactionDraftFile
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.DocumentPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ImagePojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.SellerLocationPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.SellerPojo
@@ -63,7 +61,7 @@ import java.util.UUID
 @RunWith(SpringRunner::class)
 @ContextConfiguration(
     classes = [
-        TestConfiguration::class,
+        TestRunConfiguration::class,
         TransactionService::class,
         TransactionRepository::class
     ])

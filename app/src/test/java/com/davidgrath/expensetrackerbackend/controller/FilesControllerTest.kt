@@ -1,7 +1,7 @@
 package com.davidgrath.expensetrackerbackend.controller
 
 import com.davidgrath.expensetrackerbackend.configuration.SecurityConfiguration
-import com.davidgrath.expensetrackerbackend.configuration.TestConfiguration
+import com.davidgrath.expensetrackerbackend.configuration.TestRunConfiguration
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.controller.exception.ExceptionResponseHandler
@@ -39,7 +39,7 @@ import java.util.Locale
 @WebMvcTest(AuthController::class)
 @ContextConfiguration(
     classes = [
-        FilesController::class, SecurityConfiguration::class, TestConfiguration::class, ExceptionResponseHandler::class
+        FilesController::class, SecurityConfiguration::class, TestRunConfiguration::class, ExceptionResponseHandler::class
     ])
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 class FilesControllerTest {

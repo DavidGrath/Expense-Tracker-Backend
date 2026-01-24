@@ -1,6 +1,6 @@
 package com.davidgrath.expensetrackerbackend.repository
 
-import com.davidgrath.expensetrackerbackend.configuration.TestConfiguration
+import com.davidgrath.expensetrackerbackend.configuration.TestRunConfiguration
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.AccountPojo
 import com.davidgrath.expensetrackerbackend.testutils.DataBuilder
@@ -30,7 +30,7 @@ import java.time.LocalTime
 @RunWith(SpringRunner::class)
 @ContextConfiguration(
     classes = [
-        TestConfiguration::class,
+        TestRunConfiguration::class,
         TransactionRepository::class,
         ProfileRepository::class,
         UserRepository::class,

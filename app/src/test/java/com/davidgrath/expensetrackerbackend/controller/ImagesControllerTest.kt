@@ -1,7 +1,7 @@
 package com.davidgrath.expensetrackerbackend.controller
 
 import com.davidgrath.expensetrackerbackend.configuration.SecurityConfiguration
-import com.davidgrath.expensetrackerbackend.configuration.TestConfiguration
+import com.davidgrath.expensetrackerbackend.configuration.TestRunConfiguration
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.controller.exception.ExceptionResponseHandler
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
@@ -23,7 +23,6 @@ import com.davidgrath.expensetrackerbackend.service.TransactionDraftServiceTest.
 import com.davidgrath.expensetrackerbackend.testutils.TestConstants
 import com.davidgrath.expensetrackerbackend.testutils.TestData
 import com.davidgrath.expensetrackerbackend.testutils.TestUtilComponent
-import com.davidgrath.expensetrackerbackend.testutils.copyControllerTempFile
 import com.davidgrath.expensetrackerbackend.testutils.createBearerToken
 import com.davidgrath.expensetrackerbackend.testutils.getDefaultAccountId
 import com.davidgrath.expensetrackerbackend.testutils.tempInit
@@ -34,7 +33,6 @@ import com.davidgrath.expensetrackerbackend.utils.getSha256
 import com.davidgrath.expensetrackerbackend.utils.toByte
 import org.hamcrest.Matchers
 import org.junit.After
-import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -56,7 +54,7 @@ import java.util.UUID
 @WebMvcTest(ImagesController::class)
 @ContextConfiguration(
     classes = [
-        ImagesController::class, SecurityConfiguration::class, TestConfiguration::class, ExceptionResponseHandler::class
+        ImagesController::class, SecurityConfiguration::class, TestRunConfiguration::class, ExceptionResponseHandler::class
     ])
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 class ImagesControllerTest {

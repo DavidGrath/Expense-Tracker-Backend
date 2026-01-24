@@ -1,11 +1,10 @@
 package com.davidgrath.expensetrackerbackend.controller
 
 import com.davidgrath.expensetrackerbackend.configuration.SecurityConfiguration
-import com.davidgrath.expensetrackerbackend.configuration.TestConfiguration
+import com.davidgrath.expensetrackerbackend.configuration.TestRunConfiguration
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.controller.exception.ExceptionResponseHandler
 import com.davidgrath.expensetrackerbackend.generatedapi.api.ProfilesApi
-import com.davidgrath.expensetrackerbackend.testutils.TestConstants
 import com.davidgrath.expensetrackerbackend.testutils.TestUtilComponent
 import com.davidgrath.expensetrackerbackend.testutils.createBearerToken
 import com.davidgrath.expensetrackerbackend.testutils.tempInit
@@ -13,7 +12,6 @@ import com.davidgrath.expensetrackerbackend.utils.Constants
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.JWT_ALG
 import org.hamcrest.Matchers
 import org.junit.After
-import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -31,7 +29,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers
 @WebMvcTest(ProfilesController::class)
 @ContextConfiguration(
     classes = [
-        ProfilesController::class, SecurityConfiguration::class, TestConfiguration::class, TestAuthController::class, ExceptionResponseHandler::class, TestUtilComponent::class
+        ProfilesController::class, SecurityConfiguration::class, TestRunConfiguration::class, TestAuthController::class, ExceptionResponseHandler::class, TestUtilComponent::class
     ])
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 

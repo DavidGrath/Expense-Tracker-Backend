@@ -1,6 +1,5 @@
 package com.davidgrath.expensetrackerbackend.configuration
 
-import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.repository.TransactionRepository
 import com.davidgrath.expensetrackerbackend.service.TransactionService
 import com.davidgrath.expensetrackerbackend.testutils.TestTimeHandler
@@ -14,32 +13,24 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
-import org.springframework.security.crypto.password.DelegatingPasswordEncoder
 import org.springframework.security.crypto.password.NoOpPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm
-import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
 import java.security.KeyFactory
-import java.security.interfaces.ECPublicKey
 import java.security.interfaces.RSAPublicKey
 import java.security.spec.X509EncodedKeySpec
 import java.sql.SQLException
-import java.time.Instant
 import java.time.ZoneId
-import java.time.temporal.ChronoUnit
 import java.util.*
-import javax.crypto.SecretKey
-import javax.crypto.spec.SecretKeySpec
 import javax.sql.DataSource
 
 @TestConfiguration
 @ComponentScan(basePackageClasses = [
     TransactionService::class,
     TransactionRepository::class, TestTimeHandler::class])
-open class TestConfiguration {
+open class TestRunConfiguration {
 
     @Value("\${jwt.signingkey}")
     private val jwtSigningKey: String? = null
