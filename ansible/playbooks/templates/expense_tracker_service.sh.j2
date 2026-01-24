@@ -1,7 +1,4 @@
 export APP_VERSION=$(cat app-version)
-export OTEL_SDK_DISABLED=false
-export OTEL_SERVICE_NAME=expense_tracker_backend
-export OTEL_JAVA_AGENT_LOCATION=/opt/opentelemetry
 export JAVA_TOOL_OPTIONS="-javaagent:$OTEL_JAVA_AGENT_LOCATION/opentelemetry-javaagent.jar"
 export SPRING_PROFILES_ACTIVE={{deployment_environment}}
 export OTEL_EXPORTER_OTLP_ENDPOINT=http://telemetry.davidgrath.com:4318

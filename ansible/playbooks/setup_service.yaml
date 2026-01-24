@@ -19,6 +19,12 @@
         state: directory
         owner: jenkins
         mode: '760'
+    - name: Download Pyroscope OTel Jar
+      become: true
+      ansible.builtin.get_url:
+        url: https://github.com/grafana/otel-profiling-java/releases/download/v1.0.4/pyroscope-otel.jar
+        dest: /opt/expense_tracker/pyroscope-otel.jar
+        checksum: sha256:39058f217186a1ac192a0c31e9ae3fed5d49d0ec6be6baca882bdbcc8d19c512
     - name: Configure Service Startup
       become: true
       ansible.builtin.template:

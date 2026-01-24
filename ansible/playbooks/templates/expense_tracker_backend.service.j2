@@ -3,6 +3,14 @@ Description=Expense Tracker Backend
 
 [Service]
 WorkingDirectory=/opt/expense_tracker
+
+Environment=PYROSCOPE_APPLICATION_NAME=expense_tracker_backend
+Environment=OTEL_SERVICE_NAME=expense_tracker_backend
+
+Environment=PYROSCOPE_SERVER_ADDRESS={{pyroscope_address}}
+Environment=OTEL_SDK_DISABLED=false
+Environment=OTEL_JAVA_AGENT_LOCATION=/opt/opentelemetry
+Environment=OTEL_JAVAAGENT_EXTENSIONS=./pyroscope-otel.jar
 ExecStart=/bin/bash /opt/expense_tracker/startup.sh
 
 [Install]
