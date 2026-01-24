@@ -16,6 +16,9 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 import java.util.*
+import java.util.concurrent.Callable
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
 
@@ -28,6 +31,15 @@ class AuthService constructor(
 
     @Autowired
     lateinit var timeHandler: TimeHandler
+
+    val processorCount = Runtime.getRuntime().availableProcessors()
+    val jwtExecutorService: ExecutorService
+    init {
+
+        LOGGER.info("Processor count: {}", processorCount)
+        jwtExecutorService = Executors.newFixedThreadPool(processorCount)
+        LOGGER.info("Created fixed thread pool with size {}", processorCount)
+    }
 
     val key: RSAPrivateKey
     init {
@@ -43,22 +55,27 @@ class AuthService constructor(
 
     fun createUserToken(username: String): String {
 
-
-        val localDateTime = LocalDateTime.now(timeHandler.getClock())
-        val expiry = localDateTime.plus(60, ChronoUnit.MINUTES)
-        val startTime = System.nanoTime()
-        val jws = Jwts.builder()
-            .subject(username)
-            .signWith(key)
-            .issuedAt(Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant()))
-            .expiration(Date.from(expiry.atZone(ZoneId.systemDefault()).toInstant()))
-            .id(UUID.randomUUID().toString())
-            .compact()
-        val endTime = System.nanoTime()
-        val duration = Duration.ofNanos(endTime - startTime)
-        LOGGER.info("Time taken to generate JWS: {}", duration)
-        return jws
-
+        val generateJws = Callable<String> {
+            val localDateTime = LocalDateTime.now(timeHandler.getClock())
+            val expiry = localDateTime.plus(60, ChronoUnit.MINUTES)
+            val startTime = System.nanoTime()
+            val jws = Jwts.builder()
+                .subject(username)
+                .signWith(key)
+                .issuedAt(Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant()))
+                .expiration(Date.from(expiry.atZone(ZoneId.systemDefault()).toInstant()))
+                .id(UUID.randomUUID().toString())
+                .compact()
+            val endTime = System.nanoTime()
+            val duration = Duration.ofNanos(endTime - startTime)
+            LOGGER.info("Time taken to generate JWS: {}", duration)
+            jws
+        }
+        LOGGER.info("Submitting JWS task to thread pool")
+        val future = jwtExecutorService.submit(generateJws)
+        val jwt = future.get()
+        LOGGER.info("Retrieved JWS")
+        return jwt
     }
 
     companion object {

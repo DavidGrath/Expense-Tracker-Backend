@@ -270,7 +270,7 @@ class TransactionsControllerTest {
      * I tried using withDocument to be able to test my N+1 problem fix with the documents, but my before and after are PT5.3328895S and PT2.4806974S, so I can't really tell
      */
     @Test
-//    @Ignore("It will add unnecessary time to regular test runs")
+    @Ignore("Performance test")
     fun getTransactionsTimeTest() {
         val tempFolder = Files.createTempDirectory("temp").toFile()
         tempFolder.deleteOnExit()
