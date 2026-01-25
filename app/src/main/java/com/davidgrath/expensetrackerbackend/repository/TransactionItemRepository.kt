@@ -92,10 +92,6 @@ open class TransactionItemRepository {
         return result
     }
 
-    fun deleteAllForTesting(): Int {
-        val delete = dslContext.deleteFrom(TRANSACTION_ITEM).where("true")
-        return delete.execute()
-    }
 
     companion object {
         private val LOGGER = LoggerFactory.getLogger(TransactionItemRepository::class.java)

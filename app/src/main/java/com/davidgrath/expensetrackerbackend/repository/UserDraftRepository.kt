@@ -2,8 +2,6 @@ package com.davidgrath.expensetrackerbackend.repository
 
 import com.davidgrath.expensetrackerbackend.entities.UserDraftType
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.UserDraftPojo
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.UserPojo
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.USER
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.USER_DRAFT
 import org.jooq.DSLContext
 import org.jooq.JSON
@@ -65,10 +63,6 @@ class UserDraftRepository @Autowired constructor(open var dslContext: DSLContext
         return deletedCount
     }
 
-    fun deleteAllForTesting(): Int {
-        val delete = dslContext.deleteFrom(USER_DRAFT).where("true")
-        return delete.execute()
-    }
 
     companion object {
         private val LOGGER = LoggerFactory.getLogger(UserDraftRepository::class.java)

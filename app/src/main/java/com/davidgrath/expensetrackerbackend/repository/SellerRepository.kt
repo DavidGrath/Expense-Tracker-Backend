@@ -74,11 +74,6 @@ class SellerRepository @Autowired constructor(open var dslContext: DSLContext) {
     }
 
 
-    fun deleteAllForTesting(): Int {
-        val delete = dslContext.deleteFrom(SELLER).where("true")
-        return delete.execute()
-    }
-
     companion object {
         private val LOGGER = LoggerFactory.getLogger(SellerRepository::class.java)
     }

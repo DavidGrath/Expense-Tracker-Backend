@@ -3,30 +3,12 @@ package com.davidgrath.expensetrackerbackend.utils
 import com.davidgrath.expensetrackerbackend.entities.DocumentType
 import com.davidgrath.expensetrackerbackend.entities.TransactionDraft
 import com.davidgrath.expensetrackerbackend.entities.TransactionDraftItem
-import com.davidgrath.expensetrackerbackend.generatedapi.model.Account
-import com.davidgrath.expensetrackerbackend.generatedapi.model.AccountDetails
-import com.davidgrath.expensetrackerbackend.generatedapi.model.Category
-import com.davidgrath.expensetrackerbackend.generatedapi.model.CategoryDetails
-import com.davidgrath.expensetrackerbackend.generatedapi.model.Image
-import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraftFile
-import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionItem
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
-import com.davidgrath.expensetrackerbackend.entities.views.AccountWithStats
-import com.davidgrath.expensetrackerbackend.entities.views.CategoryWithStats
-import com.davidgrath.expensetrackerbackend.entities.views.DocumentWithTransactionDateAndOrdinal
-import com.davidgrath.expensetrackerbackend.entities.views.ImageWithStats
-import com.davidgrath.expensetrackerbackend.entities.views.TransactionWithItemAndAccount
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.AccountPojo
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.CategoryPojo
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.DocumentPojo
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ImagePojo
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionItemPojo
-import com.davidgrath.expensetrackerbackend.generatedapi.model.Document
-import com.davidgrath.expensetrackerbackend.generatedapi.model.DocumentDetails
-import com.davidgrath.expensetrackerbackend.generatedapi.model.ImageDetails
-import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraftItemUpdateRequest
+import com.davidgrath.expensetrackerbackend.entities.views.*
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.*
+import com.davidgrath.expensetrackerbackend.generatedapi.model.*
 import java.net.URI
-import java.util.UUID
+import java.util.*
 
 fun Boolean.toByte(): Byte {
     return if(this) {

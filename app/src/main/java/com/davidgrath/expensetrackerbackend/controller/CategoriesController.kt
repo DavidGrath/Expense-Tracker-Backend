@@ -1,20 +1,16 @@
 package com.davidgrath.expensetrackerbackend.controller
 
+import com.davidgrath.expensetrackerbackend.controller.exception.CustomHttpException
+import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.generatedapi.api.CategoriesApi
 import com.davidgrath.expensetrackerbackend.generatedapi.model.Category
 import com.davidgrath.expensetrackerbackend.generatedapi.model.CategoryCreateRequest
 import com.davidgrath.expensetrackerbackend.generatedapi.model.CategoryDetails
 import com.davidgrath.expensetrackerbackend.generatedapi.model.CategoryUpdateRequest
-import com.davidgrath.expensetrackerbackend.controller.exception.CustomHttpException
-import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.service.CategoryService
 import com.davidgrath.expensetrackerbackend.service.ProfileService
 import com.davidgrath.expensetrackerbackend.service.UserService
-import com.davidgrath.expensetrackerbackend.utils.Constants
-import com.davidgrath.expensetrackerbackend.utils.categoryPojoToCategory
-import com.davidgrath.expensetrackerbackend.utils.categoryWithStatsToApiCategory
-import com.davidgrath.expensetrackerbackend.utils.loadMaterialSymbolsIcons
-import com.davidgrath.expensetrackerbackend.utils.toBoolean
+import com.davidgrath.expensetrackerbackend.utils.*
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotNull
 import org.slf4j.LoggerFactory

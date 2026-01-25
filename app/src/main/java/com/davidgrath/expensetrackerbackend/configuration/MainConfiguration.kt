@@ -1,9 +1,6 @@
 package com.davidgrath.expensetrackerbackend.configuration
 
 
-import com.davidgrath.expensetrackerbackend.repository.UserRepository
-import com.davidgrath.expensetrackerbackend.service.AuthService
-import com.davidgrath.expensetrackerbackend.service.UserService
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.JWT_ALG
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
@@ -11,11 +8,9 @@ import org.jooq.DSLContext
 import org.jooq.SQLDialect
 import org.jooq.impl.DSL
 import org.jooq.impl.DefaultConfiguration
-import org.jooq.impl.DefaultExecuteListenerProvider
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.DelegatingPasswordEncoder
@@ -29,10 +24,7 @@ import java.security.spec.X509EncodedKeySpec
 import java.sql.SQLException
 import java.time.Duration
 import java.time.ZoneId
-import java.time.temporal.ChronoUnit
-import java.util.Base64
-import javax.crypto.SecretKey
-import javax.crypto.spec.SecretKeySpec
+import java.util.*
 import javax.sql.DataSource
 
 @Configuration

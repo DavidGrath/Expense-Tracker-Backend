@@ -1,7 +1,5 @@
 package com.davidgrath.expensetrackerbackend.entities
 
-import java.net.URI
-
 data class TransactionDraftFile(
     val dbId: Long?,
     val path: String,

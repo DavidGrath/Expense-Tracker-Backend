@@ -10,22 +10,10 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.Document
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionItemPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionPojo
 import com.davidgrath.expensetrackerbackend.generatedapi.api.DocumentsApi
-import com.davidgrath.expensetrackerbackend.repository.AccountRepository
-import com.davidgrath.expensetrackerbackend.repository.CategoryRepository
-import com.davidgrath.expensetrackerbackend.repository.DocumentRepository
-import com.davidgrath.expensetrackerbackend.repository.ProfileRepository
-import com.davidgrath.expensetrackerbackend.repository.TransactionItemRepository
-import com.davidgrath.expensetrackerbackend.repository.TransactionRepository
-import com.davidgrath.expensetrackerbackend.repository.UserRepository
+import com.davidgrath.expensetrackerbackend.repository.*
 import com.davidgrath.expensetrackerbackend.service.TransactionDraftServiceTest.Companion.MOCKED_DATE
 import com.davidgrath.expensetrackerbackend.service.TransactionDraftServiceTest.Companion.MOCKED_TIME
-import com.davidgrath.expensetrackerbackend.testutils.TestConstants
-import com.davidgrath.expensetrackerbackend.testutils.TestData
-import com.davidgrath.expensetrackerbackend.testutils.TestUtilComponent
-import com.davidgrath.expensetrackerbackend.testutils.copyControllerTempFile
-import com.davidgrath.expensetrackerbackend.testutils.createBearerToken
-import com.davidgrath.expensetrackerbackend.testutils.getDefaultAccountId
-import com.davidgrath.expensetrackerbackend.testutils.tempInit
+import com.davidgrath.expensetrackerbackend.testutils.*
 import com.davidgrath.expensetrackerbackend.utils.Constants
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.JWT_ALG
 import com.davidgrath.expensetrackerbackend.utils.file
@@ -47,7 +35,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers
 import java.io.File
 import java.math.BigDecimal
 import java.nio.file.Files
-import java.util.UUID
+import java.util.*
 
 @RunWith(SpringRunner::class)
 @WebMvcTest(DocumentsController::class)

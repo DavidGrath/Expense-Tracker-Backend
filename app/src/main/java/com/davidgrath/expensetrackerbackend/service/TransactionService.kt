@@ -2,11 +2,7 @@ package com.davidgrath.expensetrackerbackend.service
 
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
-import com.davidgrath.expensetrackerbackend.entities.views.DateAmountSummary
-import com.davidgrath.expensetrackerbackend.entities.views.ItemSumByCategory
-import com.davidgrath.expensetrackerbackend.entities.views.TopItemSumByCategory
-import com.davidgrath.expensetrackerbackend.entities.views.TransactionAndItemCount
-import com.davidgrath.expensetrackerbackend.entities.views.TransactionWithItemAndAccount
+import com.davidgrath.expensetrackerbackend.entities.views.*
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionItemPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionPojo
 import com.davidgrath.expensetrackerbackend.generatedapi.model.SuggestionsFieldType

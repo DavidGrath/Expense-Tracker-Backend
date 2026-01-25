@@ -1,13 +1,7 @@
 package com.davidgrath.expensetrackerbackend.repository
 
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.Account
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.Transaction
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.TransactionItem
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.User
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.UserPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.USER
-import com.davidgrath.expensetrackerbackend.service.UserService
 import org.jooq.DSLContext
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -39,11 +33,6 @@ class UserRepository @Autowired constructor(open var dslContext: DSLContext) {
         val selectStep = dslContext.selectFrom(USER)
             .where(USER.USERNAME.eq(username))
         return selectStep.fetchOne()?.into(UserPojo::class.java)
-    }
-
-    fun deleteAllForTesting(): Int {
-        val delete = dslContext.deleteFrom(USER).where("true")
-        return delete.execute()
     }
 
     companion object {

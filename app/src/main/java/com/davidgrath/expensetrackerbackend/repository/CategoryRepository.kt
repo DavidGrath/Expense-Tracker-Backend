@@ -1,14 +1,8 @@
 package com.davidgrath.expensetrackerbackend.repository
 
 import com.davidgrath.expensetrackerbackend.entities.views.CategoryWithStats
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.Account
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.Category
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.Transaction
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.TransactionItem
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.User
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.CategoryPojo
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionPojo
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.UserPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.PROFILE
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION_ITEM
@@ -101,10 +95,6 @@ open class CategoryRepository {
         return updatedCount
     }
 
-    fun deleteAllForTesting(): Int {
-        val delete = dslContext.deleteFrom(CATEGORY).where("true")
-        return delete.execute()
-    }
 
     companion object {
         private val LOGGER = LoggerFactory.getLogger(CategoryRepository::class.java)

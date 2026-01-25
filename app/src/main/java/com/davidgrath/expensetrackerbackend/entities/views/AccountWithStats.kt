@@ -1,6 +1,5 @@
 package com.davidgrath.expensetrackerbackend.entities.views
 
-import jakarta.persistence.Column
 import java.math.BigDecimal
 
 data class AccountWithStats(

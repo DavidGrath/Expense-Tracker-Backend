@@ -8,16 +8,20 @@ import com.davidgrath.expensetrackerbackend.repository.ItemImagesRepository
 import com.davidgrath.expensetrackerbackend.repository.ProfileRepository
 import com.davidgrath.expensetrackerbackend.repository.SellerLocationRepository
 import com.davidgrath.expensetrackerbackend.repository.SellerRepository
+import com.davidgrath.expensetrackerbackend.repository.TestRepository
 import com.davidgrath.expensetrackerbackend.repository.TransactionItemRepository
 import com.davidgrath.expensetrackerbackend.repository.TransactionRepository
 import com.davidgrath.expensetrackerbackend.repository.UserDraftRepository
 import com.davidgrath.expensetrackerbackend.repository.UserRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.TestComponent
-import org.springframework.stereotype.Component
 
 @TestComponent
 class TestUtilComponent {
+
+    @Autowired
+    lateinit var testRepository: TestRepository
+
     @Autowired
     lateinit var profileRepository: ProfileRepository
     @Autowired
@@ -44,18 +48,19 @@ class TestUtilComponent {
     @Autowired
     lateinit var sellerLocationRepository: SellerLocationRepository
 
+
     fun deleteAll() {
-        userDraftRepository.deleteAllForTesting()
-        itemImagesRepository.deleteAllForTesting()
-        documentRepository.deleteAllForTesting()
-        itemRepository.deleteAllForTesting()
-        imageRepository.deleteAllForTesting()
-        categoryRepository.deleteAllForTesting()
-        transactionRepository.deleteAllForTesting()
-        accountRepository.deleteAllForTesting()
-        sellerLocationRepository.deleteAllForTesting()
-        sellerRepository.deleteAllForTesting()
-        profileRepository.deleteAllForTesting()
-        userRepository.deleteAllForTesting()
+        testRepository.deleteAllUserDrafts()
+        testRepository.deleteAllItemImages()
+        testRepository.deleteAllDocuments()
+        testRepository.deleteAllItems()
+        testRepository.deleteAllImages()
+        testRepository.deleteAllCategories()
+        testRepository.deleteAllTransactions()
+        testRepository.deleteAllAccounts()
+        testRepository.deleteAllSellerLocations()
+        testRepository.deleteAllSellers()
+        testRepository.deleteAllProfiles()
+        testRepository.deleteAllUsers()
     }
 }

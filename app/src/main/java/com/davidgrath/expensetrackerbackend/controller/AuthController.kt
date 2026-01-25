@@ -1,19 +1,17 @@
 package com.davidgrath.expensetrackerbackend.controller
 
-import com.davidgrath.expensetrackerbackend.generatedapi.api.AuthApi
-import com.davidgrath.expensetrackerbackend.generatedapi.model.SignUpRequest
 import com.davidgrath.expensetrackerbackend.configuration.CustomUserDetails
 import com.davidgrath.expensetrackerbackend.controller.exception.CustomHttpException
 import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
+import com.davidgrath.expensetrackerbackend.generatedapi.api.AuthApi
+import com.davidgrath.expensetrackerbackend.generatedapi.model.SignUpRequest
 import com.davidgrath.expensetrackerbackend.service.AuthService
-import com.davidgrath.expensetrackerbackend.service.TransactionService
 import com.davidgrath.expensetrackerbackend.service.UserService
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 import java.util.*
 

@@ -3,7 +3,6 @@ package com.davidgrath.expensetrackerbackend.configuration
 import java.io.File
 import java.time.Clock
 import java.time.ZoneId
-import java.util.*
 
 class MainTimeHandler: TimeHandler {
 

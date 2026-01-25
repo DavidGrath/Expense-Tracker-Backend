@@ -1,7 +1,6 @@
 package com.davidgrath.expensetrackerbackend.service
 
 import com.davidgrath.expensetrackerbackend.repository.SellerLocationRepository
-import com.davidgrath.expensetrackerbackend.repository.SellerRepository
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service

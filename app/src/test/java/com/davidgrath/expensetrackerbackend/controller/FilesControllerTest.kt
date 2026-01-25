@@ -5,8 +5,6 @@ import com.davidgrath.expensetrackerbackend.configuration.TestRunConfiguration
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.controller.exception.ExceptionResponseHandler
-import com.davidgrath.expensetrackerbackend.utils.file
-import com.davidgrath.expensetrackerbackend.utils.getSha256
 import com.davidgrath.expensetrackerbackend.repository.ProfileRepository
 import com.davidgrath.expensetrackerbackend.service.UserService
 import com.davidgrath.expensetrackerbackend.testutils.TestData
@@ -15,6 +13,8 @@ import com.davidgrath.expensetrackerbackend.testutils.createBearerToken
 import com.davidgrath.expensetrackerbackend.utils.Constants
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.JWT_ALG
+import com.davidgrath.expensetrackerbackend.utils.file
+import com.davidgrath.expensetrackerbackend.utils.getSha256
 import org.hamcrest.Matchers
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -33,7 +33,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers
 import org.springframework.web.util.DefaultUriBuilderFactory
 import java.io.File
 import java.nio.file.Files
-import java.util.Locale
+import java.util.*
 
 @RunWith(SpringRunner::class)
 @WebMvcTest(AuthController::class)

@@ -8,8 +8,6 @@ import com.davidgrath.expensetrackerbackend.generatedapi.model.ImageDocumentStat
 import com.davidgrath.expensetrackerbackend.service.DocumentService
 import com.davidgrath.expensetrackerbackend.service.ProfileService
 import com.davidgrath.expensetrackerbackend.service.UserService
-import com.davidgrath.expensetrackerbackend.utils.categoryPojoToCategory
-import com.davidgrath.expensetrackerbackend.utils.documentPojoToDocument
 import com.davidgrath.expensetrackerbackend.utils.documentPojoToDocumentDetails
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.constraints.NotNull

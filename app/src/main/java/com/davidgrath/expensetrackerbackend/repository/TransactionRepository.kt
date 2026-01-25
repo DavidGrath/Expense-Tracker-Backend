@@ -1,25 +1,12 @@
 package com.davidgrath.expensetrackerbackend.repository
 
-import com.davidgrath.expensetrackerbackend.entities.views.ItemSumByCategory
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
-import com.davidgrath.expensetrackerbackend.entities.views.DateAmountSummary
-import com.davidgrath.expensetrackerbackend.entities.views.TopItemSumByCategory
-import com.davidgrath.expensetrackerbackend.entities.views.TransactionAndItemCount
-import com.davidgrath.expensetrackerbackend.entities.views.TransactionWithItemAndAccount
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionItemPojo
+import com.davidgrath.expensetrackerbackend.entities.views.*
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionPojo
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.ACCOUNT
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.CATEGORY
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.DOCUMENT
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.IMAGE
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.PROFILE
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION_ITEM
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION_ITEM_IMAGES
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.*
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.DEFAULT_FETCH_LIMIT
 import com.davidgrath.expensetrackerbackend.utils.toByte
 import org.jooq.DSLContext
-import org.jooq.Field
 import org.jooq.impl.DSL
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -488,10 +475,6 @@ open class TransactionRepository {
 
     //region Delete
 
-    fun deleteAllForTesting(): Int { //TODO Try and make these delete methods only be available in the test folder
-        val delete = dslContext.deleteFrom(TRANSACTION).where("true")
-        return delete.execute()
-    }
 
     //endregion
 

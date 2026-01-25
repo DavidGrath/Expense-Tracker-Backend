@@ -3,12 +3,8 @@ package com.davidgrath.expensetrackerbackend.service
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import com.davidgrath.expensetrackerbackend.entities.views.DocumentWithTransactionDateAndOrdinal
 import com.davidgrath.expensetrackerbackend.entities.views.ImageDocumentStats
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.CategoryPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.DocumentPojo
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ImagePojo
 import com.davidgrath.expensetrackerbackend.repository.DocumentRepository
-import com.davidgrath.expensetrackerbackend.repository.ImageRepository
-import com.davidgrath.expensetrackerbackend.repository.ItemImagesRepository
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service

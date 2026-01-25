@@ -4,39 +4,10 @@ import com.davidgrath.expensetrackerbackend.configuration.TestRunConfiguration
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.entities.DocumentType
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ImagePojo
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.SellerLocationPojo
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.SellerPojo
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionItemImagesPojo
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionItemPojo
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionPojo
-import com.davidgrath.expensetrackerbackend.repository.AccountRepository
-import com.davidgrath.expensetrackerbackend.repository.CategoryRepository
-import com.davidgrath.expensetrackerbackend.repository.DocumentRepository
-import com.davidgrath.expensetrackerbackend.repository.ImageRepository
-import com.davidgrath.expensetrackerbackend.repository.ItemImagesRepository
-import com.davidgrath.expensetrackerbackend.repository.ProfileRepository
-import com.davidgrath.expensetrackerbackend.repository.SellerLocationRepository
-import com.davidgrath.expensetrackerbackend.repository.SellerRepository
-import com.davidgrath.expensetrackerbackend.repository.TransactionItemRepository
-import com.davidgrath.expensetrackerbackend.repository.TransactionRepository
-import com.davidgrath.expensetrackerbackend.repository.UserDraftRepository
-import com.davidgrath.expensetrackerbackend.repository.UserRepository
-import com.davidgrath.expensetrackerbackend.testutils.TestConstants
-import com.davidgrath.expensetrackerbackend.testutils.TestData
-import com.davidgrath.expensetrackerbackend.testutils.TestUtilComponent
-import com.davidgrath.expensetrackerbackend.testutils.assertEqualsBD
-import com.davidgrath.expensetrackerbackend.testutils.copyControllerTempFile
-import com.davidgrath.expensetrackerbackend.testutils.getDefaultAccountId
-import com.davidgrath.expensetrackerbackend.testutils.getHashCount
-import com.davidgrath.expensetrackerbackend.testutils.tempInit
-import com.davidgrath.expensetrackerbackend.utils.Constants
-import com.davidgrath.expensetrackerbackend.utils.LocalDateGsonAdapter
-import com.davidgrath.expensetrackerbackend.utils.LocalTimeGsonAdapter
-import com.davidgrath.expensetrackerbackend.utils.file
-import com.davidgrath.expensetrackerbackend.utils.getSha256
-import com.davidgrath.expensetrackerbackend.utils.toBoolean
-import com.davidgrath.expensetrackerbackend.utils.toByte
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.*
+import com.davidgrath.expensetrackerbackend.repository.*
+import com.davidgrath.expensetrackerbackend.testutils.*
+import com.davidgrath.expensetrackerbackend.utils.*
 import com.google.gson.GsonBuilder
 import org.jooq.JSON
 import org.junit.After
@@ -55,7 +26,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
-import java.util.UUID
+import java.util.*
 
 @SpringBootTest
 @RunWith(SpringRunner::class)

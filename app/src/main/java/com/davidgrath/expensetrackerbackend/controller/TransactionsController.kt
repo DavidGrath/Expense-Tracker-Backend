@@ -1,40 +1,13 @@
 package com.davidgrath.expensetrackerbackend.controller
 
-import com.davidgrath.expensetrackerbackend.generatedapi.api.TransactionsApi
-import com.davidgrath.expensetrackerbackend.generatedapi.model.BasicTransactionCreateRequest
-import com.davidgrath.expensetrackerbackend.generatedapi.model.SuggestionsFieldType
-import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDetails
-import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraft
 import com.davidgrath.expensetrackerbackend.controller.exception.CustomHttpException
 import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.DocumentPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ImagePojo
-import com.davidgrath.expensetrackerbackend.generatedapi.model.DocumentType
-import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraftItemUpdateRequest
-import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraftUpdateRequest
-import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionItem
-import com.davidgrath.expensetrackerbackend.service.AccountService
-import com.davidgrath.expensetrackerbackend.service.CategoryService
-import com.davidgrath.expensetrackerbackend.service.DocumentService
-import com.davidgrath.expensetrackerbackend.service.ImageService
-import com.davidgrath.expensetrackerbackend.service.ProfileService
-import com.davidgrath.expensetrackerbackend.service.SellerLocationService
-import com.davidgrath.expensetrackerbackend.service.SellerService
-import com.davidgrath.expensetrackerbackend.service.TransactionDraftService
-import com.davidgrath.expensetrackerbackend.service.TransactionService
-import com.davidgrath.expensetrackerbackend.service.UserService
-import com.davidgrath.expensetrackerbackend.utils.Constants
-import com.davidgrath.expensetrackerbackend.utils.accountPojoToAccount
-import com.davidgrath.expensetrackerbackend.utils.documentPojoToDocument
-import com.davidgrath.expensetrackerbackend.utils.draftItemUpdateRequestToDraftItem
-import com.davidgrath.expensetrackerbackend.utils.toApiMode
-import com.davidgrath.expensetrackerbackend.utils.toBoolean
-import com.davidgrath.expensetrackerbackend.utils.toDbMode
-import com.davidgrath.expensetrackerbackend.utils.toDbType
-import com.davidgrath.expensetrackerbackend.utils.transactionDraftToApiDraft
-import com.davidgrath.expensetrackerbackend.utils.transactionItemPojoToTransactionItem
-import com.davidgrath.expensetrackerbackend.utils.transactionWithItemToTransactionItem
+import com.davidgrath.expensetrackerbackend.generatedapi.api.TransactionsApi
+import com.davidgrath.expensetrackerbackend.generatedapi.model.*
+import com.davidgrath.expensetrackerbackend.service.*
+import com.davidgrath.expensetrackerbackend.utils.*
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotNull
@@ -56,7 +29,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.zone.ZoneRulesException
-import java.util.UUID
+import java.util.*
 
 @RestController
 open class TransactionsController: TransactionsApi {

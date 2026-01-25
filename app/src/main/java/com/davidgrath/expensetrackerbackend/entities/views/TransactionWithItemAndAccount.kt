@@ -1,6 +1,5 @@
 package com.davidgrath.expensetrackerbackend.entities.views
 
-import com.davidgrath.expensetrackerbackend.entities.DocumentType
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import java.math.BigDecimal
 import java.time.LocalDate

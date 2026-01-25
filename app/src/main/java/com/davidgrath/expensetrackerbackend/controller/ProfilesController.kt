@@ -2,7 +2,6 @@ package com.davidgrath.expensetrackerbackend.controller;
 
 import com.davidgrath.expensetrackerbackend.generatedapi.api.ProfilesApi
 import com.davidgrath.expensetrackerbackend.generatedapi.model.Profile
-import com.davidgrath.expensetrackerbackend.configuration.CustomUserDetails
 import com.davidgrath.expensetrackerbackend.service.ProfileService
 import com.davidgrath.expensetrackerbackend.service.UserService
 import jakarta.validation.constraints.NotNull

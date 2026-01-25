@@ -1,6 +1,5 @@
 package com.davidgrath.expensetrackerbackend.entities
 
-import java.net.URI
 import java.time.LocalDate
 import java.time.LocalTime
 

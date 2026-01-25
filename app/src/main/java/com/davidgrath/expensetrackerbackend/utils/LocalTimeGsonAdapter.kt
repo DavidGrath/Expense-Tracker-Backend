@@ -4,7 +4,6 @@ import com.google.gson.TypeAdapter
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
 import org.slf4j.LoggerFactory
-import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeParseException
 

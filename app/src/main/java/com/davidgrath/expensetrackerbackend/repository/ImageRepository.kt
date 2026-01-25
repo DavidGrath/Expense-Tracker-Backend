@@ -3,21 +3,14 @@ package com.davidgrath.expensetrackerbackend.repository
 import com.davidgrath.expensetrackerbackend.entities.views.ImageDocumentStats
 import com.davidgrath.expensetrackerbackend.entities.views.ImageWithStats
 import com.davidgrath.expensetrackerbackend.entities.views.TransactionAndItemCount
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.Account
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.Image
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.Transaction
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.TransactionItem
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.User
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ImagePojo
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionPojo
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.UserPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.PROFILE
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION_ITEM
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION_ITEM_IMAGES
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.DEFAULT_FETCH_LIMIT
 import org.jooq.DSLContext
-import org.jooq.conf.ParamType
 import org.jooq.impl.DSL
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -133,12 +126,6 @@ open class ImageRepository {
     }
 
 
-
-
-    fun deleteAllForTesting(): Int {
-        val delete = dslContext.deleteFrom(IMAGE).where("true")
-        return delete.execute()
-    }
 
     companion object {
         private val LOGGER = LoggerFactory.getLogger(ImageRepository::class.java)

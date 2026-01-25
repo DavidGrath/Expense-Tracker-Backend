@@ -1,16 +1,12 @@
 package com.davidgrath.expensetrackerbackend.testutils
 
-import com.davidgrath.expensetrackerbackend.utils.CORE_CATEGORIES
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.AccountPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.CategoryPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ProfilePojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.UserPojo
 import com.davidgrath.expensetrackerbackend.repository.*
-import com.davidgrath.expensetrackerbackend.utils.CATEGORY_IDS_ICONS_DEFAULT
-import com.davidgrath.expensetrackerbackend.utils.toByte
-import com.davidgrath.expensetrackerbackend.utils.Constants
-import com.davidgrath.expensetrackerbackend.utils.getSha256
+import com.davidgrath.expensetrackerbackend.utils.*
 import io.jsonwebtoken.Jwts
 import org.junit.Assert
 import org.slf4j.LoggerFactory

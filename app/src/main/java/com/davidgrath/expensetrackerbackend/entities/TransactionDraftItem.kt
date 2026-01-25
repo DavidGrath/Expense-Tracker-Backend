@@ -1,7 +1,7 @@
 package com.davidgrath.expensetrackerbackend.entities
 
 import java.math.BigDecimal
-import java.util.UUID
+import java.util.*
 
 data class TransactionDraftItem(
     val uuid: UUID,

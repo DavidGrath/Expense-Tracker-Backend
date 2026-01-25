@@ -1,6 +1,5 @@
 package com.davidgrath.expensetrackerbackend.utils
 
-import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import com.google.gson.Gson
 import org.slf4j.LoggerFactory
 import java.io.File

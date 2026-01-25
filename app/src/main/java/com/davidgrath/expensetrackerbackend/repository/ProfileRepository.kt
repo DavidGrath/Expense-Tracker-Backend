@@ -1,13 +1,7 @@
 package com.davidgrath.expensetrackerbackend.repository
 
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.Account
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.Profile
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.Transaction
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.TransactionItem
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.User
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ProfilePojo
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionPojo
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.UserPojo
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.DEFAULT_FETCH_LIMIT
 import org.jooq.DSLContext
 import org.slf4j.LoggerFactory
@@ -41,11 +35,6 @@ open class ProfileRepository {
         val result = selectStep.fetch().into(ProfilePojo::class.java)
         LOGGER.info("Result size: {}", result.size)
         return result
-    }
-
-    fun deleteAllForTesting(): Int {
-        val delete = dslContext.deleteFrom(PROFILE).where("true")
-        return delete.execute()
     }
 
     companion object {

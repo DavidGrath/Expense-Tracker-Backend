@@ -91,11 +91,6 @@ class SellerLocationRepository @Autowired constructor(open var dslContext: DSLCo
     // endregion
 
 
-    fun deleteAllForTesting(): Int {
-        val delete = dslContext.deleteFrom(SELLER_LOCATION).where("true")
-        return delete.execute()
-    }
-
     companion object {
         private val LOGGER = LoggerFactory.getLogger(SellerLocationRepository::class.java)
     }

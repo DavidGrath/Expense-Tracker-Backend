@@ -1,9 +1,7 @@
 package com.davidgrath.expensetrackerbackend.repository
 
 import com.davidgrath.expensetrackerbackend.entities.views.AccountWithStats
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.Account
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.AccountPojo
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.CategoryPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.ACCOUNT
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.PROFILE
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION
@@ -137,14 +135,6 @@ open class AccountRepository {
     }
 
     //endregion
-
-    // region DELETE!!!
-
-    fun deleteAllForTesting(): Int {
-        val delete = dslContext.deleteFrom(ACCOUNT).where("true")
-        return delete.execute()
-    }
-    // endregion
 
     companion object {
         private val LOGGER = LoggerFactory.getLogger(AccountRepository::class.java)

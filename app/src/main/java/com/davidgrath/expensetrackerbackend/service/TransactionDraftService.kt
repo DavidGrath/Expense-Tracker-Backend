@@ -1,32 +1,10 @@
 package com.davidgrath.expensetrackerbackend.service
 
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
-import com.davidgrath.expensetrackerbackend.entities.DocumentType
-import com.davidgrath.expensetrackerbackend.entities.UserDraftType
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionItemImagesPojo
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionItemPojo
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionPojo
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.UserDraftPojo
-import com.davidgrath.expensetrackerbackend.entities.TransactionDraft
-import com.davidgrath.expensetrackerbackend.entities.TransactionDraftFile
-import com.davidgrath.expensetrackerbackend.entities.TransactionDraftItem
-import com.davidgrath.expensetrackerbackend.entities.TransactionMode
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.DocumentPojo
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ImagePojo
-import com.davidgrath.expensetrackerbackend.repository.CategoryRepository
-import com.davidgrath.expensetrackerbackend.repository.DocumentRepository
-import com.davidgrath.expensetrackerbackend.repository.ImageRepository
-import com.davidgrath.expensetrackerbackend.repository.ItemImagesRepository
-import com.davidgrath.expensetrackerbackend.repository.SellerLocationRepository
-import com.davidgrath.expensetrackerbackend.repository.TransactionItemRepository
-import com.davidgrath.expensetrackerbackend.repository.TransactionRepository
-import com.davidgrath.expensetrackerbackend.repository.UserDraftRepository
-import com.davidgrath.expensetrackerbackend.utils.Constants
-import com.davidgrath.expensetrackerbackend.utils.LocalDateGsonAdapter
-import com.davidgrath.expensetrackerbackend.utils.LocalTimeGsonAdapter
-import com.davidgrath.expensetrackerbackend.utils.file
-import com.davidgrath.expensetrackerbackend.utils.getSha256
-import com.davidgrath.expensetrackerbackend.utils.toByte
+import com.davidgrath.expensetrackerbackend.entities.*
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.*
+import com.davidgrath.expensetrackerbackend.repository.*
+import com.davidgrath.expensetrackerbackend.utils.*
 import com.google.gson.GsonBuilder
 import org.jooq.JSON
 import org.slf4j.LoggerFactory
@@ -38,7 +16,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
-import java.util.UUID
+import java.util.*
 
 @Service
 class TransactionDraftService {
