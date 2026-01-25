@@ -15,9 +15,11 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.PRO
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION_ITEM
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION_ITEM_IMAGES
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.DEFAULT_FETCH_LIMIT
 import org.jooq.DSLContext
 import org.jooq.conf.ParamType
 import org.jooq.impl.DSL
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Repository
 
@@ -98,8 +100,10 @@ open class ImageRepository {
         )
             .from(IMAGE)
             .where(IMAGE.PROFILE_ID.eq(profileId))
-            .limit(1_000)
-        return selectStep.fetch().into(ImageWithStats::class.java)
+            .limit(DEFAULT_FETCH_LIMIT)
+        val result = selectStep.fetch().into(ImageWithStats::class.java)
+        LOGGER.info("Result size: {}", result.size)
+        return result
     }
 
     fun getOverallStats(profileId: Long): ImageDocumentStats {
@@ -134,5 +138,9 @@ open class ImageRepository {
     fun deleteAllForTesting(): Int {
         val delete = dslContext.deleteFrom(IMAGE).where("true")
         return delete.execute()
+    }
+
+    companion object {
+        private val LOGGER = LoggerFactory.getLogger(ImageRepository::class.java)
     }
 }

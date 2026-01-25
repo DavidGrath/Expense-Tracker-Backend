@@ -12,8 +12,10 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.UserPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.PROFILE
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION_ITEM
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.DEFAULT_FETCH_LIMIT
 import org.jooq.DSLContext
 import org.jooq.impl.DSL
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Repository
 
@@ -57,7 +59,10 @@ open class CategoryRepository {
     fun getAllByProfileId(profileId: Long): List<CategoryPojo> {
         val selectStep = dslContext.selectFrom(CATEGORY)
             .where(CATEGORY.PROFILE_ID.eq(profileId))
-        return selectStep.fetch().into(CategoryPojo::class.java)
+            .limit(DEFAULT_FETCH_LIMIT)
+        val result = selectStep.fetch().into(CategoryPojo::class.java)
+        LOGGER.info("Result size: {}", result.size)
+        return result
     }
 
     fun getAllByProfileIdWithStats(profileId: Long): List<CategoryWithStats> {
@@ -75,7 +80,10 @@ open class CategoryRepository {
         )
             .from(CATEGORY)
             .where(CATEGORY.PROFILE_ID.eq(profileId))
-        return selectStep.fetch().into(CategoryWithStats::class.java)
+            .limit(DEFAULT_FETCH_LIMIT)
+        val result = selectStep.fetch().into(CategoryWithStats::class.java)
+        LOGGER.info("Result size: {}", result.size)
+        return result
     }
 
     fun updateCategory(id: Long, profileId: Long, name: String, icon: String): Int {
@@ -84,11 +92,21 @@ open class CategoryRepository {
             .set(CATEGORY.ICON, icon)
             .where(CATEGORY.ID.eq(id))
             .and(CATEGORY.PROFILE_ID.eq(profileId))
-        return updateStep.execute()
+
+        val updatedCount = updateStep.execute()
+        LOGGER.info("Updated rows: {}", updatedCount)
+        if(updatedCount != 1) {
+            LOGGER.warn("Not exactly 1 row updated")
+        }
+        return updatedCount
     }
 
     fun deleteAllForTesting(): Int {
         val delete = dslContext.deleteFrom(CATEGORY).where("true")
         return delete.execute()
+    }
+
+    companion object {
+        private val LOGGER = LoggerFactory.getLogger(CategoryRepository::class.java)
     }
 }

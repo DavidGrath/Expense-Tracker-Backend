@@ -60,3 +60,4 @@ It restarts at "01" each day. Let me see you try and reach 100 commits in 24 hou
 ** Validation doesn't work, likely also because of the file splitting. TODO  I'll try adding a task that does merging and validation before the actual generation
 * Concerning repositories:
 ** Most of the methods should include a parameter that links back to the user: userId or profileId and the queries should include them, too. Basically https://developer.mozilla.org/en-US/docs/Web/Security/Attacks/IDOR[IDOR] mitigation
+* Log the sizes of all List/Iterable results from Repository classes, maybe use AspectJ

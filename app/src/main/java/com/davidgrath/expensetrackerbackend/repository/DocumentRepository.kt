@@ -13,9 +13,11 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.DOC
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.PROFILE
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION_ITEM
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.DEFAULT_FETCH_LIMIT
 import org.jooq.DSLContext
 import org.jooq.conf.ParamType
 import org.jooq.impl.DSL
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Repository
 import java.time.LocalDate
@@ -50,8 +52,11 @@ open class DocumentRepository {
             .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
             .where(DOCUMENT.TRANSACTION_ID.eq(transactionId))
             .and(ACCOUNT.PROFILE_ID.eq(profileId))
+            .limit(DEFAULT_FETCH_LIMIT)
 
-        return selectStep.fetch().into(DocumentPojo::class.java)
+        val result = selectStep.fetch().into(DocumentPojo::class.java)
+        LOGGER.info("Result size: {}", result.size)
+        return result
     }
 
     fun findDocumentsFiltered(
@@ -89,7 +94,10 @@ open class DocumentRepository {
             selectStep = selectStep.and(TRANSACTION.SELLER_ID.`in`(sellers))
         }
         val seekStep = selectStep.orderBy(TRANSACTION.ID, TRANSACTION.DATED_AT)
-        return seekStep.fetch().into(DocumentPojo::class.java)
+            .limit(DEFAULT_FETCH_LIMIT)
+        val result = seekStep.fetch().into(DocumentPojo::class.java)
+        LOGGER.info("Result size: {}", result.size)
+        return result
     }
 
 
@@ -129,7 +137,7 @@ open class DocumentRepository {
             .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(DOCUMENT.TRANSACTION_ID))
             .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
             .where(ACCOUNT.PROFILE_ID.eq(profileId))
-            .limit(1_000)
+            .limit(DEFAULT_FETCH_LIMIT)
         return selectStep.fetch().into(DocumentWithTransactionDateAndOrdinal::class.java)
     }
 
@@ -151,4 +159,7 @@ open class DocumentRepository {
         return delete.execute()
     }
 
+    companion object {
+        private val LOGGER = LoggerFactory.getLogger(DocumentRepository::class.java)
+    }
 }

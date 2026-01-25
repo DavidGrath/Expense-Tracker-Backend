@@ -9,6 +9,8 @@ import com.zaxxer.hikari.HikariDataSource
 import org.jooq.DSLContext
 import org.jooq.SQLDialect
 import org.jooq.impl.DSL
+import org.jooq.impl.DefaultConfiguration
+import org.jooq.impl.DefaultExecuteListenerProvider
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
@@ -60,7 +62,14 @@ open class TestRunConfiguration {
     @Bean
     open fun dslContext(hikariDataSource: DataSource?): DSLContext? {
         val dialect = SQLDialect.MYSQL
-        return DSL.using(hikariDataSource, dialect)
+        //Refer to MainConfiguration
+//        val listener = DefaultExecuteListenerProvider(LoggingExecutionListener())
+        val configuration = DefaultConfiguration()
+            .set(hikariDataSource)
+            .set(dialect)
+//            .set(listener)
+        val c = DSL.using(configuration)
+        return c
     }
     val BCRYPT_STRENGTH = 12
     @Bean

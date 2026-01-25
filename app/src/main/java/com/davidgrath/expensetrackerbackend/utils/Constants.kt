@@ -13,7 +13,7 @@ class Constants {
         const val JWT_ALG = "RSA"
         const val CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE = "errorCode"
         const val ICON_NAMESPACE_MATERIAL_SYMBOLS = "materialsymbols"
-
+        const val DEFAULT_FETCH_LIMIT = 1_000
     }
 
     public class Constraints {

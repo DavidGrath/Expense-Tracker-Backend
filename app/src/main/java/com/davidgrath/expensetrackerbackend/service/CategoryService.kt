@@ -56,12 +56,8 @@ class CategoryService {
     }
 
     fun updateCategory(categoryId: Long, profileId: Long, name: String, icon: String): Int {
-        val updatedRows = categoryRepository.updateCategory(categoryId, profileId, name, icon)
-        LOGGER.info("Updated rows: {}", updatedRows)
-        if(updatedRows != 1) {
-            LOGGER.warn("Not exactly 1 row updated")
-        }
-        return updatedRows
+        val updatedCount = categoryRepository.updateCategory(categoryId, profileId, name, icon)
+        return updatedCount
     }
 
     companion object {

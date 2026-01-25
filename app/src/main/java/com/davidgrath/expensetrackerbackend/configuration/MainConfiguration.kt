@@ -10,6 +10,8 @@ import com.zaxxer.hikari.HikariDataSource
 import org.jooq.DSLContext
 import org.jooq.SQLDialect
 import org.jooq.impl.DSL
+import org.jooq.impl.DefaultConfiguration
+import org.jooq.impl.DefaultExecuteListenerProvider
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
@@ -63,10 +65,15 @@ class MainConfiguration {
 
     @Bean
     open fun dslContext(hikariDataSource: DataSource): DSLContext {
-        LOGGER.debug("Hikari: {}", hikariDataSource == null)
         val dialect = SQLDialect.MYSQL
-        val c = DSL.using(hikariDataSource, dialect)
-        LOGGER.debug("DSL Context: {}", c)
+        //Pro - Just one log statement instead of individual log statements
+        //Con - Class and method names get lost
+//        val listener = DefaultExecuteListenerProvider(LoggingExecutionListener())
+        val configuration = DefaultConfiguration()
+            .set(hikariDataSource)
+            .set(dialect)
+//            .set(listener)
+        val c = DSL.using(configuration)
         return c
     }
 

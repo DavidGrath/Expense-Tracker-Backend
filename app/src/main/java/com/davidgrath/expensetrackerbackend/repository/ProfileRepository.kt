@@ -8,7 +8,9 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.User
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ProfilePojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.UserPojo
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.DEFAULT_FETCH_LIMIT
 import org.jooq.DSLContext
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Repository
 
@@ -35,11 +37,18 @@ open class ProfileRepository {
     fun findAllByUserId(userId: Long): List<ProfilePojo> {
         val selectStep = dslContext.selectFrom(PROFILE)
             .where(PROFILE.USER_ID.eq(userId))
-        return selectStep.fetch().into(ProfilePojo::class.java)
+            .limit(DEFAULT_FETCH_LIMIT)
+        val result = selectStep.fetch().into(ProfilePojo::class.java)
+        LOGGER.info("Result size: {}", result.size)
+        return result
     }
 
     fun deleteAllForTesting(): Int {
         val delete = dslContext.deleteFrom(PROFILE).where("true")
         return delete.execute()
+    }
+
+    companion object {
+        private val LOGGER = LoggerFactory.getLogger(ProfileRepository::class.java)
     }
 }

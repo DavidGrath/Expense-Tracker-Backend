@@ -8,8 +8,10 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.ACC
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.PROFILE
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION_ITEM
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.DEFAULT_FETCH_LIMIT
 import org.jooq.DSLContext
 import org.jooq.impl.DSL
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Repository
 import java.math.BigDecimal
@@ -49,7 +51,11 @@ open class AccountRepository {
     fun getAllByProfileId(profileId: Long): List<AccountPojo> {
         val selectStep = dslContext.selectFrom(ACCOUNT)
             .where(ACCOUNT.PROFILE_ID.eq(profileId))
-        return selectStep.fetch().into(AccountPojo::class.java)
+            .limit(DEFAULT_FETCH_LIMIT)
+        val result = selectStep.fetch().into(AccountPojo::class.java)
+        //TODO, also run pre-count queries for every single fetch and print whether the count exceeds the limit
+        LOGGER.info("Result size: {}", result.size)
+        return result
     }
 
     fun getByProfileIdAndId(profileId: Long, id: Long): AccountPojo? {
@@ -73,7 +79,10 @@ open class AccountRepository {
             .from(ACCOUNT)
             .innerJoin(PROFILE).on(PROFILE.ID.eq(ACCOUNT.PROFILE_ID))
             .where(PROFILE.USER_ID.eq(userId))
-        return selectStep.fetch().into(AccountPojo::class.java)
+            .limit(DEFAULT_FETCH_LIMIT)
+        val result = selectStep.fetch().into(AccountPojo::class.java)
+        LOGGER.info("Result size: {}", result.size)
+        return result
     }
 
     fun getAccountSummary(profileId: Long, id: Long): AccountWithStats? {
@@ -104,7 +113,10 @@ open class AccountRepository {
                     .asField<Long>().`as`("itemCount")
                 )
             .from(ACCOUNT).where(ACCOUNT.PROFILE_ID.eq(profileId))
-        return selectStep.fetch()?.into(AccountWithStats::class.java)?:emptyList()
+            .limit(DEFAULT_FETCH_LIMIT)
+        val result = selectStep.fetch()?.into(AccountWithStats::class.java)?:emptyList()
+        LOGGER.info("Result size: {}", result.size)
+        return result
     }
 
     // endregion
@@ -116,7 +128,12 @@ open class AccountRepository {
             .set(ACCOUNT.NAME, name)
             .where(ACCOUNT.ID.eq(id))
             .and(ACCOUNT.PROFILE_ID.eq(profileId))
-        return updateStep.execute()
+        val updatedCount = updateStep.execute()
+        LOGGER.info("Updated rows: {}", updatedCount)
+        if(updatedCount != 1) {
+            LOGGER.warn("Not exactly 1 row updated")
+        }
+        return updatedCount
     }
 
     //endregion
@@ -128,4 +145,8 @@ open class AccountRepository {
         return delete.execute()
     }
     // endregion
+
+    companion object {
+        private val LOGGER = LoggerFactory.getLogger(AccountRepository::class.java)
+    }
 }

@@ -16,6 +16,7 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.PRO
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION_ITEM
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION_ITEM_IMAGES
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.DEFAULT_FETCH_LIMIT
 import com.davidgrath.expensetrackerbackend.utils.toByte
 import org.jooq.DSLContext
 import org.jooq.Field
@@ -79,7 +80,10 @@ open class TransactionRepository {
             selectStep = selectStep.and(TRANSACTION.SELLER_ID.`in`(sellers))
         }
         val seekStep = selectStep.groupBy(aggregateDate).orderBy(aggregateDate)
-        return seekStep.fetch().into(DateAmountSummary::class.java)
+            .limit(DEFAULT_FETCH_LIMIT)
+        val result = seekStep.fetch().into(DateAmountSummary::class.java)
+        LOGGER.info("Result size: {}", result.size)
+        return result
     }
 
 
@@ -149,7 +153,10 @@ open class TransactionRepository {
             selectStep = selectStep.and(TRANSACTION.SELLER_ID.`in`(sellers))
         }
         val seekStep = selectStep.orderBy(TRANSACTION.DATED_AT)
-        return seekStep.fetch().into(TransactionPojo::class.java)
+            .limit(DEFAULT_FETCH_LIMIT)
+        val result = seekStep.fetch().into(TransactionPojo::class.java)
+        LOGGER.info("Result size: {}", result.size)
+        return result
     }
 
     fun getTransactionsWithItems(
@@ -216,7 +223,10 @@ open class TransactionRepository {
             selectStep = selectStep.and(TRANSACTION.SELLER_ID.`in`(sellers))
         }
         val seekStep = selectStep.orderBy(TRANSACTION.DATED_AT, TRANSACTION.ID)
-        return seekStep.fetch().into(TransactionWithItemAndAccount::class.java)
+            .limit(DEFAULT_FETCH_LIMIT)
+        val result = seekStep.fetch().into(TransactionWithItemAndAccount::class.java)
+        LOGGER.info("Result size: {}", result.size)
+        return result
     }
 
     fun getTransactionSum(
@@ -298,7 +308,11 @@ open class TransactionRepository {
             selectStep = selectStep.and(TRANSACTION.SELLER_ID.`in`(sellers))
         }
         val seekStep = selectStep.groupBy(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID).orderBy(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID)
-        return seekStep.fetch().into(ItemSumByCategory::class.java)
+            .limit(DEFAULT_FETCH_LIMIT)
+
+        val result = seekStep.fetch().into(ItemSumByCategory::class.java)
+        LOGGER.info("Result size: {}", result.size)
+        return result
     }
 
 
@@ -407,8 +421,11 @@ open class TransactionRepository {
         val seekStep =  selectFrom
             .groupBy(alias.field("aggregateDate"))
             .orderBy(alias.field("aggregateDate"))
+            .limit(DEFAULT_FETCH_LIMIT)
 
-        return seekStep.fetch().into(DateAmountSummary::class.java)
+        val result = seekStep.fetch().into(DateAmountSummary::class.java)
+        LOGGER.info("Result size: {}", result.size)
+        return result
     }
 
 

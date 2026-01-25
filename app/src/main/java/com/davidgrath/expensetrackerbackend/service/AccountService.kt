@@ -57,7 +57,6 @@ class AccountService {
 
     fun updateAccount(profileId: Long, id: Long, name: String): Int {
         val count = accountRepository.updateAccount(profileId, id, name)
-        LOGGER.info("Update result: {}", count)
         return count
     }
 

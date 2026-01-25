@@ -7,6 +7,7 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.USE
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.USER_DRAFT
 import org.jooq.DSLContext
 import org.jooq.JSON
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Repository
 
@@ -41,7 +42,13 @@ class UserDraftRepository @Autowired constructor(open var dslContext: DSLContext
             .set(USER_DRAFT.DRAFT, json)
             .where(USER_DRAFT.ID.eq(id))
             .and(USER_DRAFT.PROFILE_ID.eq(profileId))
-        return updateStep.execute()
+
+        val updatedCount = updateStep.execute()
+        LOGGER.info("Updated rows: {}", updatedCount)
+        if(updatedCount != 1) {
+            LOGGER.warn("Not exactly 1 row updated")
+        }
+        return updatedCount
     }
     // endregion
 
@@ -50,12 +57,21 @@ class UserDraftRepository @Autowired constructor(open var dslContext: DSLContext
         val deleteStep = dslContext.deleteFrom(USER_DRAFT)
             .where(USER_DRAFT.ID.eq(id))
             .and(USER_DRAFT.PROFILE_ID.eq(profileId))
-        return deleteStep.execute()
+        val deletedCount = deleteStep.execute()
+        LOGGER.info("Deleted rows: {}", deletedCount)
+        if(deletedCount != 1) {
+            LOGGER.warn("Not exactly 1 row deleted")
+        }
+        return deletedCount
     }
 
     fun deleteAllForTesting(): Int {
         val delete = dslContext.deleteFrom(USER_DRAFT).where("true")
         return delete.execute()
+    }
+
+    companion object {
+        private val LOGGER = LoggerFactory.getLogger(UserDraftRepository::class.java)
     }
 
 }

@@ -3,8 +3,10 @@ package com.davidgrath.expensetrackerbackend.repository
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.SellerPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.PROFILE
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.SELLER
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.DEFAULT_FETCH_LIMIT
 import org.jooq.DSLContext
 import org.jooq.impl.DSL
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 
@@ -43,7 +45,11 @@ class SellerRepository @Autowired constructor(open var dslContext: DSLContext) {
         val selectStep = dslContext.select(SELLER.asterisk())
             .from(SELLER)
             .where(SELLER.PROFILE_ID.eq(profileId))
-        return selectStep.fetch().into(SellerPojo::class.java)
+            .limit(DEFAULT_FETCH_LIMIT)
+
+        val result = selectStep.fetch().into(SellerPojo::class.java)
+        LOGGER.info("Result size: {}", result.size)
+        return result
     }
 
     //TODO Replace get with count queries for when I want to check limits, and also getAll with get all ID queries for when I want to check for existence by user
@@ -59,12 +65,21 @@ class SellerRepository @Autowired constructor(open var dslContext: DSLContext) {
             .set(SELLER.NAME, name)
             .where(SELLER.ID.eq(id))
             .and(SELLER.PROFILE_ID.eq(profileId))
-        return updateStep.execute()
+        val updatedCount = updateStep.execute()
+        LOGGER.info("Updated rows: {}", updatedCount)
+        if(updatedCount != 1) {
+            LOGGER.warn("Not exactly 1 row updated")
+        }
+        return updatedCount
     }
 
 
     fun deleteAllForTesting(): Int {
         val delete = dslContext.deleteFrom(SELLER).where("true")
         return delete.execute()
+    }
+
+    companion object {
+        private val LOGGER = LoggerFactory.getLogger(SellerRepository::class.java)
     }
 }

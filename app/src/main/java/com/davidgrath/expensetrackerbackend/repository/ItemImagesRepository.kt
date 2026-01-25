@@ -17,7 +17,9 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.IMA
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION_ITEM
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION_ITEM_IMAGES
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.DEFAULT_FETCH_LIMIT
 import org.jooq.DSLContext
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Repository
 import java.time.LocalDate
@@ -40,7 +42,10 @@ open class ItemImagesRepository {
             .innerJoin(TRANSACTION_ITEM_IMAGES).on(TRANSACTION_ITEM_IMAGES.IMAGE_ID.eq(IMAGE.ID))
             .where(IMAGE.PROFILE_ID.eq(profileId))
             .and(TRANSACTION_ITEM_IMAGES.TRANSACTION_ITEM_ID.eq(itemId))
-        return selectStep.fetch().into(ImagePojo::class.java)
+            .limit(DEFAULT_FETCH_LIMIT)
+        val result = selectStep.fetch().into(ImagePojo::class.java)
+        LOGGER.info("Result size: {}", result.size)
+        return result
     }
 
     fun findAllFiltered(profileId: Long,
@@ -81,12 +86,18 @@ open class ItemImagesRepository {
             selectStep = selectStep.and(TRANSACTION.SELLER_ID.`in`(sellers))
         }
         val seekStep = selectStep.orderBy(TRANSACTION.ID, TRANSACTION.DATED_AT)
-        return seekStep.fetch().into(ImageWithItemId::class.java)
-
+            .limit(DEFAULT_FETCH_LIMIT)
+        val result = seekStep.fetch().into(ImageWithItemId::class.java)
+        LOGGER.info("Result size: {}", result.size)
+        return result
     }
 
     fun deleteAllForTesting(): Int {
         val delete = dslContext.deleteFrom(TRANSACTION_ITEM_IMAGES).where("true")
         return delete.execute()
+    }
+
+    companion object {
+        private val LOGGER = LoggerFactory.getLogger(ItemImagesRepository::class.java)
     }
 }

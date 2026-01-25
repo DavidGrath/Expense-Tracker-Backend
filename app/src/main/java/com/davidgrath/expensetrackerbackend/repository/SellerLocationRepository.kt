@@ -4,8 +4,10 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.SellerLo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.PROFILE
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.SELLER
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.SELLER_LOCATION
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.DEFAULT_FETCH_LIMIT
 import org.jooq.DSLContext
 import org.jooq.impl.DSL
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 
@@ -50,8 +52,11 @@ class SellerLocationRepository @Autowired constructor(open var dslContext: DSLCo
             .innerJoin(SELLER).on(SELLER.ID.eq(SELLER_LOCATION.SELLER_ID))
             .where(SELLER_LOCATION.SELLER_ID.eq(sellerId))
             .and(SELLER.PROFILE_ID.eq(profileId))
+            .limit(DEFAULT_FETCH_LIMIT)
 
-        return selectStep.fetch().into(SellerLocationPojo::class.java)
+        val result = selectStep.fetch().into(SellerLocationPojo::class.java)
+        LOGGER.info("Result size: {}", result.size)
+        return result
     }
 
     fun countByProfileIdAndSellerId(profileId: Long, sellerId: Long): Int {
@@ -74,7 +79,13 @@ class SellerLocationRepository @Autowired constructor(open var dslContext: DSLCo
             .from(SELLER_LOCATION.innerJoin(SELLER).on(SELLER.ID.eq(SELLER_LOCATION.SELLER_ID)))
             .where(SELLER_LOCATION.ID.eq(id))
             .and(SELLER.PROFILE_ID.eq(profileId))
-        return updateStep.execute()
+
+        val updatedCount = updateStep.execute()
+        LOGGER.info("Updated rows: {}", updatedCount)
+        if(updatedCount != 1) {
+            LOGGER.warn("Not exactly 1 row updated")
+        }
+        return updatedCount
     }
 
     // endregion
@@ -83,5 +94,9 @@ class SellerLocationRepository @Autowired constructor(open var dslContext: DSLCo
     fun deleteAllForTesting(): Int {
         val delete = dslContext.deleteFrom(SELLER_LOCATION).where("true")
         return delete.execute()
+    }
+
+    companion object {
+        private val LOGGER = LoggerFactory.getLogger(SellerLocationRepository::class.java)
     }
 }

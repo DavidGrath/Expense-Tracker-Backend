@@ -106,13 +106,11 @@ class SellerService {
 
     fun updateSeller(profileId: Long, id: Long, name: String): Int {
         val count = sellerRepository.updateSeller(profileId, id, name)
-        LOGGER.info("Update result: {}", count)
         return count
     }
 
     fun updateSellerLocation(profileId: Long, id: Long, location: String): Int {
         val count = sellerLocationRepository.updateSellerLocation(profileId, id, location)
-        LOGGER.info("Update result: {}", count)
         return count
     }
 
