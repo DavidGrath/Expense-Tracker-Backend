@@ -22,13 +22,13 @@ open class SecurityConfiguration {
     @Autowired
     lateinit var timeHandler: TimeHandler
 
-    val loginBucket = Bucket
+    /*val loginBucket = Bucket
         .builder()
         .addLimit { limit ->
-            limit.capacity(9).refillGreedy(9, Duration.ofSeconds(1))
+            limit.capacity(9).refillIntervally(9, Duration.ofSeconds(1))
         }
         .withListener(CustomBucketListener())
-        .build()
+        .build()*/
 
 
 
@@ -54,7 +54,7 @@ open class SecurityConfiguration {
             .authorizeHttpRequests { c ->
                 c.anyRequest().authenticated()
             }.httpBasic(Customizer.withDefaults())
-            .addFilterAfter(SimpleRateLimitFilter(loginBucket), LogoutFilter::class.java)
+//            .addFilterAfter(SimpleRateLimitFilter(loginBucket), LogoutFilter::class.java)
         return httpSecurity.build()
     }
 
