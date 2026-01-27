@@ -138,7 +138,7 @@ class TransactionsControllerTest {
         val userId = userService.createUser("user2", "password", Locale.US)
         val profile2 = profileRepository.findByStringId(userId, Constants.DEFAULT_PROFILE_ID)!!
         val accounts = accountRepository.getAllByProfileId(profile2.id!!)
-        val misc = categoryRepository.findByProfileIdAndStringId(profile.id!!, "miscellaneous") //This should cause a failure
+        val misc = categoryRepository.findByProfileIdAndStringId(profile.id!!, "miscellaneous") //TODO This should cause a failure
         var basicTransactionRequest = BasicTransactionCreateRequest(accounts[0].id!!, true, BigDecimal.TEN, "Description", misc!!.id, "Etc/UTC")
 
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
@@ -169,7 +169,7 @@ class TransactionsControllerTest {
         val userId = userService.createUser("user2", "password", Locale.US)
         val profile2 = profileRepository.findByStringId(userId, Constants.DEFAULT_PROFILE_ID)!!
         val accounts = accountRepository.getAllByProfileId(profile.id!!)
-        val misc = categoryRepository.findByProfileIdAndStringId(profile2.id!!, "miscellaneous") //This should cause a failure
+        val misc = categoryRepository.findByProfileIdAndStringId(profile2.id!!, "miscellaneous") //TODO This should cause a failure
         var basicTransactionRequest = BasicTransactionCreateRequest(accounts[0].id!!, true, BigDecimal.TEN, "Description", misc!!.id, "Etc/UTC")
 
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)

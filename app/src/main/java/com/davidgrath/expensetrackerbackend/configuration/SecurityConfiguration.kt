@@ -1,5 +1,8 @@
 package com.davidgrath.expensetrackerbackend.configuration
 
+import io.github.bucket4j.Bucket
+import io.github.bucket4j.BucketListener
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -9,6 +12,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.web.SecurityFilterChain
+import org.springframework.security.web.authentication.logout.LogoutFilter
+import java.time.Duration
 
 @Configuration
 @EnableWebSecurity
@@ -16,6 +21,15 @@ open class SecurityConfiguration {
 
     @Autowired
     lateinit var timeHandler: TimeHandler
+
+    val loginBucket = Bucket
+        .builder()
+        .addLimit { limit ->
+            limit.capacity(9).refillGreedy(9, Duration.ofSeconds(1))
+        }
+        .withListener(CustomBucketListener())
+        .build()
+
 
 
     @Bean
@@ -40,6 +54,7 @@ open class SecurityConfiguration {
             .authorizeHttpRequests { c ->
                 c.anyRequest().authenticated()
             }.httpBasic(Customizer.withDefaults())
+            .addFilterAfter(SimpleRateLimitFilter(loginBucket), LogoutFilter::class.java)
         return httpSecurity.build()
     }
 

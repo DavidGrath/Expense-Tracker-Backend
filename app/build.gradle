@@ -66,6 +66,7 @@ dependencies {
     jooqConfig 'org.jooq:jooq-meta-extensions:3.19.11'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     implementation("org.jspecify:jspecify:1.0.0")
+    implementation("com.bucket4j:bucket4j_jdk17-core:8.16.0")
 }
 
 group="com.davidgrath"
