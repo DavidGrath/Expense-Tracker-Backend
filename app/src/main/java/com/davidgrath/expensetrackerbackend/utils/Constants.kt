@@ -14,6 +14,12 @@ class Constants {
         const val CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE = "errorCode"
         const val ICON_NAMESPACE_MATERIAL_SYMBOLS = "materialsymbols"
         const val DEFAULT_FETCH_LIMIT = 1_000
+        const val CUSTOM_CLAIM_TYPE = "token_type"
+    }
+
+    enum class TokenType(val value: String) {
+        Access("access"),
+        Refresh("refresh")
     }
 
     public class Constraints {

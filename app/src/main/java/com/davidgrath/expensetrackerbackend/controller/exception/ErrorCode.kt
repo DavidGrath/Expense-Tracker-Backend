@@ -15,5 +15,6 @@ enum class ErrorCode(val code: String) {
     DRAFT_DOES_NOT_EXIST("draft_does_not_exist"),
     FILE_TOO_LARGE("file_too_large"),
     DRAFT_NOT_VALID("draft_not_valid"),
-    DRAFT_MUST_HAVE_AT_LEAST_ONE_ITEM("draft_must_have_at_least_one_item")
+    DRAFT_MUST_HAVE_AT_LEAST_ONE_ITEM("draft_must_have_at_least_one_item"),
+    INVALID_TOKEN_TYPE("invalid_token_type")
 }

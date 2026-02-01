@@ -52,6 +52,25 @@ fun createBearerToken(username: String, signingKey: String, algorithm: String, t
         .signWith(key)
         .issuedAt(Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant()))
         .id(UUID.randomUUID().toString())
+        .claim(Constants.CUSTOM_CLAIM_TYPE, Constants.TokenType.Access.value)
+        .compact()
+    return jws
+}
+
+fun createRefreshToken(username: String, signingKey: String, algorithm: String, timeHandler: TimeHandler): String {
+
+    val bytes = Base64.getDecoder().decode(signingKey)
+    val keySpec = PKCS8EncodedKeySpec(bytes)
+    val keyFactory = KeyFactory.getInstance(algorithm)
+    val key = keyFactory.generatePrivate(keySpec) as RSAPrivateKey
+    val localDateTime = LocalDateTime.now(timeHandler.getClock())
+//        val expiry = localDateTime.plus(60, ChronoUnit.DAYS)
+    val jws = Jwts.builder()
+        .subject(username)
+        .signWith(key)
+        .issuedAt(Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant()))
+        .id(UUID.randomUUID().toString())
+        .claim(Constants.CUSTOM_CLAIM_TYPE, Constants.TokenType.Refresh.value)
         .compact()
     return jws
 }

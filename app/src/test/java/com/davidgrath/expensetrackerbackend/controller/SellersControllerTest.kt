@@ -1,7 +1,7 @@
 package com.davidgrath.expensetrackerbackend.controller
 
 import com.davidgrath.expensetrackerbackend.configuration.SecurityConfiguration
-import com.davidgrath.expensetrackerbackend.configuration.TestRunConfiguration
+import com.davidgrath.expensetrackerbackend.configuration.TestRunControllerConfiguration
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.controller.exception.ExceptionResponseHandler
@@ -46,7 +46,7 @@ import java.time.LocalDateTime
 @WebMvcTest(SellersController::class)
 @ContextConfiguration(
     classes = [
-        SellersController::class, SecurityConfiguration::class, TestRunConfiguration::class, ExceptionResponseHandler::class
+        SellersController::class, SecurityConfiguration::class, TestRunControllerConfiguration::class, ExceptionResponseHandler::class
     ])
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 class SellersControllerTest {

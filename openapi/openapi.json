@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "ExTrack API",
-    "version": "0.3.5",
+    "version": "0.4.0",
     "description": "API for the client-server version of ExTrack. It's meant to mirror the offline version for the most part.  # Text Field recommended length limits: Short: 20, Medium: 50, Long: 100, Extra long: 400. Try and apply these to any schemas that have 'Request' in the name"
   },
   "security": [
@@ -64,9 +64,9 @@
           "200": {
             "description": "A JWT bearer token",
             "content": {
-              "text/plain": {
+              "application/json": {
                 "schema": {
-                  "type": "string"
+                  "$ref": "./schemas.json#/components/schemas/AuthResponse"
                 }
               }
             }
@@ -93,9 +93,38 @@
           "200": {
             "description": "A JWT bearer token",
             "content": {
-              "text/plain": {
+              "application/json": {
                 "schema": {
-                  "type": "string"
+                  "$ref": "./schemas.json#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/refresh": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "parameters": [
+          {
+            "name": "refresh_token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A JWT bearer token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas.json#/components/schemas/AuthResponse"
                 }
               }
             }

@@ -28,6 +28,10 @@ flyway migrate -environment=devlocal
 gradlew.bat :app:jooqCodeGenDevLocal
 ----
 
+== Authentication/Authorization
+* Login and Sign up return a short-lived access and long-lived refresh token
+* Refresh also returns the same pair of tokens
+
 == Versioning
 For now, it's not fully fleshed out yet, because I have 3 separate things to consider:
 

@@ -1,14 +1,16 @@
 package com.davidgrath.expensetrackerbackend.controller
 
 import com.davidgrath.expensetrackerbackend.configuration.SecurityConfiguration
-import com.davidgrath.expensetrackerbackend.configuration.TestRunConfiguration
+import com.davidgrath.expensetrackerbackend.configuration.TestRunControllerConfiguration
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
+import com.davidgrath.expensetrackerbackend.configuration.filter.TokenTypeFilter
 import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.controller.exception.ExceptionResponseHandler
 import com.davidgrath.expensetrackerbackend.generatedapi.model.SignUpRequest
 import com.davidgrath.expensetrackerbackend.service.UserService
 import com.davidgrath.expensetrackerbackend.testutils.TestUtilComponent
 import com.davidgrath.expensetrackerbackend.testutils.createBearerToken
+import com.davidgrath.expensetrackerbackend.testutils.createRefreshToken
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.JWT_ALG
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -37,7 +39,7 @@ import java.util.*
 @WebMvcTest(AuthController::class)
 @ContextConfiguration(
     classes = [
-        AuthController::class, SecurityConfiguration::class, TestRunConfiguration::class, TestAuthController::class, ExceptionResponseHandler::class, TestUtilComponent::class
+        AuthController::class, SecurityConfiguration::class, TestRunControllerConfiguration::class, TestAuthController::class, ExceptionResponseHandler::class, TestUtilComponent::class, //TokenTypeFilter::class
     ])
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 class AuthControllerTest {
@@ -73,9 +75,12 @@ class AuthControllerTest {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(signUpJson)
             )
-            .andExpect(MockMvcResultMatchers.status().isOk())
+            .andExpectAll(
+                MockMvcResultMatchers.status().isOk(),
+                MockMvcResultMatchers.jsonPath("$.access_token", Matchers.startsWith("eyJ"))
+            )
             .andReturn();
-        assertTrue(signUpResult.getResponse().getContentAsString().startsWith("eyJ")) //pretty much constant for every JSON Base64
+//        assertTrue(signUpResult.getResponse().getContentAsString().startsWith("eyJ")) //pretty much constant for every JSON Base64
     }
 
 
@@ -140,27 +145,92 @@ class AuthControllerTest {
         userService.createUser("username", "password", Locale.US)
         val encoder = Base64.getEncoder()
         val basic = encoder.encodeToString("username:password".toByteArray())
-        val signUpResult = mockMvc
+        val loginResult = mockMvc
             .perform(
                 MockMvcRequestBuilders.post("/auth/login")
                     .header("Authorization", "Basic ${basic}")
             )
-            .andExpect(MockMvcResultMatchers.status().isOk())
+            .andExpectAll(
+                MockMvcResultMatchers.status().isOk(),
+                MockMvcResultMatchers.jsonPath("$.access_token", Matchers.startsWith("eyJ"))
+            )
             .andReturn();
-        assertTrue(signUpResult.getResponse().getContentAsString().startsWith("eyJ"))
+//        assertTrue(signUpResult.getResponse().getContentAsString().startsWith("eyJ"))
     }
     @Test
     fun loginTestFail() {
         userService.createUser("username", "password", Locale.US)
         val encoder = Base64.getEncoder()
         val basic = encoder.encodeToString("username:wordpass".toByteArray())
-        val signUpResult = mockMvc
+        val loginResult = mockMvc
             .perform(
                 MockMvcRequestBuilders.post("/auth/login")
                     .header("Authorization", "Basic ${basic}")
             )
             .andExpect(MockMvcResultMatchers.status().isUnauthorized())
             .andReturn();
+    }
+
+    @Test
+    fun refreshTokenTest() {
+        val jws = createBearerToken("userx", jwtSigningKey!!, JWT_ALG, timeHandler)
+        val refreshToken = createRefreshToken("userx", jwtSigningKey!!, JWT_ALG, timeHandler)
+        val testResult = mockMvc
+            .perform(
+                MockMvcRequestBuilders.get("/auth/refresh")
+                    .param("refresh_token", refreshToken)
+                    .header("Authorization", "Bearer $jws")
+            )
+            .andExpect(MockMvcResultMatchers.status().isOk())
+            .andReturn()
+    }
+
+    @Test
+    fun givenTokenTypeIsAccessWhenUseForRefreshThenFail() {
+        val jws = createBearerToken("userx", jwtSigningKey!!, JWT_ALG, timeHandler)
+        val testResult = mockMvc
+            .perform(
+                MockMvcRequestBuilders.get("/auth/refresh")
+                    .param("refresh_token", jws)
+                    .header("Authorization", "Bearer $jws")
+            )
+            .andExpectAll(
+                MockMvcResultMatchers.status().isUnauthorized(),
+                MockMvcResultMatchers.jsonPath(
+                    "$.$CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE", Matchers.equalTo(ErrorCode.INVALID_TOKEN_TYPE.code)
+                )
+            )
+            .andReturn()
+    }
+
+    @Test
+    fun givenTokenTypeIsRefreshWhenUseForAccessThenFail() {
+        val refreshToken = createRefreshToken("userx", jwtSigningKey!!, JWT_ALG, timeHandler)
+        val testResult = mockMvc
+            .perform(
+                MockMvcRequestBuilders.get("/test").header("Authorization", "Bearer $refreshToken")
+            )
+            .andExpectAll(
+                MockMvcResultMatchers.status().isUnauthorized(),
+                MockMvcResultMatchers.jsonPath(
+                    "$.$CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE", Matchers.equalTo(ErrorCode.INVALID_TOKEN_TYPE.code)
+                )
+            )
+            .andReturn()
+    }
+
+    @Test
+    fun givenRefreshSubjectNotSameAsAccessSubjectWhenRefreshThenFail() {
+        val jws = createBearerToken("userx", jwtSigningKey!!, JWT_ALG, timeHandler)
+        val refreshToken = createRefreshToken("usery", jwtSigningKey!!, JWT_ALG, timeHandler)
+        val testResult = mockMvc
+            .perform(
+                MockMvcRequestBuilders.get("/auth/refresh")
+                    .param("refresh_token", refreshToken)
+                    .header("Authorization", "Bearer $jws")
+            )
+            .andExpect(MockMvcResultMatchers.status().isUnauthorized())
+            .andReturn()
     }
 
     companion object {

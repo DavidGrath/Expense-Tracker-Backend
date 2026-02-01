@@ -1,7 +1,7 @@
 package com.davidgrath.expensetrackerbackend.controller
 
 import com.davidgrath.expensetrackerbackend.configuration.SecurityConfiguration
-import com.davidgrath.expensetrackerbackend.configuration.TestRunConfiguration
+import com.davidgrath.expensetrackerbackend.configuration.TestRunControllerConfiguration
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.controller.exception.ExceptionResponseHandler
 import com.davidgrath.expensetrackerbackend.entities.DocumentType
@@ -41,7 +41,7 @@ import java.util.*
 @WebMvcTest(DocumentsController::class)
 @ContextConfiguration(
     classes = [
-        DocumentsController::class, SecurityConfiguration::class, TestRunConfiguration::class, ExceptionResponseHandler::class
+        DocumentsController::class, SecurityConfiguration::class, TestRunControllerConfiguration::class, ExceptionResponseHandler::class
     ])
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 class DocumentsControllerTest {
