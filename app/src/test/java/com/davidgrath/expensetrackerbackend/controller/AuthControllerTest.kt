@@ -173,13 +173,13 @@ class AuthControllerTest {
 
     @Test
     fun refreshTokenTest() {
-        val jws = createBearerToken("userx", jwtSigningKey!!, JWT_ALG, timeHandler)
+//        val jws = createBearerToken("userx", jwtSigningKey!!, JWT_ALG, timeHandler)
         val refreshToken = createRefreshToken("userx", jwtSigningKey!!, JWT_ALG, timeHandler)
         val testResult = mockMvc
             .perform(
                 MockMvcRequestBuilders.get("/auth/refresh")
                     .param("refresh_token", refreshToken)
-                    .header("Authorization", "Bearer $jws")
+//                    .header("Authorization", "Bearer $jws")
             )
             .andExpect(MockMvcResultMatchers.status().isOk())
             .andReturn()
@@ -192,7 +192,7 @@ class AuthControllerTest {
             .perform(
                 MockMvcRequestBuilders.get("/auth/refresh")
                     .param("refresh_token", jws)
-                    .header("Authorization", "Bearer $jws")
+//                    .header("Authorization", "Bearer $jws")
             )
             .andExpectAll(
                 MockMvcResultMatchers.status().isUnauthorized(),
@@ -219,19 +219,6 @@ class AuthControllerTest {
             .andReturn()
     }
 
-    @Test
-    fun givenRefreshSubjectNotSameAsAccessSubjectWhenRefreshThenFail() {
-        val jws = createBearerToken("userx", jwtSigningKey!!, JWT_ALG, timeHandler)
-        val refreshToken = createRefreshToken("usery", jwtSigningKey!!, JWT_ALG, timeHandler)
-        val testResult = mockMvc
-            .perform(
-                MockMvcRequestBuilders.get("/auth/refresh")
-                    .param("refresh_token", refreshToken)
-                    .header("Authorization", "Bearer $jws")
-            )
-            .andExpect(MockMvcResultMatchers.status().isUnauthorized())
-            .andReturn()
-    }
 
     companion object {
         private val LOGGER = LoggerFactory.getLogger(AuthControllerTest::class.java)

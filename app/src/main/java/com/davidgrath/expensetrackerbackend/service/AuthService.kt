@@ -95,7 +95,7 @@ class AuthService constructor(
 
         val generateRefreshToken = Callable<String> {
 
-            val expiry = localDateTime.plus(60, ChronoUnit.DAYS)
+            val expiry = localDateTime.plus(1, ChronoUnit.DAYS)
             val startTime = System.nanoTime()
             val refresh = Jwts.builder()
                 .subject(username)

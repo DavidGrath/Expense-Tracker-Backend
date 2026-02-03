@@ -50,27 +50,18 @@ open class AuthController: AuthApi {
     }
 
     override fun authRefreshGet(refreshToken: @NotNull @Valid String): ResponseEntity<AuthResponse?>? {
-        val authentication = SecurityContextHolder.getContext().authentication
-        val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
         val jwt = authService.parseToken(refreshToken)
         val payload = jwt.payload
         val refreshSubject = payload.subject
-        LOGGER.debug("Principal claims: {}", principal.claims)
-        LOGGER.debug("Refresh claims: {}", jwt.payload)
-        if(principal.subject != refreshSubject) {
-            val exception = CustomHttpException(ErrorCode.INVALID_INPUT, HttpStatus.UNAUTHORIZED)
-            LOGGER.error("Subjects not the same", exception)
-            throw exception
-        }
+        LOGGER.info("Username: {}", refreshSubject)
         val type = payload.get(Constants.CUSTOM_CLAIM_TYPE, String::class.java)
         if(type != Constants.TokenType.Refresh.value) {
             val exception = CustomHttpException(ErrorCode.INVALID_TOKEN_TYPE, HttpStatus.UNAUTHORIZED)
-            LOGGER.error("Refresh error", exception)
+            LOGGER.error("Wrong token type", exception)
             throw exception
         }
-        //TODO There's the general possibility that a token can be made for a non-existent user. Make a global handler for this contrived occurence
-        val token = authService.createUserToken(principal.subject)
+        //TODO There's the general possibility that a token can be made for a non-existent user. Make a global handler for this contrived occurrence
+        val token = authService.createUserToken(refreshSubject)
         return ResponseEntity.ok(token)
     }
 
