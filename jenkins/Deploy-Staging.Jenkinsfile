@@ -13,6 +13,7 @@
 //It is assumed that ../app-version is changed manually before running this
 pipeline {
     environment {
+        MYSQL_CREDS = credentials('mysql-credentials-staging')
         FLYWAY = credentials('flyway-credentials-staging')
     }
     agent {
@@ -29,16 +30,13 @@ pipeline {
                 sh './gradlew clean'
             }
         }
-//         stage('Flyway') {
-//
-//             steps {
-//                 sh 'chmod +x ./gradlew'
-//                 sh './gradlew setUpCIDb'
-//                 dir ('database/flyway') {
-//                     sh 'flyway migrate -environment=staging  -user=$MYSQL_CREDS_USR -password=$MYSQL_CREDS_PSW'
-//                 }
-//             }
-//         }
+        stage('Flyway Staging') {
+            steps {
+                dir ('database/flyway') {
+                    sh 'flyway migrate -environment=staging  -user=$FLYWAY_USR -password=$FLYWAY_PSW'
+                }
+            }
+        }
         //TODO Version Provider
         stage('JooQ') {
             steps {
@@ -68,14 +66,14 @@ pipeline {
                 sh './gradlew test'
             }
         }
-        stage('Flyway Staging') {
-            steps {
-                dir ('database/flyway') {
-//                     sh 'flyway migrate -environment=staging  -user=$MYSQL_CREDS_USR -password=$MYSQL_CREDS_PSW'
-                    sh 'flyway migrate -environment=staging'
-                }
-            }
-        }
+//         stage('Flyway Staging') {
+//             steps {
+//                 dir ('database/flyway') {
+// //                     sh 'flyway migrate -environment=staging  -user=$MYSQL_CREDS_USR -password=$MYSQL_CREDS_PSW'
+//                     sh 'flyway migrate -environment=staging'
+//                 }
+//             }
+//         }
         stage('Ansible setup') {
             agent {
                 node {

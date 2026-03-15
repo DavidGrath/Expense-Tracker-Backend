@@ -73,7 +73,7 @@ Also, Java version is 17
 [source,mysql-sql]
 ----
 create user 'expense_tracker'@'localhost' IDENTIFIED BY 'xxxxxxxx';
-create user 'flyway'@'localhost' IDENTIFIED BY 'xxxxxxxx';
+create user 'flyway'@'172.26.48.138' IDENTIFIED BY 'xxxxxxxx';
 GRANT INSERT,SELECT,UPDATE,DELETE ON expense_tracker_database.* TO 'expense_tracker'@'localhost';
 GRANT CREATE,ALTER,INDEX,INSERT,UPDATE ON expense_tracker_database.* TO 'flyway'@'localhost';
 ----

@@ -1,7 +1,8 @@
 //It is assumed that ../app-version is changed manually before running this
 pipeline {
     environment {
-        MYSQL_CREDS = credentials('mysql_credentials')
+        MYSQL_CREDS = credentials('mysql-credentials-dev')
+        FLYWAY = credentials('flyway-credentials-dev')
     }
     agent {
         node {
@@ -23,7 +24,7 @@ pipeline {
                 sh 'chmod +x ./gradlew'
                 sh './gradlew setUpCIDb'
                 dir ('database/flyway') {
-                    sh 'flyway migrate -environment=ci  -user=$MYSQL_CREDS_USR -password=$MYSQL_CREDS_PSW'
+                    sh 'flyway migrate -environment=ci  -user=$FLYWAY_USR -password=$FLYWAY_PSW'
                 }
             }
         }
