@@ -19,6 +19,7 @@ pipeline {
     // Branch staging
     stages {
 
+//TODO Uncomment
 //         stage('Clean') {
 //             steps {
 //                 sh 'chmod +x ./gradlew'
@@ -35,7 +36,7 @@ pipeline {
         //TODO Version Provider
         stage('JooQ') {
             steps {
-                sh 'chmod +x ./gradlew'
+                sh 'chmod +x ./gradlew' //TODO Move back to clean stage
                 sh './gradlew jooqCodeGenStaging'
             }
         }
