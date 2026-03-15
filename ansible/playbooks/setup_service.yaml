@@ -18,7 +18,8 @@
         path: /opt/expense_tracker
         state: directory
         #owner: TODO create expense-tracker
-        mode: '760'
+#        mode: '760' TODO Rework users later
+        mode: '777'
     - name: Download Pyroscope OTel Jar
       become: true
       ansible.builtin.get_url:
