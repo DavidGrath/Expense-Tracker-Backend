@@ -48,6 +48,8 @@ The NN part is supposed to be incremented before every push to the test server, 
 
 It restarts at "01" each day. Let me see you try and reach 100 commits in 24 hours
 
+Also, Java version is 17
+
 === TODO
 * I use "supposed" because these haven't been implemented just yet
 * Fail any pushes if the version remains the same
@@ -65,3 +67,13 @@ It restarts at "01" each day. Let me see you try and reach 100 commits in 24 hou
 * Concerning repositories:
 ** Most of the methods should include a parameter that links back to the user: userId or profileId and the queries should include them, too. Basically https://developer.mozilla.org/en-US/docs/Web/Security/Attacks/IDOR[IDOR] mitigation
 * Log the sizes of all List/Iterable results from Repository classes, maybe use AspectJ
+
+== Staging user
+
+[source,mysql-sql]
+----
+create user 'expense_tracker'@'localhost' IDENTIFIED BY 'xxxxxxxx';
+create user 'flyway'@'localhost' IDENTIFIED BY 'xxxxxxxx';
+GRANT INSERT,SELECT,UPDATE,DELETE ON expense_tracker_database.* TO 'expense_tracker'@'localhost';
+GRANT CREATE,ALTER,INDEX,INSERT,UPDATE ON expense_tracker_database.* TO 'flyway'@'localhost';
+----
