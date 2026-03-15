@@ -1,5 +1,5 @@
 - name: Set up Expense Tracker
-  hosts: test_server
+  hosts: test_server,staging_server,prod_server
   tasks:
     - name: Ensure OTel Directory exists
       become: true

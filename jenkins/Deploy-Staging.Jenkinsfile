@@ -87,7 +87,7 @@ pipeline {
             }
             steps {
                 dir ('ansible') {
-                    sh 'ansible-playbook -i inventory playbooks/setup_service.yaml  --private-key ~/.ssh/ansible_staging -e "ansible_become_password=\'$ANSIBLE_BECOME_PASS\'"'
+                    sh 'ansible-playbook --limit staging_server playbooks/setup_service.yaml  --private-key ~/.ssh/ansible_staging -e "ansible_become_password=\'$ANSIBLE_BECOME_PASS\'"'
                 }
             }
         }
