@@ -1,0 +1,5 @@
+{
+  "deployment_environment": "staging",
+  "pyroscope_address": "http://localhost:4040",
+  "telemetry_address": "http://localhost:4318"
+}

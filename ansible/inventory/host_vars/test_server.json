@@ -1,4 +1,5 @@
 {
   "deployment_environment": "dev",
-  "pyroscope_address": "http://172.26.48.140:4040"
+  "pyroscope_address": "http://172.26.48.140:4040",
+  "telemetry_address": "https://telemetry-local.davidgrath.com:4318"
 }

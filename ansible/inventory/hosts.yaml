@@ -5,6 +5,10 @@ ungrouped:
 #      ansible_user: ansible
       ansible_user: jenkins
       ansible_become: true
+    staging_server:
+      ansible_host: 172.26.48.26
+      ansible_user: ansible
+      ansible_become: true
     prod_server: # Does not exist yet
       ansible_host: 192.0.0.1
       ansible_user: ansible
