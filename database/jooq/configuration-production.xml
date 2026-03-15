@@ -6,6 +6,7 @@
         <url>jdbc:mysql://localhost:3306/expense_tracker_database</url>
     </jdbc>
     <generator>
+        <name>org.jooq.codegen.KotlinGenerator</name>
         <database>
             <name>org.jooq.meta.mysql.MySQLDatabase</name>
             <inputSchema>expense_tracker_database</inputSchema>
@@ -28,12 +29,26 @@
                 </forcedType>
             </forcedTypes>
         </database>
+        <strategy>
+            <matchers>
+                <tables>
+                    <table>
+                        <pojoClass>
+                            <transform>PASCAL</transform>
+                            <expression>$0_Pojo</expression>
+                        </pojoClass>
+                    </table>
+                </tables>
+            </matchers>
+        </strategy>
         <target>
             <packageName>com.davidgrath.expensetrackerbackend.generated.jooq</packageName>
             <directory>../../app/build/generated/jooq/main</directory>
         </target>
         <generate>
-            <!-- <daos>true</daos> -->
+            <pojos>true</pojos>
+            <immutablePojos>true</immutablePojos>
+            <pojosAsKotlinDataClasses>true</pojosAsKotlinDataClasses>
         </generate>
     </generator>
 </configuration>
