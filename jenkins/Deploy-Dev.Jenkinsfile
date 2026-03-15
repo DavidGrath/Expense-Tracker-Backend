@@ -75,7 +75,7 @@ pipeline {
             }
             steps {
                 dir ('ansible') {
-                    sh 'ansible-playbook --limit test_server playbooks/setup_service.yaml  --private-key ~/.ssh/jenkins_agent_key -e "ansible_become_password=\'$ANSIBLE_BECOME_PASS\'"'
+                    sh 'ansible-playbook --limit test_server playbooks/setup_service.yaml -e "ansible_become_password=\'$ANSIBLE_BECOME_PASS\'"'
                 }
             }
         }
