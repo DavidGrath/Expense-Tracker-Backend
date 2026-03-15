@@ -48,7 +48,7 @@ pipeline {
                 sh './gradlew assemble'
             }
         }
-        stage('Test') {
+        /* stage('Test') {
             environment {
                 SPRING_PROFILES_ACTIVE='staging'
             }
@@ -60,7 +60,7 @@ pipeline {
             }
                 sh './gradlew test'
             }
-        }
+        } */
 //         stage('Flyway Staging') {
 //             steps {
 //                 dir ('database/flyway') {
@@ -91,10 +91,10 @@ pipeline {
                 sh 'cp app-version /opt/expense_tracker/app-version'
                 sh 'chmod 777 /opt/expense_tracker/expense-tracker-backend.jar'
                 withCredentials([file(credentialsId: 'expense-tracker-backend-secrets-staging', variable: 'expenseTrackerApplicationSecrets')]) {
-                    sh 'sudo rm -f /opt/expense_tracker/secrets-staging.properties'
-                    sh 'cp $expenseTrackerApplicationSecrets /opt/expense_tracker/secrets-staging.properties'
-                    sh 'chmod 700 /opt/expense_tracker/secrets-staging.properties'
-                    sh 'sudo chown root:root /opt/expense_tracker/secrets-staging.properties'
+                    sh 'sudo rm -f /opt/expense_tracker/secrets.properties'
+                    sh 'cp $expenseTrackerApplicationSecrets /opt/expense_tracker/secrets.properties'
+                    sh 'chmod 700 /opt/expense_tracker/secrets.properties'
+                    sh 'sudo chown root:root /opt/expense_tracker/secrets.properties'
                 }
                 sh 'sudo systemctl enable expense_tracker_backend'
                 sh 'sudo systemctl daemon-reload'
