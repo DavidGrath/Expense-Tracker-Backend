@@ -176,7 +176,7 @@ tasks.register('jooqCodeGenStaging', Exec) {
     dependsOn jooqCodeGenCopy
     
     workingDir "${rootDir}/database/jooq"
-    commandLine "java", "-Djooq.codegen.jdbc.driver=com.mysql.jdbc.Driver", "-Djooq.codegen.jdbc.url=jdbc:mysql://172.26.48.26:3307/expense_tracker_database", "-Djooq.codegen.jdbc.username=${System.getenv("MYSQL_CREDS_USR")}", "-Djooq.codegen.jdbc.password=${System.getenv("MYSQL_CREDS_PSW")}", "-Djooq.codegen.propertyOverride=true", "-cp", "*", "org.jooq.codegen.GenerationTool", "configuration-staging.xml"
+    commandLine "java", "-Djooq.codegen.jdbc.driver=com.mysql.jdbc.Driver", "-Djooq.codegen.jdbc.url=jdbc:mysql://localhost:3306/expense_tracker_database", "-Djooq.codegen.jdbc.username=${System.getenv("MYSQL_CREDS_USR")}", "-Djooq.codegen.jdbc.password=${System.getenv("MYSQL_CREDS_PSW")}", "-Djooq.codegen.propertyOverride=true", "-cp", "*", "org.jooq.codegen.GenerationTool", "configuration-staging.xml"
 }
 
 tasks.register('jooqCodeGenProd', Exec) {

@@ -31,7 +31,7 @@ password = ""
 driver = "com.mysql.jdbc.Driver"
 
 [environments.staging]
-url = "jdbc:mysql://172.26.48.26:3307/expense_tracker_database"
+url = "jdbc:mysql://localhost:3306/expense_tracker_database"
 schemas = ["expense_tracker_database"]
 user = ""
 password = ""
