@@ -17,7 +17,7 @@
       ansible.builtin.file:
         path: /opt/expense_tracker
         state: directory
-        owner: jenkins
+        #owner: TODO create expense-tracker
         mode: '760'
     - name: Download Pyroscope OTel Jar
       become: true
@@ -30,7 +30,7 @@
       ansible.builtin.template:
         src: expense_tracker_service.sh.j2
         dest: /opt/expense_tracker/startup.sh
-        owner: jenkins
+        #owner: TODO create expense-tracker
         mode: '751'
     - name: Configure Service
       become: true
