@@ -19,12 +19,12 @@ pipeline {
     // Branch staging
     stages {
 
-        stage('Clean') {
-            steps {
-                sh 'chmod +x ./gradlew'
-                sh './gradlew clean'
-            }
-        }
+//         stage('Clean') {
+//             steps {
+//                 sh 'chmod +x ./gradlew'
+//                 sh './gradlew clean'
+//             }
+//         }
         stage('Flyway Staging') {
             steps {
                 dir ('database/flyway') {
@@ -35,6 +35,7 @@ pipeline {
         //TODO Version Provider
         stage('JooQ') {
             steps {
+                sh 'chmod +x ./gradlew'
                 sh './gradlew jooqCodeGenStaging'
             }
         }
@@ -80,7 +81,7 @@ pipeline {
             }
             steps {
                 dir ('ansible') {
-                    sh 'ansible-playbook --limit staging_server playbooks/setup_service.yaml  --private-key ~/.ssh/ansible_staging -e "ansible_become_password=\'$ANSIBLE_BECOME_PASS\'"'
+                    sh 'ansible-playbook --limit staging_server playbooks/setup_service.yaml -e "ansible_become_password=\'$ANSIBLE_BECOME_PASS\'"'
                 }
             }
         }
