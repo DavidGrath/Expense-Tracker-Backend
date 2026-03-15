@@ -103,9 +103,9 @@ pipeline {
             }
         }
     }
-    post {
+    /* post {
             always {
-                junit 'app/build/test-results/**/*.xml'
+                junit 'app/build/test-results *//** /* *//*.xml'
             }
-    }
+    } */
 }
