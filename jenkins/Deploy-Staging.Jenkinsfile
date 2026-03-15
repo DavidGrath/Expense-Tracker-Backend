@@ -1,10 +1,5 @@
 // Branch staging
-// Run Flyway migration - expense_tracker_database_staging
-// Run JOOQ Codegen
-// Run OpenAPI codegen
-// Build
-// set spring profiles active to staging
-// Test
+
 // Upload JAR to Artifactory
 // Ansible setup service on test_server
 // Download jar to /opt/expense-tracker
@@ -18,7 +13,7 @@ pipeline {
     }
     agent {
         node {
-            label 'Test Server'
+            label 'Staging Server'
         }
     }
     // Branch staging
@@ -90,11 +85,6 @@ pipeline {
             }
         }
         stage('Deploy') {
-            agent {
-                node {
-                    label 'Staging Server'
-                }
-            }
             steps {
                 sh './gradlew bootJar'
                 sh 'cp "./app/build/libs/expense-tracker-backend.jar" /opt/expense_tracker/expense-tracker-backend.jar'
