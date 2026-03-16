@@ -10,6 +10,7 @@ pipeline {
     environment {
         FLYWAY_STAGING = credentials('flyway-credentials-staging')
         FLYWAY_DEV = credentials('flyway-credentials-dev')
+        MYSQL_CREDS = credentials('mysql-credentials-dev')
     }
     agent {
         node {
