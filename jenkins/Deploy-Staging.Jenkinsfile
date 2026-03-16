@@ -8,36 +8,33 @@
 //It is assumed that ../app-version is changed manually before running this
 pipeline {
     environment {
-        MYSQL_CREDS = credentials('mysql-credentials-staging')
-        FLYWAY = credentials('flyway-credentials-staging')
+        FLYWAY_STAGING = credentials('flyway-credentials-staging')
+        FLYWAY_DEV = credentials('flyway-credentials-dev')
     }
     agent {
         node {
-            label 'Staging Server'
+            label 'Test Server'
         }
     }
     // Branch staging
     stages {
 
-//TODO Uncomment
-//         stage('Clean') {
-//             steps {
-//                 sh 'chmod +x ./gradlew'
-//                 sh './gradlew clean'
-//             }
-//         }
+        stage('Clean') {
+            steps {
+                sh 'chmod +x ./gradlew'
+                sh './gradlew clean'
+            }
+        }
         stage('Flyway Staging') {
             steps {
                 dir ('database/flyway') {
-                    sh 'flyway migrate -environment=staging  -user=$FLYWAY_USR -password=$FLYWAY_PSW'
+                    sh 'flyway migrate -environment=dev  -user=$FLYWAY_DEV_USR -password=$FLYWAY_DEV_PSW'
                 }
             }
         }
-        //TODO Version Provider
         stage('JooQ') {
             steps {
-                sh 'chmod +x ./gradlew' //TODO Move back to clean stage
-                sh './gradlew jooqCodeGenStaging'
+                sh './gradlew jooqCodeGenDev'
             }
         }
         stage('Open API') {
@@ -50,9 +47,9 @@ pipeline {
                 sh './gradlew assemble'
             }
         }
-        /* stage('Test') {
+        stage('Test') {
             environment {
-                SPRING_PROFILES_ACTIVE='staging'
+                SPRING_PROFILES_ACTIVE='ci'
             }
             steps {
                 sh 'rm -f app/src/main/resources/secrets-staging.properties'
@@ -62,15 +59,20 @@ pipeline {
             }
                 sh './gradlew test'
             }
-        } */
-//         stage('Flyway Staging') {
-//             steps {
-//                 dir ('database/flyway') {
-// //                     sh 'flyway migrate -environment=staging  -user=$MYSQL_CREDS_USR -password=$MYSQL_CREDS_PSW'
+        }
+        stage('Flyway Staging') {
+            agent {
+                node {
+                    label 'Staging Server'
+                }
+            }
+            steps {
+                dir ('database/flyway') {
+                    sh 'flyway migrate -environment=staging  -user=$FLYWAY_STAGING_USR -password=$FLYWAY_STAGING_PSW'
 //                     sh 'flyway migrate -environment=staging'
-//                 }
-//             }
-//         }
+                }
+            }
+        }
         stage('Ansible setup') {
             agent {
                 node {
@@ -86,10 +88,24 @@ pipeline {
                 }
             }
         }
-        stage('Deploy') {
+        stage('Copy Jar') {
+            agent {
+                node {
+                    label 'built-in'
+                }
+            }
             steps {
                 sh './gradlew bootJar'
-                sh 'cp "./app/build/libs/expense-tracker-backend.jar" /opt/expense_tracker/expense-tracker-backend.jar'
+                sh 'scp -i /etc/ssh/jenkins_remote "./app/build/libs/expense-tracker-backend.jar" jenkins_remote@172.26.48.26:/opt/expense_tracker/expense-tracker-backend.jar'
+            }
+        }
+        stage('Deploy') {
+            agent {
+                node {
+                    label 'Staging Server'
+                }
+            }
+            steps {
                 sh 'cp app-version /opt/expense_tracker/app-version'
                 sh 'chmod 777 /opt/expense_tracker/expense-tracker-backend.jar'
                 withCredentials([file(credentialsId: 'expense-tracker-backend-secrets-staging', variable: 'expenseTrackerApplicationSecrets')]) {
@@ -105,9 +121,9 @@ pipeline {
             }
         }
     }
-    /* post {
-            always {
-                junit 'app/build/test-results *//** /* *//*.xml'
-            }
-    } */
+    post {
+        always {
+            junit 'app/build/test-results/**/*.xml'
+        }
+    }
 }
