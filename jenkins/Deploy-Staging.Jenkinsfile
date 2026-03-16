@@ -90,14 +90,14 @@ pipeline {
             }
         }
         stage('Copy Jar') {
-            agent {
-                node {
-                    label 'built-in'
-                }
-            }
+//             agent {
+//                 node {
+//                     label 'built-in'
+//                 }
+//             }
             steps {
                 sh './gradlew bootJar'
-                sh 'scp -i /etc/ssh/jenkins_remote "./app/build/libs/expense-tracker-backend.jar" jenkins_remote@172.26.48.26:/opt/expense_tracker/expense-tracker-backend.jar'
+                sh 'scp -i /etc/ssh/jenkins_test_to_staging "./app/build/libs/expense-tracker-backend.jar" jenkins_remote@172.26.48.26:/opt/expense_tracker/expense-tracker-backend.jar'
             }
         }
         stage('Deploy') {
