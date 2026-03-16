@@ -53,10 +53,10 @@ pipeline {
                 SPRING_PROFILES_ACTIVE='ci'
             }
             steps {
-                sh 'rm -f app/src/main/resources/secrets-staging.properties'
+                sh 'rm -f app/src/main/resources/secrets-ci.properties'
                 sh 'chmod o+w -R app'
-            withCredentials([file(credentialsId: 'expense-tracker-backend-secrets-staging', variable: 'expenseTrackerApplicationSecrets')]) {
-                sh 'cp $expenseTrackerApplicationSecrets app/src/main/resources/secrets-staging.properties'
+            withCredentials([file(credentialsId: 'expense-tracker-backend-secrets-ci', variable: 'expenseTrackerApplicationSecrets')]) {
+                sh 'cp $expenseTrackerApplicationSecrets app/src/main/resources/secrets-ci.properties'
             }
                 sh './gradlew test'
             }
