@@ -25,7 +25,7 @@ pipeline {
                 sh './gradlew clean'
             }
         }
-        stage('Flyway Staging') {
+        stage('Flyway') {
             steps {
                 dir ('database/flyway') {
                     sh 'flyway migrate -environment=dev  -user=$FLYWAY_DEV_USR -password=$FLYWAY_DEV_PSW'
