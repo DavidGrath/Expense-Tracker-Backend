@@ -1,0 +1,18 @@
+rules:
+  - bean: Tomcat:type=ProtocolHandler,port=7206
+    mapping:
+      connectionCount:
+        metric: tomcat.connections.current
+        type: gauge
+      maxConnections:
+        metric: tomcat.connections.max
+        type: gauge
+
+  - bean: Tomcat:type=ThreadPool,name=*
+    mapping:
+      currentThreadsBusy:
+        metric: tomcat.thread.busy.count
+        type: gauge
+      maxThreads:
+        dropNegativeValues: true
+        metric: tomcat.thread.limit

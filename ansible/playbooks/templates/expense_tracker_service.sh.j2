@@ -1,5 +1,5 @@
 export APP_VERSION=$(cat app-version)
-export JAVA_TOOL_OPTIONS="-javaagent:$OTEL_JAVA_AGENT_LOCATION/opentelemetry-javaagent.jar"
+export JAVA_TOOL_OPTIONS="-javaagent:$OTEL_JAVA_AGENT_LOCATION/opentelemetry-javaagent.jar -Dotel.jmx.config=./jmx_rules.yaml"
 export SPRING_PROFILES_ACTIVE={{deployment_environment}}
 export OTEL_EXPORTER_OTLP_ENDPOINT={{telemetry_address}}
 export OTEL_RESOURCE_ATTRIBUTES=deployment.environment.name={{deployment_environment}},deployment.environment={{deployment_environment}},service.version=$APP_VERSION
