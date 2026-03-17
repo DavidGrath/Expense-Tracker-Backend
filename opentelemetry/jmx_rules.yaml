@@ -14,5 +14,5 @@ rules:
         metric: tomcat.thread.busy.count
         type: gauge
       maxThreads:
-        dropNegativeValues: true
         metric: tomcat.thread.limit
+        type: gauge
