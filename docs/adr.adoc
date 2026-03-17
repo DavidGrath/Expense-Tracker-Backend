@@ -13,8 +13,6 @@ and since I'm already familiar with the next option, I picked that
 * https://opentelemetry.io/docs/zero-code/java/agent/server-config[OpenTelemetry]
 
 == Details
-* I thought I needed to enable the https://docs.spring.io/spring-boot/appendix/application-properties/index.html#application-properties.server.server.tomcat.mbeanregistry.enabled[Bean Registry],
-but it seems to work just fine without it
 * I chose not to use the default https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/d63cd5a4a9c8497221cea0a1993331fc69187264/instrumentation/jmx-metrics/library/tomcat.md[Tomcat JMX instrumentation]
 because most of the metrics are already covered by the https://opentelemetry.io/docs/specs/semconv/http/http-metrics/[HTTP instrumentation] and I don't currently care about sessions
 * But instead, I chose to https://github.com/open-telemetry/opentelemetry-java-instrumentation/tree/v2.9.0/instrumentation/jmx-metrics/javaagent#configuration-files[create custom metrics]
