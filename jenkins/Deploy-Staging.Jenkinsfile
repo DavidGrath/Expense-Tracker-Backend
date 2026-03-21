@@ -108,6 +108,8 @@ pipeline {
             }
             steps {
                 sh 'cp app-version /opt/expense_tracker/app-version'
+                // To expose Tomcat connection count
+                sh 'cp opentelemetry/jmx_rules.yaml /opt/expense_tracker/jmx_rules.yaml'
                 sh 'chmod 777 /opt/expense_tracker/expense-tracker-backend.jar'
                 withCredentials([file(credentialsId: 'expense-tracker-backend-secrets-staging', variable: 'expenseTrackerApplicationSecrets')]) {
                     sh 'sudo rm -f /opt/expense_tracker/secrets.properties'
