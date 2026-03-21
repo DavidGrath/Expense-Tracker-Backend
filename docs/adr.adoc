@@ -1,0 +1,21 @@
+= Architectural Decisions Record
+
+This doc is mainly here because I added some JMX instrumentations and wanted to include the relevant links
+
+== The Goal
+
+Track the number of busy threads and open connections
+
+== Possible Solutions
+
+* https://docs.micrometer.io/micrometer/reference/installing.html[Micrometer] - however, I'm still not sure how Micrometer and Actuator fit together in the Spring ecosystem,
+and since I'm already familiar with the next option, I picked that
+* https://opentelemetry.io/docs/zero-code/java/agent/server-config[OpenTelemetry]
+
+== Details
+* I chose not to use the default https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/d63cd5a4a9c8497221cea0a1993331fc69187264/instrumentation/jmx-metrics/library/tomcat.md[Tomcat JMX instrumentation]
+because most of the metrics are already covered by the https://opentelemetry.io/docs/specs/semconv/http/http-metrics/[HTTP instrumentation] and I don't currently care about sessions
+* But instead, I chose to https://github.com/open-telemetry/opentelemetry-java-instrumentation/tree/v2.9.0/instrumentation/jmx-metrics/javaagent#configuration-files[create custom metrics]
+to copy a subset of the existing ones by using the https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/d63cd5a4a9c8497221cea0a1993331fc69187264/instrumentation/jmx-metrics/library/src/main/resources/jmx/rules/tomcat.yaml#L95[source] as a reference
+
+
