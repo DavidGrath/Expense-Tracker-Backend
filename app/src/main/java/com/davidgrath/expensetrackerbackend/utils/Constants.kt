@@ -10,7 +10,7 @@ class Constants {
         const val SUBFOLDER_NAME_DOCUMENTS = "documents"
         const val DEFAULT_PROFILE_ID = "fae075e1-d54a-4857-a76b-b3eadf88d602"
 
-        const val JWT_ALG = "RSA"
+        const val JWT_ALG = "RSA" //4096 bits
         const val CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE = "errorCode"
         const val ICON_NAMESPACE_MATERIAL_SYMBOLS = "materialsymbols"
         const val DEFAULT_FETCH_LIMIT = 1_000

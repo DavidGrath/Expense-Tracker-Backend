@@ -58,6 +58,7 @@ class UserService {
         //Create Accounts
         val currency = Currency.getInstance(locale)?.currencyCode ?: "USD"
         val account = AccountPojo(null, profileId, currency, null, null, "Default Account", utcDate)
+        //TODO start transaction
         accountRepository.insertAccount(account)
         LOGGER.info("Created default account with currency code {}", currency)
         //Create categories

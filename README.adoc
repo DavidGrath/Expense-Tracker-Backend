@@ -56,6 +56,30 @@ Also, Java version is 17
 * Alternatively, or combined - increment the version number automatically in the pipeline
 * https://xkcd.com/838/ Log all attempts to access unauthorized entities along with the target entity IDs to the console. INFO level
 * Generate SchemaSpy to static webpage
+* Coroutines with MDCContext
+* JaCoCo
+* detekt
+* Constraints and constraint tests
+* Consider using Hibernate validators
+* Time zone consistency
+** JVM (`-Duser.timezone`)
+** JDBC Connection Properties (`connectionTimeZone`, `serverTimeZone`)
+** MySQL itself (`--default-time-zone`)
+* Transaction isolation readcommitted
+* sessionVariables cte_max_recursion_depth=36524
+* Use `with recursive` for date generation
+* Custom controller method to toggle log levels in production
+
+=== Naming conventions for constraints
+* Primary Keys: `pk_<table_name>`
+* Unique Keys: `uq_<table_name>_<column_or_columns>` (Summarize if hitting the 64-character limit)
+* Foreign Keys: `fk_<local_table>_<local_column>_<parent_table>`
+* Check Constraints: `chk_<table_name>_<column_or_general_name>_<behavior_description>`
+* Plain indexes: `idx_<table_name>_<column_names_or_sensible_name>`
+
+== Development APIs (TODO)
+For the sake of integration tests, some APIs will be exposed only within the `development`, `ci`, and
+`staging` profiles to enable easier handling of database state
 
 == Notes
 * The project uses an API-first approach, so the endpoints are derived from the link:openapi/openapi.json[OpenAPI specification]
