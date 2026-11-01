@@ -22,7 +22,7 @@ import com.davidgrath.expensetrackerbackend.testutils.createBearerToken
 import com.davidgrath.expensetrackerbackend.testutils.tempInit
 import com.davidgrath.expensetrackerbackend.utils.Constants
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.JWT_ALG
-import com.davidgrath.expensetrackerbackend.utils.toByte
+import com.davidgrath.expensetrackerbackend.utils.bytesToUUID
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.ObjectWriter
 import org.hamcrest.Matchers
@@ -83,7 +83,7 @@ class SellersControllerTest {
     @Test
     fun getAllLocationsOkTest() {
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val profileId = profile.id!!
 
         val (sellerId, locationId) = seedSellers(profileId)
@@ -94,7 +94,7 @@ class SellersControllerTest {
             .perform(
                 MockMvcRequestBuilders.get(SellersApi.PATH_SELLERS_ID_LOCATIONS_GET, sellerId)
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!).toString())
             )
             .andExpectAll(
                 MockMvcResultMatchers.status().isOk,
@@ -107,7 +107,7 @@ class SellersControllerTest {
     @Test
     fun getLocationByIdOkTest() {
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val profileId = profile.id!!
 
         val (sellerId, locationId) = seedSellers(profileId)
@@ -118,7 +118,7 @@ class SellersControllerTest {
             .perform(
                 MockMvcRequestBuilders.get(SellersApi.PATH_SELLERS_ID_LOCATIONS_LOCATION_ID_GET, sellerId, locationId)
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!).toString())
             )
             .andExpectAll(
                 MockMvcResultMatchers.status().isOk
@@ -128,7 +128,7 @@ class SellersControllerTest {
     @Test
     fun getSellerByIdOkTest() {
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val profileId = profile.id!!
 
         val (sellerId, locationId) = seedSellers(profileId)
@@ -139,7 +139,7 @@ class SellersControllerTest {
             .perform(
                 MockMvcRequestBuilders.get(SellersApi.PATH_SELLERS_ID_GET, sellerId)
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!).toString())
             )
             .andExpectAll(
                 MockMvcResultMatchers.status().isOk
@@ -149,7 +149,7 @@ class SellersControllerTest {
     @Test
     fun getAllSellersOkTest() {
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val profileId = profile.id!!
 
         seedSellers(profileId)
@@ -160,7 +160,7 @@ class SellersControllerTest {
             .perform(
                 MockMvcRequestBuilders.get(SellersApi.PATH_SELLERS_GET)
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!).toString())
             )
             .andExpectAll(
                 MockMvcResultMatchers.status().isOk,
@@ -176,7 +176,7 @@ class SellersControllerTest {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val objectWriter: ObjectWriter = ObjectMapper().writer()
         val existing = sellerRepository.getAll(profile.id!!)
         val remaining = Constants.Constraints.MAX_SELLERS_PER_PROFILE - existing.size
@@ -193,7 +193,7 @@ class SellersControllerTest {
             .perform(
                 MockMvcRequestBuilders.post(SellersApi.PATH_SELLERS_POST)
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!).toString())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(json)
             )
@@ -210,7 +210,7 @@ class SellersControllerTest {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val objectWriter: ObjectWriter = ObjectMapper().writer()
         val (sellerId, locationId) = seedSellers(profile.id!!)
         val existing = sellerLocationRepository.getByProfileIdAndSellerId(profile.id!!, sellerId)
@@ -220,7 +220,7 @@ class SellersControllerTest {
         }
         val createdAt = LocalDateTime.now(timeHandler.getClock())
         for(sel in 0 until remaining) {
-            val sellerLocation = SellerLocationPojo(null, sellerId, "Branch location", false.toByte(), null, null, null, createdAt)
+            val sellerLocation = SellerLocationPojo(null, sellerId, sel+1+existing.size, "Branch location", null, null, null, createdAt)
             val sellerLocationId = sellerLocationRepository.insertSellerLocation(sellerLocation)
         }
         val createRequest = SellerLocationCreateRequest("Supermarket branch")
@@ -230,7 +230,7 @@ class SellersControllerTest {
             .perform(
                 MockMvcRequestBuilders.post(SellersApi.PATH_SELLERS_ID_LOCATIONS_POST, sellerId)
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!).toString())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(json)
             )
@@ -248,7 +248,7 @@ class SellersControllerTest {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 
 //        val (sellerId, locationId) = seedSellers(profile.id!!)
 
@@ -260,7 +260,7 @@ class SellersControllerTest {
             .perform(
                 MockMvcRequestBuilders.post(SellersApi.PATH_SELLERS_POST)
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!).toString())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(json)
             )
@@ -277,7 +277,7 @@ class SellersControllerTest {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 
         val (sellerId, locationId) = seedSellers(profile.id!!)
 
@@ -289,7 +289,7 @@ class SellersControllerTest {
             .perform(
                 MockMvcRequestBuilders.put(SellersApi.PATH_SELLERS_ID_PUT, sellerId)
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!).toString())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(json)
             )
@@ -306,7 +306,7 @@ class SellersControllerTest {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 
         val (sellerId, locationId) = seedSellers(profile.id!!)
 
@@ -318,7 +318,7 @@ class SellersControllerTest {
             .perform(
                 MockMvcRequestBuilders.post(SellersApi.PATH_SELLERS_ID_LOCATIONS_POST, sellerId)
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!).toString())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(json)
             )
@@ -335,7 +335,7 @@ class SellersControllerTest {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 
         val (sellerId, locationId) = seedSellers(profile.id!!)
 
@@ -347,7 +347,7 @@ class SellersControllerTest {
             .perform(
                 MockMvcRequestBuilders.put(SellersApi.PATH_SELLERS_ID_LOCATIONS_LOCATION_ID_PUT, sellerId, locationId)
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!).toString())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(json)
             )
@@ -363,7 +363,7 @@ class SellersControllerTest {
         val createdAt = LocalDateTime.now(timeHandler.getClock())
         val seller = SellerPojo(null, profileId, "Restaurant", createdAt)
         val sellerId = sellerRepository.insertSeller(seller)
-        val sellerLocation = SellerLocationPojo(null, sellerId, "Branch location", false.toByte(), null, null, null, createdAt)
+        val sellerLocation = SellerLocationPojo(null, sellerId, 1, "Branch location", null, null, null, createdAt)
         val sellerLocationId = sellerLocationRepository.insertSellerLocation(sellerLocation)
         return sellerId to sellerLocationId
     }

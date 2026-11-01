@@ -78,7 +78,7 @@ class ProfilesControllerTest {
 
         var response = mockMvc
             .perform(
-                MockMvcRequestBuilders.get(ProfilesApi.PATH_PROFILES_STRING_ID_GET, Constants.DEFAULT_PROFILE_ID)
+                MockMvcRequestBuilders.get(ProfilesApi.PATH_PROFILES_UUID_GET, Constants.DEFAULT_PROFILE_ID)
                     .header("Authorization", "Bearer ${jws}")
             )
             .andExpectAll(

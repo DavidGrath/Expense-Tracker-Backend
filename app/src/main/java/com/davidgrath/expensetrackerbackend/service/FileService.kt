@@ -49,7 +49,7 @@ class FileService {
         }
     }
 
-    fun moveFileToMain(root: File, userUuid: String, profileStringId: String, sourceFile: File, subfolder: String, date: LocalDate?): String {
+    fun moveFileToMain(root: File, userUuid: String, profileUuid: String, sourceFile: File, subfolder: String, date: LocalDate?): String {
         var path: String? = null
         var destination: File? = null
         if(subfolder == Constants.SUBFOLDER_NAME_DOCUMENTS) {
@@ -57,16 +57,16 @@ class FileService {
             val month = String.format("%02d", date!!.monthValue)
             val day = String.format("%02d", date!!.dayOfMonth)
 
-            path = "/profiles/${profileStringId}/${Constants.FOLDER_NAME_DATA}/${Constants.SUBFOLDER_NAME_DOCUMENTS}/${year}/${month}/${day}/${sourceFile.name}"
+            path = "/profiles/${profileUuid}/${Constants.FOLDER_NAME_DATA}/${Constants.SUBFOLDER_NAME_DOCUMENTS}/${year}/${month}/${day}/${sourceFile.name}"
             destination = file(root,
                 Constants.FOLDER_NAME_USERS, userUuid,
-                Constants.FOLDER_NAME_PROFILES, profileStringId,
+                Constants.FOLDER_NAME_PROFILES, profileUuid,
                 Constants.FOLDER_NAME_DATA, Constants.SUBFOLDER_NAME_DOCUMENTS, year, month, day, sourceFile.name)
         } else if (subfolder == Constants.SUBFOLDER_NAME_IMAGES) {
-            path = "/profiles/${profileStringId}/${Constants.FOLDER_NAME_DATA}/${Constants.SUBFOLDER_NAME_IMAGES}/${sourceFile.name}"
+            path = "/profiles/${profileUuid}/${Constants.FOLDER_NAME_DATA}/${Constants.SUBFOLDER_NAME_IMAGES}/${sourceFile.name}"
             destination = file(root,
                 Constants.FOLDER_NAME_USERS, userUuid,
-                Constants.FOLDER_NAME_PROFILES, profileStringId,
+                Constants.FOLDER_NAME_PROFILES, profileUuid,
                 Constants.FOLDER_NAME_DATA, Constants.SUBFOLDER_NAME_IMAGES, sourceFile.name)
         }
             if(destination!!.exists()) {

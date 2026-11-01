@@ -95,10 +95,12 @@ class SellerService {
     }
 
 
-    fun createSellerLocation(sellerId: Long, name: String): Long {
+    fun createSellerLocation(profileId: Long, sellerId: Long, name: String): Long {
         val date = ZonedDateTime.now(timeHandler.getClock())
         val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
-        val sellerLocationPojo = SellerLocationPojo(null, sellerId, name, false.toByte(), null, null, null, utcDate)
+        val maxOrdinal = sellerLocationRepository.getMaxOrdinalForSeller(profileId, sellerId)?: 0
+        val newOrdinal = maxOrdinal + 1
+        val sellerLocationPojo = SellerLocationPojo(null, sellerId, newOrdinal, name, null, null, null, utcDate)
         val id = sellerLocationRepository.insertSellerLocation(sellerLocationPojo)
         LOGGER.info("ID: {}", id)
         return id
@@ -109,8 +111,8 @@ class SellerService {
         return count
     }
 
-    fun updateSellerLocation(profileId: Long, id: Long, location: String): Int {
-        val count = sellerLocationRepository.updateSellerLocation(profileId, id, location)
+    fun updateSellerLocation(profileId: Long, id: Long, name: String): Int {
+        val count = sellerLocationRepository.updateSellerLocation(profileId, id, name)
         return count
     }
 

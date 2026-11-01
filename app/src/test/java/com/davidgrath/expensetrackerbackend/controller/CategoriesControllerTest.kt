@@ -17,6 +17,7 @@ import com.davidgrath.expensetrackerbackend.testutils.createBearerToken
 import com.davidgrath.expensetrackerbackend.testutils.tempInit
 import com.davidgrath.expensetrackerbackend.utils.Constants
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.JWT_ALG
+import com.davidgrath.expensetrackerbackend.utils.bytesToUUID
 import com.davidgrath.expensetrackerbackend.utils.toByte
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.ObjectWriter
@@ -79,14 +80,14 @@ class CategoriesControllerTest {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 
 
         mockMvc
             .perform(
                 MockMvcRequestBuilders.get("/categories")
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
             )
             .andExpectAll(
                 MockMvcResultMatchers.status().is2xxSuccessful
@@ -98,7 +99,7 @@ class CategoriesControllerTest {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val objectWriter: ObjectWriter = ObjectMapper().writer()
         val existing = categoryRepository.getAllByProfileId(profile.id!!)
         val remaining = Constants.Constraints.MAX_CATEGORIES_PER_PROFILE - existing.size
@@ -115,7 +116,7 @@ class CategoriesControllerTest {
             .perform(
                 MockMvcRequestBuilders.post("/categories")
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(json)
             )
@@ -132,7 +133,7 @@ class CategoriesControllerTest {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val objectWriter: ObjectWriter = ObjectMapper().writer()
 
         val createRequest = CategoryCreateRequest("new category", "category")
@@ -141,7 +142,7 @@ class CategoriesControllerTest {
             .perform(
                 MockMvcRequestBuilders.post("/categories")
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(json)
             )
@@ -158,7 +159,7 @@ class CategoriesControllerTest {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 
         val customCategoryId = categoryRepository.insertCategory(CategoryPojo(null, profile.id!!, null, true.toByte(), "Shopping",
             LocalDateTime.now(timeHandler.getClock())))
@@ -171,7 +172,7 @@ class CategoriesControllerTest {
             .perform(
                 MockMvcRequestBuilders.put("/categories/{id}", customCategoryId)
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(json)
             )
@@ -188,7 +189,7 @@ class CategoriesControllerTest {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val objectWriter: ObjectWriter = ObjectMapper().writer()
 
         val createRequest = CategoryCreateRequest("new category", "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category_x")
@@ -197,7 +198,7 @@ class CategoriesControllerTest {
             .perform(
                 MockMvcRequestBuilders.post("/categories")
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(json)
             )
@@ -213,7 +214,7 @@ class CategoriesControllerTest {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 
         val customCategoryId = categoryRepository.insertCategory(CategoryPojo(null, profile.id!!, null, true.toByte(), "Shopping",
             LocalDateTime.now(timeHandler.getClock()), "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category"))
@@ -226,7 +227,7 @@ class CategoriesControllerTest {
             .perform(
                 MockMvcRequestBuilders.put("/categories/{id}", customCategoryId)
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(json)
             )
@@ -246,7 +247,7 @@ class CategoriesControllerTest {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 
         val categoryId = categoryRepository.findByProfileIdAndStringId(profile.id!!, "food")!!.id!!
 
@@ -258,7 +259,7 @@ class CategoriesControllerTest {
             .perform(
                 MockMvcRequestBuilders.put("/categories/{id}", categoryId)
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(json)
             )
@@ -281,7 +282,7 @@ class CategoriesControllerTest {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val objectWriter: ObjectWriter = ObjectMapper().writer()
 
         val createRequest = CategoryCreateRequest("  \t\r", "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category")
@@ -290,7 +291,7 @@ class CategoriesControllerTest {
             .perform(
                 MockMvcRequestBuilders.post("/categories")
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(json)
             )
@@ -307,7 +308,7 @@ class CategoriesControllerTest {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 
         val customCategoryId = categoryRepository.insertCategory(CategoryPojo(null, profile.id!!, null, true.toByte(), "Shopping",
             LocalDateTime.now(timeHandler.getClock())))
@@ -320,7 +321,7 @@ class CategoriesControllerTest {
             .perform(
                 MockMvcRequestBuilders.put("/categories/{id}", customCategoryId)
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(json)
             )

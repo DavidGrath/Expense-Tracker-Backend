@@ -32,7 +32,7 @@ open class TransactionRepository {
 
     //region Read
 
-    fun getTransactionSumByDate(
+    fun getTransactionSumByDate( //TODO Improve with recursive CTE, as I did on Android
         profileId: Long, debitOrCredit: Boolean,
         fromDate: LocalDate? = null, toDate: LocalDate? = null,
         accountIds: List<Long>,
@@ -74,8 +74,8 @@ open class TransactionRepository {
     }
 
 
-    fun getMaxOrdinalInDayForAccount(profileId: Long, accountId: Long, date: LocalDate): Int? {
-        val selectStep = dslContext.select(DSL.max(TRANSACTION.ORDINAL))
+    fun getMaxSortKeyInDayForAccount(profileId: Long, accountId: Long, date: LocalDate): Int? {
+        val selectStep = dslContext.select(DSL.max(TRANSACTION.SORT_KEY))
             .from(TRANSACTION)
             .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
             .where(TRANSACTION.ACCOUNT_ID.eq(accountId))
@@ -156,7 +156,6 @@ open class TransactionRepository {
         var selectStep = dslContext.select(
             TRANSACTION.ID.`as`("transactionId"),
             TRANSACTION.AMOUNT.`as`("transactionAmount"),
-            TRANSACTION.REFERENCE_NUMBER.`as`("transactionReferenceNumber"),
             TRANSACTION.DEBIT_OR_CREDIT.`as`("transactionDebitOrCredit"),
             TRANSACTION.DATED_AT.`as`("transactionDatedAt"),
             TRANSACTION.TIME.`as`("transactionTime"),
@@ -174,7 +173,6 @@ open class TransactionRepository {
             TRANSACTION_ITEM.QUANTITY.`as`("itemQuantity"),
             TRANSACTION_ITEM.BRAND.`as`("itemBrand"),
             TRANSACTION_ITEM.VARIATION.`as`("itemVariation"),
-            TRANSACTION_ITEM.REFERENCE_NUMBER.`as`("itemReferenceNumber"),
             TRANSACTION_ITEM.IS_REDUCTION.`as`("itemIsReduction"),
             (dslContext.select(CATEGORY.ID).from(CATEGORY).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.eq(CATEGORY.ID)).where(TRANSACTION_ITEM.ID.eq(transactionItemId)).asField<Long>("categoryId")),
             (dslContext.select(CATEGORY.NAME).from(CATEGORY).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.eq(CATEGORY.ID)).where(TRANSACTION_ITEM.ID.eq(transactionItemId)).asField<String>("categoryName")),

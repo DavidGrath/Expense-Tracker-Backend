@@ -16,8 +16,10 @@ import com.davidgrath.expensetrackerbackend.service.TransactionDraftServiceTest.
 import com.davidgrath.expensetrackerbackend.testutils.*
 import com.davidgrath.expensetrackerbackend.utils.Constants
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.JWT_ALG
+import com.davidgrath.expensetrackerbackend.utils.bytesToUUID
 import com.davidgrath.expensetrackerbackend.utils.file
 import com.davidgrath.expensetrackerbackend.utils.getSha256
+import com.davidgrath.expensetrackerbackend.utils.getSha256AsBytes
 import com.davidgrath.expensetrackerbackend.utils.toByte
 import org.hamcrest.Matchers
 import org.junit.After
@@ -89,14 +91,15 @@ class ImagesControllerTest {
         tempFolder.deleteOnExit()
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val profileId = profile.id!!
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
         val resource = TestData.Resource.Images.BREAD
         val classLoader = ImagesControllerTest::class.java.classLoader
 
+        val profileUuidString = bytesToUUID(profile.uuid!!).toString()
 
-        createTransactionWithImage(profileId, user.uuid!!, profile.stringId!!, accountId, classLoader, resource)
+        createTransactionWithImage(profileId, user.uuid!!, profile.uuid!!, accountId, classLoader, resource)
 
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
@@ -104,7 +107,7 @@ class ImagesControllerTest {
             .perform(
                 MockMvcRequestBuilders.get(ImagesApi.PATH_IMAGES_GET)
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", profileUuidString)
             )
             .andExpectAll(
                 MockMvcResultMatchers.status().isOk,
@@ -120,14 +123,15 @@ class ImagesControllerTest {
         tempFolder.deleteOnExit()
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val profileId = profile.id!!
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
         val resource = TestData.Resource.Images.BREAD
         val classLoader = ImagesControllerTest::class.java.classLoader
 
+        val profileUuidString = bytesToUUID(profile.uuid!!).toString()
 
-        val imageId = createTransactionWithImage(profileId, user.uuid!!, profile.stringId!!, accountId, classLoader, resource)
+        val imageId = createTransactionWithImage(profileId, user.uuid!!, profile.uuid!!, accountId, classLoader, resource)
 
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
@@ -135,7 +139,7 @@ class ImagesControllerTest {
             .perform(
                 MockMvcRequestBuilders.get(ImagesApi.PATH_IMAGES_ID_GET, imageId)
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", profileUuidString)
             )
             .andExpectAll(
                 MockMvcResultMatchers.status().isOk
@@ -148,14 +152,15 @@ class ImagesControllerTest {
         tempFolder.deleteOnExit()
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val profileId = profile.id!!
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
         val resource = TestData.Resource.Images.BREAD
         val classLoader = ImagesControllerTest::class.java.classLoader
 
+        val profileUuidString = bytesToUUID(profile.uuid!!).toString()
 
-        val imageId = createTransactionWithImage(profileId, user.uuid!!, profile.stringId!!, accountId, classLoader, resource)
+        val imageId = createTransactionWithImage(profileId, user.uuid!!, profile.uuid!!, accountId, classLoader, resource)
 
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
@@ -163,7 +168,7 @@ class ImagesControllerTest {
             .perform(
                 MockMvcRequestBuilders.get(ImagesApi.PATH_IMAGES_STATS_GET)
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", profileUuidString)
             )
             .andExpectAll(
                 MockMvcResultMatchers.status().isOk,
@@ -174,28 +179,31 @@ class ImagesControllerTest {
     }
 
 
-    fun createTransactionWithImage(profileId: Long, userUuid: String, profileStringId: String, accountId: Long, classLoader: ClassLoader, resource: TestData.Resource): Long {
+    fun createTransactionWithImage(profileId: Long, userUuid: ByteArray, profileUuid: ByteArray, accountId: Long, classLoader: ClassLoader, resource: TestData.Resource): Long {
+
         val amount = BigDecimal.TEN
         val account = accountRepository.findByProfileIdAndId(profileId, accountId)!!
 
-        val maxOrdinal = transactionRepository.getMaxOrdinalInDayForAccount(profileId, accountId, MOCKED_DATE)?: 0
-        var transactionOrdinal = maxOrdinal + 1
+        val maxSortkey = transactionRepository.getMaxSortKeyInDayForAccount(profileId, accountId, MOCKED_DATE)?: 0
+        var transactionSortKey = maxSortkey + 1_000
 
-        val transaction = TransactionPojo(null, accountId, amount, account.currencyCode,
-            null, true.toByte(), MOCKED_DATE, transactionOrdinal,
-            TransactionMode.Other, null, null, null, MOCKED_DATE.atTime(MOCKED_TIME), MOCKED_TIME)
+        val transaction = TransactionPojo(null, accountId, amount, true.toByte(), MOCKED_DATE, MOCKED_TIME,
+            transactionSortKey, TransactionMode.Other, null, null, null, MOCKED_DATE.atTime(MOCKED_TIME))
 
         val transactionId = transactionRepository.insertTransaction(transaction)
         val misc = categoryRepository.findByProfileIdAndStringId(profileId, "miscellaneous")!!
 
-        val item = TransactionItemPojo(null, transactionId, "Basic", amount, misc.id!!, 1, 1, null,
-            null, null, false.toByte(),
+        val userUuidString = bytesToUUID(userUuid).toString()
+        val profileUuidString = bytesToUUID(profileUuid).toString()
+
+        val item = TransactionItemPojo(null, transactionId, "Basic", amount, misc.id!!, 1_000, 1, 1, null,
+            null, null, null, null, null,false.toByte(),
             MOCKED_DATE.atTime(MOCKED_TIME))
         val itemId = transactionItemRepository.insertTransactionItem(item)
         //TODO make this more convenient
         val newFileName = "${UUID.randomUUID()}.jpg"
-        val newPath = "/${Constants.FOLDER_NAME_PROFILES}/$profileStringId/${Constants.FOLDER_NAME_DATA}/${Constants.SUBFOLDER_NAME_IMAGES}/${newFileName}"
-        val destinationFolder = file(timeHandler.getRoot(), Constants.FOLDER_NAME_USERS, userUuid, Constants.FOLDER_NAME_PROFILES,profileStringId, Constants.FOLDER_NAME_DATA, Constants.SUBFOLDER_NAME_IMAGES)
+        val newPath = "/${Constants.FOLDER_NAME_PROFILES}/$profileUuidString/${Constants.FOLDER_NAME_DATA}/${Constants.SUBFOLDER_NAME_IMAGES}/${newFileName}"
+        val destinationFolder = file(timeHandler.getRoot(), Constants.FOLDER_NAME_USERS, userUuidString, Constants.FOLDER_NAME_PROFILES, profileUuidString, Constants.FOLDER_NAME_DATA, Constants.SUBFOLDER_NAME_IMAGES)
         destinationFolder.mkdirs()
         val destination = File(destinationFolder, newFileName)
 
@@ -206,12 +214,12 @@ class ImagesControllerTest {
         outputStream.close()
         val hashStream = destination.inputStream()
 
-        val hash = getSha256(hashStream)
+        val hash = getSha256AsBytes(hashStream)
         hashStream.close()
 
         val image = ImagePojo(null, profileId, destination.length(), hash, "image/jpeg", "", newPath, MOCKED_DATE.atTime(MOCKED_TIME))
         val imageId = imageRepository.insertImage(image)
-        val itemImage = TransactionItemImagesPojo(null, itemId, imageId, MOCKED_DATE.atTime(MOCKED_TIME))
+        val itemImage = TransactionItemImagesPojo(null, itemId, imageId, 1_000, 1, MOCKED_DATE.atTime(MOCKED_TIME))
         itemImagesRepository.insertItemImage(itemImage)
         return imageId
     }

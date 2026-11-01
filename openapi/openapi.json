@@ -1417,10 +1417,10 @@
         }
       }
     },
-    "/profiles/{stringId}": {
+    "/profiles/{uuid}": {
       "parameters": [
         {
-          "name": "stringId",
+          "name": "uuid",
           "in": "path",
           "required": true,
           "schema": {

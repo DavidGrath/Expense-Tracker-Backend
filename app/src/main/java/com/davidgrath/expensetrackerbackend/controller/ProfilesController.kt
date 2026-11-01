@@ -4,6 +4,7 @@ import com.davidgrath.expensetrackerbackend.generatedapi.api.ProfilesApi
 import com.davidgrath.expensetrackerbackend.generatedapi.model.Profile
 import com.davidgrath.expensetrackerbackend.service.ProfileService
 import com.davidgrath.expensetrackerbackend.service.UserService
+import com.davidgrath.expensetrackerbackend.utils.bytesToUUID
 import jakarta.validation.constraints.NotNull
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -27,18 +28,18 @@ class ProfilesController: ProfilesApi{
         val user = userService.getByUsername(principal.subject!!)
         val profilePojos = profileService.getAllByUserId(user!!.id!!)!!
         val profiles = profilePojos.map {
-            Profile(it.id, it.stringId, it.name)
+            Profile(it.id, bytesToUUID(it.uuid!!).toString(), it.name)
         }
         return ResponseEntity.ok(profiles)
     }
 
-    override fun profilesStringIdGet(stringId: @NotNull String): ResponseEntity<Profile?>? {
+    override fun profilesUuidGet(uuid: @NotNull String): ResponseEntity<Profile?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
-        val profile = profileService.getByUserIdAndStringId(user!!.id!!, stringId!!)!!
-        val p = Profile(profile.id, profile.stringId, profile.name)
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, uuid!!)!!
+        val p = Profile(profile.id, bytesToUUID(profile.uuid!!).toString(), profile.name)
         return ResponseEntity.ok(p)
     }
 

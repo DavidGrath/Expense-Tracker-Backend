@@ -2,10 +2,12 @@ package com.davidgrath.expensetrackerbackend.repository
 
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.UserPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.USER
+import com.davidgrath.expensetrackerbackend.utils.uuidToBytes
 import org.jooq.DSLContext
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Repository
+import java.util.UUID
 
 @Repository
 class UserRepository @Autowired constructor(open var dslContext: DSLContext) {
@@ -23,10 +25,15 @@ class UserRepository @Autowired constructor(open var dslContext: DSLContext) {
         return selectStep.fetchOne()?.into(UserPojo::class.java)
     }
 
-    fun findByUuid(uuid: String): UserPojo? {
+    fun findByUuid(uuid: ByteArray): UserPojo? {
         val selectStep = dslContext.selectFrom(USER)
             .where(USER.UUID.eq(uuid))
         return selectStep.fetchOne()?.into(UserPojo::class.java)
+    }
+
+    fun findByUuid(uuid: String): UserPojo? {
+        val uuidBytes = uuidToBytes(UUID.fromString(uuid))
+        return findByUuid(uuidBytes)
     }
 
     fun findByUsername(username: String): UserPojo? {

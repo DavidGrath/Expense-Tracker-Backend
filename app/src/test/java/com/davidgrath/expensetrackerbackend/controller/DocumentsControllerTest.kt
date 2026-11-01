@@ -16,6 +16,7 @@ import com.davidgrath.expensetrackerbackend.service.TransactionDraftServiceTest.
 import com.davidgrath.expensetrackerbackend.testutils.*
 import com.davidgrath.expensetrackerbackend.utils.Constants
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.JWT_ALG
+import com.davidgrath.expensetrackerbackend.utils.bytesToUUID
 import com.davidgrath.expensetrackerbackend.utils.file
 import com.davidgrath.expensetrackerbackend.utils.toByte
 import org.hamcrest.Matchers
@@ -36,6 +37,7 @@ import java.io.File
 import java.math.BigDecimal
 import java.nio.file.Files
 import java.util.*
+import kotlin.toString
 
 @RunWith(SpringRunner::class)
 @WebMvcTest(DocumentsController::class)
@@ -86,7 +88,7 @@ class DocumentsControllerTest {
         tempFolder.deleteOnExit()
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val profileId = profile.id!!
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
         val resource = TestData.Resource.Documents.EVIDENCE_IMAGE
@@ -94,7 +96,7 @@ class DocumentsControllerTest {
 
         copyControllerTempFile(tempFolder, classLoader, resource)
 
-        createTransactionWithDocument(profileId, user.uuid!!, profile.stringId!!, accountId, tempFolder, resource)
+        createTransactionWithDocument(profileId, user.uuid!!, profile.uuid!!, accountId, tempFolder, resource)
 
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
@@ -102,7 +104,7 @@ class DocumentsControllerTest {
             .perform(
                 MockMvcRequestBuilders.get(DocumentsApi.PATH_DOCUMENTS_GET)
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
             )
             .andExpectAll(
                 MockMvcResultMatchers.status().isOk,
@@ -118,7 +120,7 @@ class DocumentsControllerTest {
         tempFolder.deleteOnExit()
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val profileId = profile.id!!
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
         val resource = TestData.Resource.Documents.EVIDENCE_IMAGE
@@ -126,7 +128,7 @@ class DocumentsControllerTest {
 
         copyControllerTempFile(tempFolder, classLoader, resource)
 
-        createTransactionWithDocument(profileId, user.uuid!!, profile.stringId!!, accountId, tempFolder, resource)
+        createTransactionWithDocument(profileId, user.uuid!!, profile.uuid!!, accountId, tempFolder, resource)
 
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
@@ -134,7 +136,7 @@ class DocumentsControllerTest {
             .perform(
                 MockMvcRequestBuilders.get(DocumentsApi.PATH_DOCUMENTS_STATS_GET)
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
             )
             .andExpectAll(
                 MockMvcResultMatchers.status().isOk,
@@ -150,14 +152,16 @@ class DocumentsControllerTest {
         tempFolder.deleteOnExit()
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val profileId = profile.id!!
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
         val resource = TestData.Resource.Documents.EVIDENCE_IMAGE
         val classLoader = DocumentsControllerTest::class.java.classLoader
 
         copyControllerTempFile(tempFolder, classLoader, resource)
-        val documentId = createTransactionWithDocument(profileId, user.uuid!!, profile.stringId!!, accountId, tempFolder, resource)
+        val userUuidString = user.uuid!!.toString()
+        val profileUuidString = profile.uuid!!.toString()
+        val documentId = createTransactionWithDocument(profileId, user.uuid!!, profile.uuid!!, accountId, tempFolder, resource)
 
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
@@ -165,41 +169,42 @@ class DocumentsControllerTest {
             .perform(
                 MockMvcRequestBuilders.get(DocumentsApi.PATH_DOCUMENTS_ID_GET, documentId)
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
             )
             .andExpectAll(
                 MockMvcResultMatchers.status().isOk
             ).andReturn()
     }
 
-    fun createTransactionWithDocument(profileId: Long, userUuid: String, profileStringId: String, accountId: Long, tempFolder: File, resource: TestData.Resource): Long {
+    fun createTransactionWithDocument(profileId: Long, userUuid: ByteArray, profileUuid: ByteArray, accountId: Long, tempFolder: File, resource: TestData.Resource): Long {
+        val userUuidString = bytesToUUID(userUuid).toString()
+        val profileUuidString = bytesToUUID(profileUuid).toString()
         val amount = BigDecimal.TEN
         val account = accountRepository.findByProfileIdAndId(profileId, accountId)!!
 
-        val maxOrdinal = transactionRepository.getMaxOrdinalInDayForAccount(profileId, accountId, MOCKED_DATE)?: 0
-        var transactionOrdinal = maxOrdinal + 1
+        val maxSortKey = transactionRepository.getMaxSortKeyInDayForAccount(profileId, accountId, MOCKED_DATE)?: 0
+        val transactionSortKey = maxSortKey + 1_000
 
-        val transaction = TransactionPojo(null, accountId, amount, account.currencyCode,
-            null, true.toByte(), MOCKED_DATE, transactionOrdinal,
-            TransactionMode.Other, null, null, null, MOCKED_DATE.atTime(MOCKED_TIME), MOCKED_TIME)
+        val transaction = TransactionPojo(null, accountId, amount, true.toByte(), MOCKED_DATE, MOCKED_TIME, transactionSortKey,
+            TransactionMode.Other, null, null, null, MOCKED_DATE.atTime(MOCKED_TIME),)
 
         val transactionId = transactionRepository.insertTransaction(transaction)
         val misc = categoryRepository.findByProfileIdAndStringId(profileId, "miscellaneous")!!
 
-        val item = TransactionItemPojo(null, transactionId, "Basic", amount, misc.id!!, 1, 1, null,
-            null, null, false.toByte(),
+        val item = TransactionItemPojo(null, transactionId, "Basic", amount, misc.id!!, 1_000, 1, 1, null,
+            null, null, null, null, null,false.toByte(),
             MOCKED_DATE.atTime(MOCKED_TIME))
         val itemId = transactionItemRepository.insertTransactionItem(item)
         //TODO make this more convenient
         val newFileName = "${UUID.randomUUID()}.jpg"
-        val newPath = "/${Constants.FOLDER_NAME_PROFILES}/$profileStringId/${Constants.FOLDER_NAME_DATA}/${Constants.SUBFOLDER_NAME_DOCUMENTS}/${newFileName}"
-        val destination = file(timeHandler.getRoot(), Constants.FOLDER_NAME_USERS, userUuid, Constants.FOLDER_NAME_PROFILES,profileStringId, Constants.FOLDER_NAME_DATA, Constants.SUBFOLDER_NAME_DOCUMENTS, newFileName)
+        val newPath = "/${Constants.FOLDER_NAME_PROFILES}/$profileUuidString/${Constants.FOLDER_NAME_DATA}/${Constants.SUBFOLDER_NAME_DOCUMENTS}/${newFileName}"
+        val destination = file(timeHandler.getRoot(), Constants.FOLDER_NAME_USERS, userUuidString, Constants.FOLDER_NAME_PROFILES, profileUuidString, Constants.FOLDER_NAME_DATA, Constants.SUBFOLDER_NAME_DOCUMENTS, newFileName)
 
         val tempFile = File(tempFolder, resource.fileName)
         val length = tempFile.length()
         tempFile.copyTo(destination)
         tempFile.delete()
-        val document = DocumentPojo(null, transactionId, DocumentType.Other, length, resource.sha256, "image/jpeg", "", newPath, MOCKED_DATE.atTime(MOCKED_TIME))
+        val document = DocumentPojo(null, transactionId, DocumentType.Other, length, HexFormat.of().parseHex(resource.sha256), "image/jpeg", "", newPath, 1_000, 1, MOCKED_DATE.atTime(MOCKED_TIME))
         val documentId = documentRepository.insertDocument(document)
         return documentId
     }

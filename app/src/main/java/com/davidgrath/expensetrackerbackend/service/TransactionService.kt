@@ -34,26 +34,25 @@ class TransactionService {
         val userTime = date.withZoneSameInstant(zoneId).toLocalTime()
 
         val account = accountRepository.findByProfileIdAndId(profileId, accountId)!!
-        val maxOrdinal = transactionRepository.getMaxOrdinalInDayForAccount(profileId, accountId, utcDate.toLocalDate())?: 0
-        val ordinal = maxOrdinal + 1
+        val maxSortKey = transactionRepository.getMaxSortKeyInDayForAccount(profileId, accountId, utcDate.toLocalDate())?: 0
+        val sortKey = maxSortKey + 1_000
         val transaction = TransactionPojo(
             null,
             accountId,
             amount,
-            account.currencyCode,
-            null,
             debitOrCredit.toByte(),
             utcDate.toLocalDate(),
-            ordinal,
+            userTime,
+            sortKey,
             TransactionMode.Other,
             null,
             null,
             null,
-            utcDate.toLocalDateTime(), userTime
+            utcDate.toLocalDateTime()
         )
         val transactionId = transactionRepository.insertTransaction(transaction)
 
-        val item = TransactionItemPojo(null, transactionId, description, amount, categoryId, 1, 1, null, null,null, false.toByte(), utcDate.toLocalDateTime())
+        val item = TransactionItemPojo(null, transactionId, description, amount, categoryId, 1_000, 1, 1, null,null, null, null, null, null,false.toByte(), utcDate.toLocalDateTime())
         transactionItemRepository.insertTransactionItem(item)
         return transactionId
     }

@@ -1,15 +1,18 @@
 package com.davidgrath.expensetrackerbackend.repository
 
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.SellerLocationPojo
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.ACCOUNT
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.PROFILE
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.SELLER
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.SELLER_LOCATION
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.DEFAULT_FETCH_LIMIT
 import org.jooq.DSLContext
 import org.jooq.impl.DSL
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
+import java.time.LocalDate
 
 @Service
 class SellerLocationRepository @Autowired constructor(open var dslContext: DSLContext) {
@@ -69,13 +72,23 @@ class SellerLocationRepository @Autowired constructor(open var dslContext: DSLCo
         return selectStep.fetchOne()!!.value1()
     }
 
+    fun getMaxOrdinalForSeller(profileId: Long, sellerId: Long): Int? {
+        val selectStep = dslContext.select(DSL.max(SELLER_LOCATION.ORDINAL))
+            .from(SELLER_LOCATION)
+            .innerJoin(SELLER).on(SELLER.ID.eq(SELLER_LOCATION.SELLER_ID))
+            .innerJoin(PROFILE).on(PROFILE.ID.eq(SELLER.PROFILE_ID))
+            .where(SELLER.ID.eq(sellerId))
+            .and(SELLER.PROFILE_ID.eq(profileId))
+        return selectStep.fetchOne()?.value1()
+    }
+
     // endregion
 
     // region Update
 
-    fun updateSellerLocation(profileId: Long, id: Long, location: String): Int {
+    fun updateSellerLocation(profileId: Long, id: Long, name: String): Int {
         val updateStep = dslContext.update(SELLER_LOCATION)
-            .set(SELLER_LOCATION.LOCATION, location)
+            .set(SELLER_LOCATION.NAME, name)
             .from(SELLER_LOCATION.innerJoin(SELLER).on(SELLER.ID.eq(SELLER_LOCATION.SELLER_ID)))
             .where(SELLER_LOCATION.ID.eq(id))
             .and(SELLER.PROFILE_ID.eq(profileId))

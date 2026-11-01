@@ -83,7 +83,7 @@ fun transactionWithItemToTransactionItem(transactionWithItem: TransactionWithIte
     }
     return TransactionItem(
         transactionWithItem.itemId, transactionWithItem.itemAmount, transactionWithItem.itemDescription, transactionWithItemToCategory(transactionWithItem),
-        transactionWithItem.itemQuantity, transactionWithItem.itemIsReduction.toBoolean(), transactionWithItem.itemBrand, transactionWithItem.itemVariation, transactionWithItem.itemReferenceNumber, imagesApi
+        transactionWithItem.itemQuantity, transactionWithItem.itemIsReduction.toBoolean(), transactionWithItem.itemBrand, transactionWithItem.itemVariation, imagesApi
         )
 }
 
@@ -94,7 +94,7 @@ fun transactionItemPojoToTransactionItem(transactionItemPojo: TransactionItemPoj
     }
     return TransactionItem(
         transactionItemPojo.id, transactionItemPojo.amount, transactionItemPojo.description, categoryPojoToCategory(categoryPojo),
-        transactionItemPojo.quantity, transactionItemPojo.isReduction.toBoolean(), transactionItemPojo.brand, transactionItemPojo.variation, transactionItemPojo.referenceNumber, imagesApi
+        transactionItemPojo.quantity, transactionItemPojo.isReduction.toBoolean(), transactionItemPojo.brand, transactionItemPojo.variation, imagesApi
         )
 }
 
@@ -123,8 +123,8 @@ fun categoryWithStatsToApiCategory(categoryWithStats: CategoryWithStats): Catego
 
 fun draftItemUpdateRequestToDraftItem(uuid: UUID, transactionDraftItemUpdateRequest: TransactionDraftItemUpdateRequest): TransactionDraftItem {
     val t = transactionDraftItemUpdateRequest
-    return TransactionDraftItem(uuid, null, t.categoryId, t.amount, t.description, null, null, null, t.quantity,
-        t.isReduction)
+    return TransactionDraftItem(uuid, null, t.categoryId, t.amount, t.description, t.brand, t.variation, t.quantity,
+        null, null, null, null, t.isReduction)
 }
 
 fun transactionDraftToApiDraft(draft: TransactionDraft, baseUrl: Triple<String, String, Int>): com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraft {
@@ -138,7 +138,7 @@ fun transactionDraftToApiDraft(draft: TransactionDraft, baseUrl: Triple<String, 
             TransactionDraftFile(it.dbId, it.sizeBytes, imageUrl, it.mimeType, null, it.sha256)
         }
         com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraftItem(item.dbId, item.uuid, item.amount, item.description, item.category, item.isReduction,
-            item.quantity, item.brand, item.variation, item.referenceNumber, images, emptyList())
+            item.quantity, item.brand, item.variation, images, emptyList())
     }
     val apiDraft = com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraft(
         items, emptyList(), documents, emptyList(), draft.customDate, draft.customTime?.toString(),

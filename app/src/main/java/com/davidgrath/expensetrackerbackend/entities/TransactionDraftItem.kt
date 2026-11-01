@@ -11,10 +11,13 @@ data class TransactionDraftItem(
     val description: String? = null,
     val brand: String? = null,
     val variation: String? = null,
-    val referenceNumber: String? = null,
     val quantity: Int = 1,
+    val weight: BigDecimal? = null,
+    val weightUnit: String? = null,
+    val volume: BigDecimal? = null,
+    val volumeUnit: String? = null,
     val isReduction: Boolean = false,
-    val ordinal: Int = 0,
+    val sortKey: Int = 0,
     val images: List<TransactionDraftFile> = emptyList(),
     val deletedDbImages: List<TransactionDraftFile> = emptyList()
 )

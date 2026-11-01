@@ -17,6 +17,7 @@ import com.davidgrath.expensetrackerbackend.testutils.createBearerToken
 import com.davidgrath.expensetrackerbackend.testutils.tempInit
 import com.davidgrath.expensetrackerbackend.utils.Constants
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.JWT_ALG
+import com.davidgrath.expensetrackerbackend.utils.bytesToUUID
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.ObjectWriter
 import org.hamcrest.Matchers
@@ -74,7 +75,7 @@ class AccountsControllerTest {
     @Test //TODO Exclude Jupiter so I don't mistakenly import it at some point
     fun getAccountHappyPathTest() {
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 
 
         val account = accountRepository.getAllByProfileId(profile.id!!).firstOrNull()!!
@@ -86,7 +87,7 @@ class AccountsControllerTest {
             .perform(
                 MockMvcRequestBuilders.get("/accounts/{id}", account.id)
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
             )
             .andExpectAll(
                 MockMvcResultMatchers.status().is2xxSuccessful
@@ -99,7 +100,7 @@ class AccountsControllerTest {
     @Test
     fun getAccountsHappyPathTest() {
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 
 
 
@@ -109,7 +110,7 @@ class AccountsControllerTest {
             .perform(
                 MockMvcRequestBuilders.get("/accounts")
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
             )
             .andExpectAll(
                 MockMvcResultMatchers.status().is2xxSuccessful,
@@ -122,7 +123,7 @@ class AccountsControllerTest {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 
 
         val objectWriter: ObjectWriter = ObjectMapper().writer()
@@ -133,7 +134,7 @@ class AccountsControllerTest {
             .perform(
                 MockMvcRequestBuilders.post("/accounts")
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(json)
             )
@@ -150,7 +151,7 @@ class AccountsControllerTest {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 
 
         val objectWriter: ObjectWriter = ObjectMapper().writer()
@@ -161,7 +162,7 @@ class AccountsControllerTest {
             .perform(
                 MockMvcRequestBuilders.post("/accounts")
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(json)
             )
@@ -178,7 +179,7 @@ class AccountsControllerTest {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 
 
         val objectWriter: ObjectWriter = ObjectMapper().writer()
@@ -190,7 +191,7 @@ class AccountsControllerTest {
             .perform(
                 MockMvcRequestBuilders.put("/accounts/{id}", defaultAccountId)
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(json)
             )
@@ -207,7 +208,7 @@ class AccountsControllerTest {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val objectWriter: ObjectWriter = ObjectMapper().writer()
         val existing = accountRepository.getAllByProfileId(profile.id!!)
         val remaining = Constants.Constraints.MAX_ACCOUNTS_PER_PROFILE - existing.size
@@ -224,7 +225,7 @@ class AccountsControllerTest {
             .perform(
                 MockMvcRequestBuilders.post("/accounts")
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(json)
             )
@@ -241,13 +242,13 @@ class AccountsControllerTest {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 
         var response = mockMvc
             .perform(
                 MockMvcRequestBuilders.get("/accounts")
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
             )
             .andExpectAll(
                 MockMvcResultMatchers.status().isOk,
@@ -262,13 +263,13 @@ class AccountsControllerTest {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 
         var response = mockMvc
             .perform(
                 MockMvcRequestBuilders.get("/accounts/details")
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
             )
             .andExpectAll(
                 MockMvcResultMatchers.status().isOk,

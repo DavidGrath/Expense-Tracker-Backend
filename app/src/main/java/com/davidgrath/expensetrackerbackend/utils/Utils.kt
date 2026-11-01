@@ -6,6 +6,7 @@ import java.io.File
 import java.io.InputStream
 import java.math.BigInteger
 import java.security.MessageDigest
+import java.util.UUID
 
 
 private val LOGGER = LoggerFactory.getLogger("com.davidgrath.expensetrackerbackend.Utils")
@@ -52,26 +53,10 @@ val CATEGORY_IDS_ICONS_DEFAULT = mapOf(
 )
 
 fun getSha256(inputStream: InputStream): String {
-
-        val bufSize = DEFAULT_BUFFER_SIZE
-        val bufferedStream = inputStream.buffered()
-        val md = MessageDigest.getInstance("SHA256")
-        var array = ByteArray(bufSize)
-        var len = 0
-        var total = 0L //TODO UOM/UCOM
-        while (len >= 0) {
-            len = bufferedStream.read(array)
-            if (len >= 0) {
-                total += len
-                md.update(array, 0, len)
-            }
-        }
-        val hash = md.digest()
-        val hashText = String.format("%064x", BigInteger(1, hash))
-        LOGGER.info("getSha256: read {} bytes", total)
-        LOGGER.info("getSha256: hash: {}", hashText)
-        return hashText
-
+    val hash = getSha256AsBytes(inputStream)
+    val hashText = String.format("%064x", BigInteger(1, hash))
+    LOGGER.info("getSha256: hash: {}", hashText)
+    return hashText
 }
 
 fun getSha256(byteArray: ByteArray): String {
@@ -87,6 +72,32 @@ fun getSha256(byteArray: ByteArray): String {
     val hashText = String.format("%064x", BigInteger(1, hash))
     LOGGER.info("getSha256: read {} bytes", len)
     LOGGER.info("getSha256: hash: {}", hashText)
+    return hashText
+
+}
+
+fun getSha256AsBytes(inputStream: InputStream): ByteArray {
+
+    val bufSize = DEFAULT_BUFFER_SIZE
+    val bufferedStream = inputStream.buffered()
+    val md = MessageDigest.getInstance("SHA256")
+    var array = ByteArray(bufSize)
+    var len = 0
+    var total = 0L //TODO UOM/UCOM
+    while (len >= 0) {
+        len = bufferedStream.read(array)
+        if (len >= 0) {
+            total += len
+            md.update(array, 0, len)
+        }
+    }
+    val hash = md.digest()
+    LOGGER.info("getSha256: read {} bytes", total)
+    return hash
+}
+
+fun sha256ToString(bytes: ByteArray): String {
+    val hashText = String.format("%064x", BigInteger(1, bytes))
     return hashText
 
 }
@@ -182,4 +193,47 @@ fun loadMaterialSymbolsIcons(classLoader: ClassLoader): Set<String> {
         }.toHashSet()
         return symbolsOutlined
 
+}
+
+fun uuidToBytes(uuid: UUID): ByteArray {
+    val msb = uuid.mostSignificantBits
+    val lsb = uuid.leastSignificantBits
+    val bytes = ByteArray(16)
+    bytes[0] = (msb shr (7 * 8) and 0xFF).toByte()
+    bytes[1] = (msb shr (6 * 8) and 0xFF).toByte()
+    bytes[2] = (msb shr (5 * 8) and 0xFF).toByte()
+    bytes[3] = (msb shr (4 * 8) and 0xFF).toByte()
+    bytes[4] = (msb shr (3 * 8) and 0xFF).toByte()
+    bytes[5] = (msb shr (2 * 8) and 0xFF).toByte()
+    bytes[6] = (msb shr (1 * 8) and 0xFF).toByte()
+    bytes[7] = (msb shr (0 * 8) and 0xFF).toByte()
+
+    bytes[8] = (lsb shr (7 * 8) and 0xFF).toByte()
+    bytes[9] = (lsb shr (6 * 8) and 0xFF).toByte()
+    bytes[10] = (lsb shr (5 * 8) and 0xFF).toByte()
+    bytes[11] = (lsb shr (4 * 8) and 0xFF).toByte()
+    bytes[12] = (lsb shr (3 * 8) and 0xFF).toByte()
+    bytes[13] = (lsb shr (2 * 8) and 0xFF).toByte()
+    bytes[14] = (lsb shr (1 * 8) and 0xFF).toByte()
+    bytes[15] = (lsb shr (0 * 8) and 0xFF).toByte()
+    return bytes
+}
+
+fun bytesToUUID(bytes: ByteArray): UUID {
+//    return UUID.nameUUIDFromBytes(bytes)
+    var high = 0L
+    for(i in 0..7) {
+        val num = (bytes[i].toLong() and 0xFF) shl ((7-i) * 8)
+        high = high or num
+    }
+    var low = 0L
+    for(i in 0..7) {
+        val num = (bytes[i+8].toLong() and 0xFF) shl ((7-i) * 8)
+        low = low or num
+    }
+//    val high = bytes.get(0).toLong().shl(7 * 8) or bytes.get(1).toLong().shl(6 * 8) or bytes.get(2).toLong().shl(5 * 8) or bytes.get(3).toLong().shl(4 * 8) or bytes.get(4).toLong().shl(3 * 8) or bytes.get(5).toLong().shl(2 * 8) or bytes.get(6).toLong().shl(1 * 8) or bytes.get(7).toLong().shl(0 * 8)
+    LOGGER.debug("High: {}", high.toString(16))
+//    val low = bytes.get(8).toLong().shl(7 * 8) or bytes.get(9).toLong().shl(6 * 8) or bytes.get(10).toLong().shl(5 * 8) or bytes.get(11).toLong().shl(4 * 8) or bytes.get(12).toLong().shl(3 * 8) or bytes.get(13).toLong().shl(2 * 8) or bytes.get(14).toLong().shl(1 * 8) or bytes.get(15).toLong().shl(0 * 8)
+    val uuid = UUID(high, low)
+    return uuid
 }

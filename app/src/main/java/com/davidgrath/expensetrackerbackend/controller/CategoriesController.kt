@@ -36,7 +36,7 @@ class CategoriesController: CategoriesApi {
         val principal = authentication.principal as Jwt
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
-        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
 
         val categories = categoryService.getCategoriesForProfile(profile.id!!)
         val apiCategories = categories.map { c ->
@@ -50,7 +50,7 @@ class CategoriesController: CategoriesApi {
         val principal = authentication.principal as Jwt
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
-        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
         if(!categoryService.isCategoryForUser(user.id!!, id)) {
             val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
             LOGGER.error("Category not for user", exception)
@@ -102,7 +102,7 @@ class CategoriesController: CategoriesApi {
         val principal = authentication.principal as Jwt
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
-        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
 
         val existing = categoryService.getCategoriesForProfile(profile.id!!)
         if(existing.size >= Constants.Constraints.MAX_CATEGORIES_PER_PROFILE) {
@@ -144,7 +144,7 @@ class CategoriesController: CategoriesApi {
         val principal = authentication.principal as Jwt
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
-        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
 
         val categories = categoryService.getCategoryDetailsForProfile(profile.id!!)
         val apiCategories = categories.map { c ->

@@ -8,11 +8,14 @@ import com.davidgrath.expensetrackerbackend.repository.*
 import com.davidgrath.expensetrackerbackend.utils.Constants
 import com.davidgrath.expensetrackerbackend.utils.file
 import com.davidgrath.expensetrackerbackend.utils.toByte
+import com.davidgrath.expensetrackerbackend.utils.uuidToBytes
 import java.io.File
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.util.HexFormat
+import java.util.UUID
 
 class DataBuilder(private val root: File, private val timeHandler: TimeHandler, private val userUuid: String?, private val profileUuid: String,
                   private val testUtilComponent: TestUtilComponent
@@ -56,8 +59,8 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
         private val userUuid = _userUuid?: TestConstants.DEFAULT_USER_ID
 
         init {
-            val user = userRepository.findByUuid(userUuid)!!
-            profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+            val user = userRepository.findByUuid(uuidToBytes(UUID.fromString(userUuid)))!!
+            profile = profileRepository.findByUuid(user.id!!, uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID)))!!
             account = accountRepository.getAllByProfileId(profile.id!!).first()
         }
 
@@ -71,7 +74,8 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
             if(categoryDb == null) {
                 throw IllegalStateException("Category does not exist")
             }
-            items.add(TransactionItemPojo(null, -1, description, amount, categoryDb.id, 1, 1, null, "", null, false.toByte(), LocalDateTime.now()))
+            items.add(TransactionItemPojo(null, -1, description, amount, categoryDb.id, 1, 1, 1,null, null, null,
+                null, null, null,false.toByte(), LocalDateTime.now()))
             return this
         }
 
@@ -161,29 +165,29 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
                 if(useDatesAsCreationDates) {
                     dateTime = repeatDate.atTime(LocalTime.parse("08:00:00"))
                 }
-                val ordinal = transactionRepository.getMaxOrdinalInDayForAccount(profile.id!!, account.id!!, repeatDate)?: 0
-                val transaction = TransactionPojo(null, account.id!!, sum, account.currencyCode, null, debitOrCredit.toByte(), repeatDate, ordinal + 1, TransactionMode.Other,null, null, null, dateTime)
+                val sortKey = transactionRepository.getMaxSortKeyInDayForAccount(profile.id!!, account.id!!, repeatDate)?: 0
+                val transaction = TransactionPojo(null, account.id!!, sum,  debitOrCredit.toByte(), repeatDate, null, sortKey + 1_000, TransactionMode.Other,null, null, null, dateTime)
                 val transactionId = transactionRepository.insertTransaction(transaction)
 
-                documents.forEach { doc ->
+                documents.forEachIndexed { i, doc ->
                     val resourceInputStream = classLoader.getResourceAsStream(doc.resourceName)
                     val file = File(mainDocumentsFolder, doc.fileName)
                     val outputStream = file.outputStream()
                     val copied = resourceInputStream.copyTo(outputStream)
                     resourceInputStream.close()
                     outputStream.close()
-                    val documentDb = DocumentPojo(null, transactionId, DocumentType.Other, file.length(), doc.sha256, "image/jpeg", "", "", LocalDateTime.now()) //TODO date time
+                    val documentDb = DocumentPojo(null, transactionId, DocumentType.Other, file.length(), HexFormat.of().parseHex(doc.sha256), "image/jpeg", "", "", i * 1_000, i,LocalDateTime.now()) //TODO date time
                     val documentId = documentRepository.insertDocument(documentDb)
 //                sha256Map[doc.sha256] = imageId
 //                imageId
                 }
 
                 items.forEachIndexed { index, item ->
-                    val correctedItem = item.copy(transactionId = transactionId, createdAt = dateTime, ordinal = index + 1)
+                    val correctedItem = item.copy(transactionId = transactionId, createdAt = dateTime, sortKey = index * 1_000, occupancySlot = index + 1)
                     val itemId = transactionItemRepository.insertTransactionItem(correctedItem)
                     val list = imagesMap[index]
                     if(list != null) {
-                        for(resource in list) {
+                        list.forEachIndexed { i, resource ->
                             val imageId = if(sha256Map.contains(resource.sha256)) {
                                 sha256Map[resource.sha256]!!
                             } else {
@@ -193,12 +197,14 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
                                 val copied = resourceInputStream.copyTo(outputStream)
                                 resourceInputStream.close()
                                 outputStream.close()
-                                val imageDb = ImagePojo(null, profile.id!!, file.length(), resource.sha256, "image/jpeg", "", "", LocalDateTime.now()) //TODO date time
+                                val imageDb = ImagePojo(null, profile.id!!, file.length(), HexFormat.of().parseHex(resource.sha256), "image/jpeg", "", "", LocalDateTime.now()) //TODO date time
                                 val imageId = imagesRepository.insertImage(imageDb)
                                 sha256Map[resource.sha256] = imageId
                                 imageId
                             }
-                            val itemImage = TransactionItemImagesPojo(null, itemId, imageId, LocalDateTime.now()) //TODO date time
+                            val sortKey = i * 1_000
+                            val occupancySlot = i+1
+                            val itemImage = TransactionItemImagesPojo(null, itemId, imageId, sortKey, occupancySlot,LocalDateTime.now()) //TODO date time
                             itemImagesRepository.insertItemImage(itemImage)
                         }
                     }
@@ -246,7 +252,9 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
 
     private class TransactionItemBuilderImpl(private val xTransactionBuilderImpl: TransactionBuilderImpl, private val categoryRepository: CategoryRepository, private val profileDb: ProfilePojo): TransactionItemBuilder {
 
-        private var item = TransactionItemPojo(null, -1, "", BigDecimal.ZERO, -1, 0, 1, null, "", null, false.toByte(), LocalDateTime.now())
+        private var item = TransactionItemPojo(null, -1, "", BigDecimal.ZERO, -1, 0, 1, null, "", null,
+            null, null, null, null,
+            false.toByte(), LocalDateTime.now())
         private var images = listOf<TestData.Resource>()
         private var mainDetailsSet = false
 
@@ -263,13 +271,15 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
             if(categoryDb == null) {
                 throw IllegalStateException("Category does not exist")
             }
-            item = TransactionItemPojo(null, -1, description, amount, categoryDb.id!!, 0, 1, null, "", null, false.toByte(), LocalDateTime.now())
+            item = TransactionItemPojo(null, -1, description, amount, categoryDb.id!!, 0, 1, null, "", null,
+            null, null, null, null,
+                false.toByte(), LocalDateTime.now())
             mainDetailsSet = true
             return this
         }
 
-        override fun otherDetails(brand: String?, quantity: Int, variation: String, referenceNumber: String?, isReduction: Boolean): TransactionItemBuilder {
-            item = item.copy(brand = brand, quantity = quantity, variation = variation, referenceNumber = referenceNumber, isReduction = isReduction.toByte())
+        override fun otherDetails(brand: String?, quantity: Int, variation: String, referenceNumber: String?, isReduction: Boolean, weight: BigDecimal?, weightUnit: String?, volume: BigDecimal?, volumeUnit: String?): TransactionItemBuilder {
+            item = item.copy(brand = brand, quantity = quantity, variation = variation, isReduction = isReduction.toByte(), weight = weight, weightUnit = weightUnit, volume = volume, volumeUnit = volumeUnit)
             return this
         }
 

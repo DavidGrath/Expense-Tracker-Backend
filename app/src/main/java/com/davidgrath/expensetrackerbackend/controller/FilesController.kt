@@ -5,6 +5,7 @@ import com.davidgrath.expensetrackerbackend.controller.exception.CustomHttpExcep
 import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.service.UserService
 import com.davidgrath.expensetrackerbackend.utils.Constants
+import com.davidgrath.expensetrackerbackend.utils.bytesToUUID
 import com.davidgrath.expensetrackerbackend.utils.file
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -35,7 +36,8 @@ class FilesController {
         val user = userService.getByUsername(principal.subject!!)
         val userUuid = user!!.uuid!!
 
-        val file = file(root, Constants.FOLDER_NAME_USERS, userUuid, Constants.FOLDER_NAME_PROFILES, profileUuid, path)
+        val userUuidString = bytesToUUID(userUuid).toString()
+        val file = file(root, Constants.FOLDER_NAME_USERS, userUuidString, Constants.FOLDER_NAME_PROFILES, profileUuid, path)
         LOGGER.debug("Absolute path: {}", file.absolutePath)
         if(!file.exists()) {
             val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)

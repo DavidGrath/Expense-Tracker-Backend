@@ -29,8 +29,8 @@ open class ImageRepository {
         return imageDb.id!!
     }
 
-    fun findBySha256(profileId: Long, sha256: String): ImagePojo? {
-        val selectStep = dslContext.select(IMAGE.asterisk())
+    fun findBySha256(profileId: Long, sha256: ByteArray): ImagePojo? {
+        val selectStep = dslContext.select(IMAGE.fields().toList()) //TO work around the generated columns
             .from(IMAGE)
             .where(IMAGE.PROFILE_ID.eq(profileId))
             .and(IMAGE.SHA_256.eq(sha256))
@@ -39,7 +39,7 @@ open class ImageRepository {
 
 
     fun findByUserIdAndId(userId: Long, id: Long): ImagePojo? {
-        val selectStep = dslContext.select(IMAGE.asterisk())
+        val selectStep = dslContext.select(IMAGE.fields().toList()) //TO work around the generated columns
             .from(IMAGE)
             .innerJoin(PROFILE).on(PROFILE.ID.eq(IMAGE.PROFILE_ID))
             .where(IMAGE.ID.eq(id))

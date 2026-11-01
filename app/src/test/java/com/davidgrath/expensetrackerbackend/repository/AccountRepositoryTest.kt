@@ -5,6 +5,7 @@ import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.AccountPojo
 import com.davidgrath.expensetrackerbackend.testutils.*
 import com.davidgrath.expensetrackerbackend.utils.Constants
+import com.davidgrath.expensetrackerbackend.utils.uuidToBytes
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -18,6 +19,7 @@ import java.math.BigDecimal
 import java.nio.file.Files
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.util.UUID
 
 @SpringBootTest
 @RunWith(SpringRunner::class)
@@ -65,8 +67,8 @@ class AccountRepositoryTest {
         val totalItems = 3L
 
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
-        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)
+        val user = userRepository.findByUuid(uuidToBytes(UUID.fromString(TestConstants.DEFAULT_USER_ID)))!!
+        val profile = profileRepository.findByUuid(user.id!!, uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID)))
 
         val dataBuilder = DataBuilder(folder, timeHandler, null, Constants.DEFAULT_PROFILE_ID, testUtilComponent)
 
@@ -112,8 +114,8 @@ class AccountRepositoryTest {
         val totalItems = 3L
 
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
-        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val user = userRepository.findByUuid(uuidToBytes(UUID.fromString(TestConstants.DEFAULT_USER_ID)))!!
+        val profile = profileRepository.findByUuid(user.id!!, uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID)))!!
 
         val dataBuilder = DataBuilder(folder, timeHandler, null, Constants.DEFAULT_PROFILE_ID, testUtilComponent)
 

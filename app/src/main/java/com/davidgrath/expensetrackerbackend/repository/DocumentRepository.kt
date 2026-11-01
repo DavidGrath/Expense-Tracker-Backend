@@ -7,7 +7,9 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.Document
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.*
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.DEFAULT_FETCH_LIMIT
 import org.jooq.DSLContext
+import org.jooq.Fields
 import org.jooq.impl.DSL
+import org.jooq.impl.DSL.inline
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Repository
@@ -24,8 +26,8 @@ open class DocumentRepository {
         return documentDb.id!!
     }
 
-    fun findByTransactionIdAndHash(profileId: Long, transactionId: Long, sha256: String): DocumentPojo? {
-        val selectStep = dslContext.select(DOCUMENT.asterisk())
+    fun findByTransactionIdAndHash(profileId: Long, transactionId: Long, sha256: ByteArray): DocumentPojo? {
+        val selectStep = dslContext.select(DOCUMENT.fields().toList()) //To work around the excluded generated fields
             .from(DOCUMENT)
             .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(DOCUMENT.TRANSACTION_ID))
             .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
@@ -37,7 +39,7 @@ open class DocumentRepository {
     }
 
     fun findByTransactionId(profileId: Long, transactionId: Long): List<DocumentPojo> {
-        val selectStep = dslContext.select(DOCUMENT.asterisk())
+        val selectStep = dslContext.select(DOCUMENT.fields().toList()) //To work around the excluded generated fields
             .from(DOCUMENT)
             .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(DOCUMENT.TRANSACTION_ID))
             .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
@@ -56,7 +58,7 @@ open class DocumentRepository {
         accountIds: List<Long>,
         dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>
     ): List<DocumentPojo> {
-        var selectStep = dslContext.select(DOCUMENT.asterisk())
+        var selectStep = dslContext.select(DOCUMENT.fields().toList()) //To work around the excluded generated fields
             .from(DOCUMENT)
             .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(DOCUMENT.TRANSACTION_ID))
             .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
@@ -93,7 +95,7 @@ open class DocumentRepository {
 
 
     fun findByUserIdAndId(userId: Long, id: Long): DocumentPojo? {
-        val selectStep = dslContext.select(DOCUMENT.asterisk())
+        val selectStep = dslContext.select(DOCUMENT.fields().toList()) //To work around the excluded generated fields
             .from(DOCUMENT)
             .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(DOCUMENT.TRANSACTION_ID))
             .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
@@ -107,7 +109,7 @@ open class DocumentRepository {
         val selectStep = dslContext.select(
             DOCUMENT.ID, TRANSACTION.ID.`as`("transactionId"), DOCUMENT.TYPE,
             DOCUMENT.SIZE_BYTES, DOCUMENT.SHA_256, DOCUMENT.MIME_TYPE, DOCUMENT.PATH,
-            TRANSACTION.DATED_AT.`as`("transactionDatedAt"), TRANSACTION.ORDINAL.`as`("transactionOrdinal")
+            TRANSACTION.DATED_AT.`as`("transactionDatedAt"), inline(1).`as`("transactionOrdinal") //TODO remove when confirmed not needed
         )
             .from(DOCUMENT)
             .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(DOCUMENT.TRANSACTION_ID))
@@ -122,7 +124,7 @@ open class DocumentRepository {
         val selectStep = dslContext.select(
             DOCUMENT.ID, TRANSACTION.ID.`as`("transactionId"), DOCUMENT.TYPE,
             DOCUMENT.SIZE_BYTES, DOCUMENT.SHA_256, DOCUMENT.MIME_TYPE, DOCUMENT.PATH,
-            TRANSACTION.DATED_AT.`as`("transactionDatedAt"), TRANSACTION.ORDINAL.`as`("transactionOrdinal")
+            TRANSACTION.DATED_AT.`as`("transactionDatedAt"), inline(1).`as`("transactionOrdinal") //TODO remove when confirmed not needed
         )
             .from(DOCUMENT)
             .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(DOCUMENT.TRANSACTION_ID))

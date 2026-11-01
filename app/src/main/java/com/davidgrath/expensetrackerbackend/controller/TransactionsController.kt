@@ -68,7 +68,7 @@ open class TransactionsController: TransactionsApi {
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
         val userUuid = user!!.uuid!!
-        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
         val zone = try {
             ZoneId.of(basicTransactionCreateRequest!!.timeZone)
         } catch (e: DateTimeException) {
@@ -109,7 +109,7 @@ open class TransactionsController: TransactionsApi {
         val principal = authentication.principal as Jwt
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
-        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
 
         val transactions = transactionService.getTransactionsWithItems(profile.id!!, fromDate, toDate,
             accountIds as List<Long>, emptyList(), emptyList(), emptyList(), emptyList())
@@ -181,7 +181,7 @@ open class TransactionsController: TransactionsApi {
         val principal = authentication.principal as Jwt
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
-        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
         val t = transactionService.getByProfileIdAndId(profile.id!!, id)
         if(t == null) {
             val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
@@ -220,7 +220,7 @@ open class TransactionsController: TransactionsApi {
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
         val userUuid = user!!.uuid!!
-        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
 
         if(!transactionDraftService.doesDraftExistForProfile(profile.id!!)) {
             val exception = CustomHttpException(ErrorCode.DRAFT_DOES_NOT_EXIST, HttpStatus.NOT_FOUND)
@@ -244,7 +244,7 @@ open class TransactionsController: TransactionsApi {
             LOGGER.error("Bad time zone", exception)
             throw exception
         }
-        transactionDraftService.finishDraft(profile.id!!, userUuid, profileId, zone)
+        transactionDraftService.finishDraft(profile.id!!, userUuid, uuidToBytes(UUID.fromString(profileId)), zone)
         return ResponseEntity.ok().build()
     }
 
@@ -257,7 +257,7 @@ open class TransactionsController: TransactionsApi {
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
         val userUuid = user!!.uuid!!
-        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
 
         if(!accountService.areAllAccountsForUser(user.id!!, accountIds.map { it!! })) {
             val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
@@ -286,7 +286,7 @@ open class TransactionsController: TransactionsApi {
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
         val userUuid = user!!.uuid!!
-        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
 
         val suggestions = transactionService.getGenericSuggestions(profile.id!!, fieldType, query)
         return ResponseEntity.ok(suggestions)
@@ -298,7 +298,7 @@ open class TransactionsController: TransactionsApi {
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
         val userUuid = user!!.uuid!!
-        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
 
         if(!transactionDraftService.doesDraftExistForProfile(profile.id!!)) {
             val exception = CustomHttpException(ErrorCode.DRAFT_DOES_NOT_EXIST, HttpStatus.NOT_FOUND)
@@ -321,7 +321,7 @@ open class TransactionsController: TransactionsApi {
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
         val userUuid = user!!.uuid!!
-        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
 
         if(!transactionDraftService.doesDraftExistForProfile(profile.id!!)) {
             val exception = CustomHttpException(ErrorCode.DRAFT_DOES_NOT_EXIST, HttpStatus.NOT_FOUND)
@@ -347,7 +347,7 @@ open class TransactionsController: TransactionsApi {
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
         val userUuid = user!!.uuid!!
-        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
 
         if(!transactionDraftService.doesDraftExistForProfile(profile.id!!)) {
             val exception = CustomHttpException(ErrorCode.DRAFT_DOES_NOT_EXIST, HttpStatus.NOT_FOUND)
@@ -381,7 +381,7 @@ open class TransactionsController: TransactionsApi {
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
         val userUuid = user!!.uuid!!
-        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
 
         if(transactionDraftService.doesDraftExistForProfile(profile.id!!)) {
             val exception = CustomHttpException(ErrorCode.DRAFT_ALREADY_EXISTS, HttpStatus.BAD_REQUEST)
@@ -408,7 +408,7 @@ open class TransactionsController: TransactionsApi {
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
         val userUuid = user!!.uuid!!
-        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
 
         if(!transactionDraftService.doesDraftExistForProfile(profile.id!!)) {
             val exception = CustomHttpException(ErrorCode.DRAFT_DOES_NOT_EXIST, HttpStatus.NOT_FOUND)
@@ -486,7 +486,7 @@ open class TransactionsController: TransactionsApi {
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
         val userUuid = user!!.uuid!!
-        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
 
         if(!transactionDraftService.doesDraftExistForProfile(profile.id!!)) {
             val exception = CustomHttpException(ErrorCode.DRAFT_DOES_NOT_EXIST, HttpStatus.NOT_FOUND)
@@ -516,7 +516,7 @@ open class TransactionsController: TransactionsApi {
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
         val userUuid = user!!.uuid!!
-        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
 
         LOGGER.debug("Document null: {}", document == null)
         LOGGER.debug("Resource type: {}", document!!.resource!!.javaClass.typeName)
@@ -537,7 +537,7 @@ open class TransactionsController: TransactionsApi {
         outputStream.close()
 
         val path = transactionDraftService.addDocumentToDraft(profile.id!!, type!!.toDbType(), tempFile, document.contentType?: MediaType.APPLICATION_OCTET_STREAM_VALUE,
-            userUuid, profileId)
+            bytesToUUID(userUuid).toString(), profileId)
 
         tempFolder.deleteRecursively()
         if(path == null) {
@@ -564,7 +564,7 @@ open class TransactionsController: TransactionsApi {
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
         val userUuid = user!!.uuid!!
-        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
 
         if(!transactionDraftService.doesDraftExistForProfile(profile.id!!)) {
             val exception = CustomHttpException(ErrorCode.DRAFT_DOES_NOT_EXIST, HttpStatus.NOT_FOUND)
@@ -599,7 +599,7 @@ open class TransactionsController: TransactionsApi {
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
         val userUuid = user!!.uuid!!
-        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
 
         LOGGER.debug("Resource type: {}", file!!.resource.javaClass.typeName)
         LOGGER.debug("Is open: {}", file!!.resource.isOpen)
@@ -619,7 +619,7 @@ open class TransactionsController: TransactionsApi {
         outputStream.close()
         //TODO Validate for images or PDFs
         val added = transactionDraftService.addImageToItem(profile.id!!, uuid, tempFile, file.contentType?: MediaType.APPLICATION_OCTET_STREAM_VALUE,
-            userUuid, profileId)
+            userUuid, uuidToBytes(UUID.fromString(profileId)))
 
         tempFolder.deleteRecursively()
         if(!added) {
@@ -646,7 +646,7 @@ open class TransactionsController: TransactionsApi {
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
         val userUuid = user!!.uuid!!
-        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
 
         if(!transactionDraftService.doesDraftExistForProfile(profile.id!!)) {
             val exception = CustomHttpException(ErrorCode.DRAFT_DOES_NOT_EXIST, HttpStatus.NOT_FOUND)

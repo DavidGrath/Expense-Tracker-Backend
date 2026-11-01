@@ -105,9 +105,6 @@
           "variation": {
             "type": "string"
           },
-          "referenceNumber": {
-            "type": "string"
-          },
           "images": {
             "type": "array",
             "items": {
@@ -639,9 +636,6 @@
           "variation": {
             "type": "string"
           },
-          "referenceNumber": {
-            "type": "string"
-          },
           "images": {
             "type": "array",
             "items": {
@@ -685,9 +679,6 @@
             "type": "string"
           },
           "variation": {
-            "type": "string"
-          },
-          "referenceNumber": {
             "type": "string"
           }
         },

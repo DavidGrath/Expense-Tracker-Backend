@@ -25,5 +25,6 @@ data class TransactionDraft(
     val customDate: LocalDate? = null,
     val customTime: LocalTime? = null,
     val sellerId: Long? = null,
-    val sellerLocationId: Long? = null,
+    val sellerLocationId: Long? = null, //TODO remove
+    val sellerLocationOrdinal: Int? = null,
 )

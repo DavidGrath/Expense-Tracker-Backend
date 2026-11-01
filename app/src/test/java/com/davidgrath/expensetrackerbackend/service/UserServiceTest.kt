@@ -6,6 +6,7 @@ import com.davidgrath.expensetrackerbackend.repository.*
 import com.davidgrath.expensetrackerbackend.testutils.TestUtilComponent
 import com.davidgrath.expensetrackerbackend.testutils.tempInit
 import com.davidgrath.expensetrackerbackend.utils.Constants
+import com.davidgrath.expensetrackerbackend.utils.uuidToBytes
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -66,7 +67,8 @@ class UserServiceTest {
     fun basicUserSignUpTest() {
         val locale = Locale("en", "GB")
         val userId = userService.createUser("user2", "password", locale)
-        val profile = profileRepository.findByStringId(userId, Constants.DEFAULT_PROFILE_ID)
+        val uuid = uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID))
+        val profile = profileRepository.findByUuid(userId, uuid)
         assertNotNull(profile)
         //Assert default account exists
         val accounts = accountRepository.getAllByProfileId(profile!!.id!!)

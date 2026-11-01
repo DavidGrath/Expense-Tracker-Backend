@@ -71,6 +71,11 @@ class TransactionDraftServiceTest {
     @Autowired
     lateinit var userDraftRepository: UserDraftRepository
 
+    val gson = GsonBuilder()
+        .registerTypeAdapter(LocalDate::class.java, LocalDateGsonAdapter())
+        .registerTypeAdapter(LocalTime::class.java, LocalTimeGsonAdapter())
+        .create()
+
     @Before
     fun setUp() {
         tempInit(testUtilComponent, timeHandler)
@@ -87,7 +92,7 @@ class TransactionDraftServiceTest {
 
         //Add item with isReduction
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val profileId = profile.id!!
 
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
@@ -103,10 +108,10 @@ class TransactionDraftServiceTest {
 
         //Add item with isReduction
         val secondItem = draft!!.items[1]
-        val modified = secondItem.copy(isReduction = true, amount = BigDecimal.TEN,description = "Discount", quantity = 13, brand = "Generic", variation = "XXL", referenceNumber = "REF-1234")
+        val modified = secondItem.copy(isReduction = true, amount = BigDecimal.TEN,description = "Discount", quantity = 13, brand = "Generic", variation = "XXL", volume = BigDecimal(100), volumeUnit = "l", weight = BigDecimal(100), weightUnit = "g")
         transactionDraftService.modifyDraftItem(profileId, secondItem.uuid!!, modified)
         //Fill in all fields
-        transactionDraftService.finishDraft(profileId, user.uuid!!, profile.stringId!!,ZoneId.of("UTC"))
+        transactionDraftService.finishDraft(profileId, user.uuid!!, profile.uuid!!, ZoneId.of("UTC"))
         val account = accountRepository.getAllByProfileId(profileId).first()
         val transactions = transactionRepository.getTransactions(profileId, null, null, listOf(account.id!!), emptyList(), emptyList(), emptyList(), emptyList())
         val transaction = transactions.first()
@@ -121,7 +126,10 @@ class TransactionDraftServiceTest {
         //Assert all other fields discarded
         assertNull(item.variation)
         assertNull(item.brand)
-        assertNull(item.referenceNumber)
+        assertNull(item.weight)
+        assertNull(item.weightUnit)
+        assertNull(item.volume)
+        assertNull(item.volumeUnit)
         assertEquals(1, item.quantity)
 
     }
@@ -132,7 +140,7 @@ class TransactionDraftServiceTest {
 
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val profileId = profile.id!!
 
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
@@ -161,7 +169,7 @@ class TransactionDraftServiceTest {
         //Add normal item
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val profileId = profile.id!!
 
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
@@ -186,7 +194,7 @@ class TransactionDraftServiceTest {
     @Test
     fun givenTransactionHasReductionsAndTransactionHasNoNormalItemsThenFail() {
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val profileId = profile.id!!
 
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
@@ -209,7 +217,7 @@ class TransactionDraftServiceTest {
     @Test
     fun givenDateIsTodayBasedOnUserTimezoneAndTimeNotSetWhenSaveThenTimeIsNow() {
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val profileId = profile.id!!
 
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
@@ -226,7 +234,7 @@ class TransactionDraftServiceTest {
         val modifiedFirst = firstItem.copy(amount = BigDecimal.TEN)
         transactionDraftService.modifyDraftItem(profileId, firstItem.uuid!!, modifiedFirst)
 
-        val transactionId = transactionDraftService.finishDraft(profileId, user.uuid!!, profile.stringId!!,ZoneId.of("UTC"))
+        val transactionId = transactionDraftService.finishDraft(profileId, user.uuid!!, profile.uuid!!,ZoneId.of("UTC"))
         val transaction = transactionRepository.getByProfileIdAndId(profileId, transactionId)!!
         val transactionTime = transaction.time!!
 
@@ -236,7 +244,7 @@ class TransactionDraftServiceTest {
     @Test
     fun givenDateIsTodayBasedOnUserTimezoneAndTimeIsSetWhenSaveThenTimeIsCustom() {
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val profileId = profile.id!!
 
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
@@ -249,7 +257,18 @@ class TransactionDraftServiceTest {
         transactionDraftService.setDate(profileId, localDate)
         transactionDraftService.setTime(profileId, localTime)
 
-        val transactionId = transactionDraftService.finishDraft(profileId, user.uuid!!, profile.stringId!!,ZoneId.of("UTC"))
+        val userDraft = userDraftRepository.getDraftByProfile(profileId)!!
+
+        var draft = transactionDraftService.getDraft(profileId)!!
+        val items = draft.items.toMutableList()
+        items[0] = items[0].copy(amount = BigDecimal(100))
+        draft = draft.copy(items = items)
+
+        val jsonString = gson.toJson(draft)
+        val json = JSON.json(jsonString)
+        userDraftRepository.updateDraft(profileId, userDraft.id!!, json)
+
+        val transactionId = transactionDraftService.finishDraft(profileId, user.uuid!!, profile.uuid!!,ZoneId.of("UTC"))
         val transaction = transactionRepository.getByProfileIdAndId(profileId, transactionId)
         val transactionTime = transaction!!.time
 
@@ -260,7 +279,7 @@ class TransactionDraftServiceTest {
     fun givenDateIsTodayBasedOnUserTimezoneAndDateIsNotTodayBasedOnServerTimezoneAndCustomDateIsNullAndTimeNotSetWhenSaveThenTimeIsNotNull() {
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val profileId = profile.id!!
 
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
@@ -276,7 +295,7 @@ class TransactionDraftServiceTest {
         val modifiedFirst = firstItem.copy(amount = BigDecimal.TEN, description = "Desc")
         transactionDraftService.modifyDraftItem(profileId, firstItem.uuid!!, modifiedFirst)
 
-        val transactionId = transactionDraftService.finishDraft(profileId, user.uuid!!, profile.stringId!!,ZoneId.of("Etc/GMT+10"))  // 10 PM 2025-06-29
+        val transactionId = transactionDraftService.finishDraft(profileId, user.uuid!!, profile.uuid!!,ZoneId.of("Etc/GMT+10"))  // 10 PM 2025-06-29
         val transaction = transactionRepository.getByProfileIdAndId(profileId, transactionId)
         val transactionTime = transaction!!.time
 
@@ -290,7 +309,7 @@ class TransactionDraftServiceTest {
     @Test
     fun givenCustomDateIsBeforeTodayBasedOnUserTimezoneAndTimeSetWhenSaveThenTimeIsCustom() {
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val profileId = profile.id!!
 
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
@@ -309,7 +328,7 @@ class TransactionDraftServiceTest {
         val modifiedFirst = firstItem.copy(amount = BigDecimal.TEN, description = "Desc")
         transactionDraftService.modifyDraftItem(profileId, firstItem.uuid!!, modifiedFirst)
 
-        val transactionId = transactionDraftService.finishDraft(profileId, user.uuid!!, profile.stringId!!,ZoneId.of("UTC"))
+        val transactionId = transactionDraftService.finishDraft(profileId, user.uuid!!, profile.uuid!!,ZoneId.of("UTC"))
         val transaction = transactionRepository.getByProfileIdAndId(profileId, transactionId)
 
         assertEquals(localTime, transaction!!.time)
@@ -319,7 +338,7 @@ class TransactionDraftServiceTest {
     fun givenSellerAndLocationSetIfLocationSomehowNotLinkedToSellerWhenSaveThenLocationNull() {
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val profileId = profile.id!!
 
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
@@ -330,54 +349,76 @@ class TransactionDraftServiceTest {
 
         val sellerId = sellerRepository.insertSeller(SellerPojo(null, profile.id!!, "Restaurant", utcDate))
         val sellerId2 = sellerRepository.insertSeller(SellerPojo(null, profile.id!!, "Coffee Shop", utcDate))
-        val sellerLocationId = sellerLocationRepository.insertSellerLocation(SellerLocationPojo(null, sellerId, "Downtown", false.toByte(), null, null, null, utcDate))
+        val sellerLocationId = sellerLocationRepository.insertSellerLocation(SellerLocationPojo(null, sellerId, 1,"Downtown", null, null, null, utcDate))
 
         transactionDraftService.createDraft(profileId, accountId)
 
+        val userDraft = userDraftRepository.getDraftByProfile(profileId)!!
+
+        var draft = transactionDraftService.getDraft(profileId)!!
+        val items = draft.items.toMutableList()
+        items[0] = items[0].copy(amount = BigDecimal(100))
+        draft = draft.copy(items = items)
+
+        val jsonString = gson.toJson(draft)
+        val json = JSON.json(jsonString)
+        userDraftRepository.updateDraft(profileId, userDraft.id!!, json)
 
         transactionDraftService.setSeller(profileId, sellerId2)
         transactionDraftService.setSellerLocation(profileId, sellerLocationId)
 
-        val transactionId = transactionDraftService.finishDraft(profileId, user.uuid!!, profile.stringId!!,ZoneId.of("UTC"))
+        val transactionId = transactionDraftService.finishDraft(profileId, user.uuid!!, profile.uuid!!,ZoneId.of("UTC"))
         val transaction = transactionRepository.getByProfileIdAndId(profileId, transactionId)!!
 
         assertNotNull(transaction.sellerId)
-        assertNull(transaction.sellerLocationId)
+        assertNull(transaction.sellerLocationOrdinal)
     }
 
     @Test
     fun givenImagesInDraftWhenDoneThenImagesNotInDraftAndImagesInMainFolder() {
         val resource = TestData.Resource.Images.BREAD
+        val resource2 = TestData.Resource.Images.TOOTHBRUSH
         val classLoader = TransactionDraftServiceTest::class.java.classLoader!!
         val tempFolder = Files.createTempDirectory("temp").toFile()
         tempFolder.deleteOnExit()
-        copyControllerTempFile(tempFolder, classLoader, resource)
+        copyControllerTempFile(tempFolder, classLoader, resource2)
         val tempFile = File(tempFolder, resource.fileName)
+        copyControllerTempFile(tempFolder, classLoader, resource)
+        val tempFile2 = File(tempFolder, resource2.fileName)
 
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val profileId = profile.id!!
 
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
 
 
         transactionDraftService.createDraft(profileId, accountId)
-        val draft = transactionDraftService.getDraft(profileId)!!
+        val userDraft = userDraftRepository.getDraftByProfile(profileId)!!
+
+        var draft = transactionDraftService.getDraft(profileId)!!
+        val items = draft.items.toMutableList()
+        items[0] = items[0].copy(amount = BigDecimal(100))
+        draft = draft.copy(items = items)
+
+        val jsonString = gson.toJson(draft)
+        val json = JSON.json(jsonString)
+        userDraftRepository.updateDraft(profileId, userDraft.id!!, json)
         val item = draft.items[0]
+        transactionDraftService.addImageToItem(profileId, item.uuid, tempFile, "image/jpeg", user.uuid!!, profile.uuid!!)
+        transactionDraftService.addImageToItem(profileId, item.uuid, tempFile2, "image/jpeg", user.uuid!!, profile.uuid!!)
 
-        transactionDraftService.addImageToItem(profileId, item.uuid, tempFile, "image/jpeg", user.uuid!!, profile.stringId!!)
-        transactionDraftService.addImageToItem(profileId, item.uuid, tempFile, "image/jpeg", user.uuid!!, profile.stringId!!)
-
-        transactionDraftService.finishDraft(profileId, user.uuid!!, profile.stringId!!,ZoneId.of("UTC"))
-
+        transactionDraftService.finishDraft(profileId, user.uuid!!, profile.uuid!!,ZoneId.of("UTC"))
+        val userUuidString = bytesToUUID(user.uuid!!).toString()
+        val profileUuidString = bytesToUUID(profile.uuid!!).toString()
         val draftImagesFolder = file(timeHandler.getRoot(),
-        Constants.FOLDER_NAME_USERS, user.uuid!!,
-        Constants.FOLDER_NAME_PROFILES, profile.stringId!!,
+        Constants.FOLDER_NAME_USERS, userUuidString,
+        Constants.FOLDER_NAME_PROFILES, profileUuidString,
         Constants.FOLDER_NAME_DRAFT, Constants.SUBFOLDER_NAME_IMAGES)
         val mainImagesFolder = file(timeHandler.getRoot(),
-        Constants.FOLDER_NAME_USERS, user.uuid!!,
-        Constants.FOLDER_NAME_PROFILES, profile.stringId!!,
+        Constants.FOLDER_NAME_USERS, userUuidString,
+        Constants.FOLDER_NAME_PROFILES, profileUuidString,
         Constants.FOLDER_NAME_DATA, Constants.SUBFOLDER_NAME_IMAGES)
         assertEquals(0, getHashCount(resource.sha256, draftImagesFolder))
         assertEquals(1, getHashCount(resource.sha256, mainImagesFolder))
@@ -392,28 +433,31 @@ class TransactionDraftServiceTest {
         tempFolder.deleteOnExit()
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val profileId = profile.id!!
 
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
 
         copyControllerTempFile(tempFolder, classLoader, resource)
         val tempFile = File(tempFolder, resource.fileName)
+        val userUuidString = bytesToUUID(user.uuid!!).toString()
+        val profileUuidString = bytesToUUID(profile.uuid!!).toString()
+
 
         val draftImagesFolder = file(timeHandler.getRoot(),
-            Constants.FOLDER_NAME_USERS,user.uuid!!,
-            Constants.FOLDER_NAME_PROFILES, profile.stringId!!,
+            Constants.FOLDER_NAME_USERS,userUuidString,
+            Constants.FOLDER_NAME_PROFILES, profileUuidString,
             Constants.FOLDER_NAME_DRAFT, Constants.SUBFOLDER_NAME_IMAGES)
         draftImagesFolder.mkdirs()
         val mainImagesFolder = file(timeHandler.getRoot(),
-            Constants.FOLDER_NAME_USERS,user.uuid!!,
-            Constants.FOLDER_NAME_PROFILES, profile.stringId!!,
+            Constants.FOLDER_NAME_USERS,userUuidString,
+            Constants.FOLDER_NAME_PROFILES, profileUuidString,
             Constants.FOLDER_NAME_DATA, Constants.SUBFOLDER_NAME_IMAGES)
         mainImagesFolder.mkdirs()
         val draftImage = File(draftImagesFolder, "45402cd3-2452-4804-981a-7ea5515dec74.jpg")
         tempFile.copyTo(draftImage)
 
-        val path = "/${Constants.FOLDER_NAME_PROFILES}/${profile.stringId}/${Constants.FOLDER_NAME_DRAFT}/${Constants.SUBFOLDER_NAME_IMAGES}/${tempFile.name}"
+        val path = "/${Constants.FOLDER_NAME_PROFILES}/${profileUuidString}/${Constants.FOLDER_NAME_DRAFT}/${Constants.SUBFOLDER_NAME_IMAGES}/${tempFile.name}"
 
         // Populate hashmap with unused image
         val map = mapOf(resource.sha256 to path)
@@ -421,7 +465,12 @@ class TransactionDraftServiceTest {
         transactionDraftService.createDraft(profileId, accountId)
         val userDraft = userDraftRepository.getDraftByProfile(profileId)!!
 
-        val draft = transactionDraftService.getDraft(profileId)!!.copy(imageHashes = map)
+        var draft = transactionDraftService.getDraft(profileId)!!.copy(imageHashes = map)
+
+        val items = draft.items.toMutableList()
+        items[0] = items[0].copy(amount = BigDecimal(100))
+        draft = draft.copy(items = items)
+
         val gson = GsonBuilder()
             .registerTypeAdapter(LocalDate::class.java, LocalDateGsonAdapter())
             .registerTypeAdapter(LocalTime::class.java, LocalTimeGsonAdapter())
@@ -429,7 +478,7 @@ class TransactionDraftServiceTest {
         val jsonString = gson.toJson(draft)
         val json = JSON.json(jsonString)
         userDraftRepository.updateDraft(profileId, userDraft.id!!, json)
-        transactionDraftService.finishDraft(profileId, user.uuid!!, profile.stringId!!, ZoneId.of("UTC"))
+        transactionDraftService.finishDraft(profileId, user.uuid!!, profile.uuid!!, ZoneId.of("UTC"))
 
         assertEquals(0, getHashCount(resource.sha256, draftImagesFolder))
         assertEquals(0, getHashCount(resource.sha256, mainImagesFolder))
@@ -446,7 +495,7 @@ class TransactionDraftServiceTest {
 
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val profileId = profile.id!!
 
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
@@ -456,8 +505,8 @@ class TransactionDraftServiceTest {
         val draft = transactionDraftService.getDraft(profileId)!!
         val item = draft.items[0]
 
-        transactionDraftService.addImageToItem(profileId, item.uuid, tempFile, "image/jpeg", user.uuid!!, profile.stringId!!)
-        transactionDraftService.addImageToItem(profileId, item.uuid, tempFile, "image/jpeg", user.uuid!!, profile.stringId!!)
+        transactionDraftService.addImageToItem(profileId, item.uuid, tempFile, "image/jpeg", user.uuid!!, profile.uuid!!)
+        transactionDraftService.addImageToItem(profileId, item.uuid, tempFile, "image/jpeg", user.uuid!!, profile.uuid!!)
 
         val newDraft = transactionDraftService.getDraft(profileId)!!
         val itemImages = newDraft.items[0].images
@@ -475,7 +524,7 @@ class TransactionDraftServiceTest {
         val tempFile = File(tempFolder, resource.fileName)
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val profileId = profile.id!!
 
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
@@ -486,12 +535,15 @@ class TransactionDraftServiceTest {
         val uuid1 = draft.items[0].uuid
         val uuid2 = transactionDraftService.addItemToDraft(profileId)!!
 
-        transactionDraftService.addImageToItem(profileId, uuid1, tempFile, "image/jpeg", user.uuid!!, profile.stringId!!)
-        transactionDraftService.addImageToItem(profileId, uuid2, tempFile, "image/jpeg", user.uuid!!, profile.stringId!!)
+        transactionDraftService.addImageToItem(profileId, uuid1, tempFile, "image/jpeg", user.uuid!!, profile.uuid!!)
+        transactionDraftService.addImageToItem(profileId, uuid2, tempFile, "image/jpeg", user.uuid!!, profile.uuid!!)
+
+        val userUuidString = bytesToUUID(user.uuid!!).toString()
+        val profileUuidString = bytesToUUID(profile.uuid!!).toString()
 
         val draftImagesFolder = file(timeHandler.getRoot(),
-            Constants.FOLDER_NAME_USERS, user.uuid!!,
-            Constants.FOLDER_NAME_PROFILES, profile.stringId!!,
+            Constants.FOLDER_NAME_USERS, userUuidString,
+            Constants.FOLDER_NAME_PROFILES, profileUuidString,
             Constants.FOLDER_NAME_DRAFT, Constants.SUBFOLDER_NAME_IMAGES)
         val updatedDraft = transactionDraftService.getDraft(profileId)!!
         val items = updatedDraft.items
@@ -520,7 +572,7 @@ class TransactionDraftServiceTest {
         }
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val profileId = profile.id!!
 
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
@@ -531,16 +583,19 @@ class TransactionDraftServiceTest {
         val uuid = draft.items[0].uuid
 
         tempFiles.forEach { file ->
-            transactionDraftService.addImageToItem(profileId, uuid, file, "image/jpeg", user.uuid!!, profile.stringId!!)
+            transactionDraftService.addImageToItem(profileId, uuid, file, "image/jpeg", user.uuid!!, profile.uuid!!)
         }
         val extraResource = TestData.Resource.Images.BREAD
         copyControllerTempFile(tempFolder, classLoader, extraResource)
         val extraTempFile = File(tempFolder, extraResource.fileName)
-        transactionDraftService.addImageToItem(profileId, uuid, extraTempFile, "image/jpeg", user.uuid!!, profile.stringId!!)
+        transactionDraftService.addImageToItem(profileId, uuid, extraTempFile, "image/jpeg", user.uuid!!, profile.uuid!!)
+
+        val userUuidString = bytesToUUID(user.uuid!!).toString()
+        val profileUuidString = bytesToUUID(profile.uuid!!).toString()
 
         val draftImagesFolder = file(timeHandler.getRoot(),
-            Constants.FOLDER_NAME_USERS, user.uuid!!,
-            Constants.FOLDER_NAME_PROFILES, profile.stringId!!,
+            Constants.FOLDER_NAME_USERS, userUuidString,
+            Constants.FOLDER_NAME_PROFILES, profileUuidString,
             Constants.FOLDER_NAME_DRAFT, Constants.SUBFOLDER_NAME_IMAGES)
         val updatedDraft = transactionDraftService.getDraft(profileId)!!
         val items = updatedDraft.items
@@ -558,7 +613,7 @@ class TransactionDraftServiceTest {
         tempFolder.deleteOnExit()
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val profileId = profile.id!!
 
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
@@ -566,22 +621,25 @@ class TransactionDraftServiceTest {
         copyControllerTempFile(tempFolder, classLoader, resource)
         val tempFile = File(tempFolder, resource.fileName)
 
+        val userUuidString = bytesToUUID(user.uuid!!).toString()
+        val profileUuidString = bytesToUUID(profile.uuid!!).toString()
 
-        val path = "/${Constants.FOLDER_NAME_PROFILES}/${profile.stringId}/${Constants.FOLDER_NAME_DRAFT}/${Constants.SUBFOLDER_NAME_IMAGES}/${tempFile.name}"
 
-        createTransactionWithImage(profileId, user.uuid!!, profile.stringId!!, accountId, classLoader, resource)
+        val path = "/${Constants.FOLDER_NAME_PROFILES}/${profileUuidString}/${Constants.FOLDER_NAME_DRAFT}/${Constants.SUBFOLDER_NAME_IMAGES}/${tempFile.name}"
+
+        createTransactionWithImage(profileId, userUuidString, profileUuidString, accountId, classLoader, resource)
 
 
         val draftImagesFolder = file(timeHandler.getRoot(),
-            Constants.FOLDER_NAME_USERS, user.uuid!!,
-            Constants.FOLDER_NAME_PROFILES, profile.stringId!!,
+            Constants.FOLDER_NAME_USERS, userUuidString,
+            Constants.FOLDER_NAME_PROFILES, profileUuidString,
             Constants.FOLDER_NAME_DRAFT, Constants.SUBFOLDER_NAME_IMAGES)
 
         transactionDraftService.createDraft(profileId, accountId)
         val draft = transactionDraftService.getDraft(profileId)!!
         val uuid = draft.items[0].uuid
 
-        transactionDraftService.addImageToItem(profileId, uuid, tempFile,"image/jpeg", user.uuid!!, profile.stringId!!)
+        transactionDraftService.addImageToItem(profileId, uuid, tempFile,"image/jpeg", user.uuid!!, profile.uuid!!)
 
         val updatedDraft = transactionDraftService.getDraft(profileId)!!
         val items = updatedDraft.items
@@ -599,7 +657,7 @@ class TransactionDraftServiceTest {
         tempFolder.deleteOnExit()
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val profileId = profile.id!!
 
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
@@ -607,21 +665,25 @@ class TransactionDraftServiceTest {
         copyControllerTempFile(tempFolder, classLoader, resource)
         val tempFile = File(tempFolder, resource.fileName)
 
+        val userUuidString = bytesToUUID(user.uuid!!).toString()
+        val profileUuidString = bytesToUUID(profile.uuid!!).toString()
+
+
         val draftDocumentsFolder = file(timeHandler.getRoot(),
-            Constants.FOLDER_NAME_USERS,user.uuid!!,
-            Constants.FOLDER_NAME_PROFILES, profile.stringId!!,
+            Constants.FOLDER_NAME_USERS,userUuidString,
+            Constants.FOLDER_NAME_PROFILES, profileUuidString,
             Constants.FOLDER_NAME_DRAFT, Constants.SUBFOLDER_NAME_DOCUMENTS)
         draftDocumentsFolder.mkdirs()
         val mainDocumentsFolder = file(timeHandler.getRoot(),
-            Constants.FOLDER_NAME_USERS,user.uuid!!,
-            Constants.FOLDER_NAME_PROFILES, profile.stringId!!,
+            Constants.FOLDER_NAME_USERS,userUuidString,
+            Constants.FOLDER_NAME_PROFILES, profileUuidString,
             Constants.FOLDER_NAME_DATA, Constants.SUBFOLDER_NAME_DOCUMENTS,
             "2025","06","30")
         mainDocumentsFolder.mkdirs()
         val draftDocument = File(draftDocumentsFolder, "45402cd3-2452-4804-981a-7ea5515dec74.jpg")
         tempFile.copyTo(draftDocument)
 
-        val path = "/${Constants.FOLDER_NAME_PROFILES}/${profile.stringId}/${Constants.FOLDER_NAME_DRAFT}/${Constants.SUBFOLDER_NAME_DOCUMENTS}/2025/06/30/${tempFile.name}"
+        val path = "/${Constants.FOLDER_NAME_PROFILES}/${profileUuidString}/${Constants.FOLDER_NAME_DRAFT}/${Constants.SUBFOLDER_NAME_DOCUMENTS}/2025/06/30/${tempFile.name}"
 
         // Populate hashmap with unused document
         val map = mapOf(resource.sha256 to path)
@@ -629,15 +691,15 @@ class TransactionDraftServiceTest {
         transactionDraftService.createDraft(profileId, accountId)
         val userDraft = userDraftRepository.getDraftByProfile(profileId)!!
 
-        val draft = transactionDraftService.getDraft(profileId)!!.copy(documentHashes = map)
-        val gson = GsonBuilder()
-            .registerTypeAdapter(LocalDate::class.java, LocalDateGsonAdapter())
-            .registerTypeAdapter(LocalTime::class.java, LocalTimeGsonAdapter())
-            .create()
+        var draft = transactionDraftService.getDraft(profileId)!!.copy(documentHashes = map)
+        val items = draft.items.toMutableList()
+        items[0] = items[0].copy(amount = BigDecimal(100))
+        draft = draft.copy(items = items)
+
         val jsonString = gson.toJson(draft)
         val json = JSON.json(jsonString)
         userDraftRepository.updateDraft(profileId, userDraft.id!!, json)
-        transactionDraftService.finishDraft(profileId, user.uuid!!, profile.stringId!!, ZoneId.of("UTC"))
+        transactionDraftService.finishDraft(profileId, user.uuid!!, profile.uuid!!, ZoneId.of("UTC"))
 
         assertEquals(0, getHashCount(resource.sha256, draftDocumentsFolder))
         assertEquals(0, getHashCount(resource.sha256, mainDocumentsFolder))
@@ -654,7 +716,7 @@ class TransactionDraftServiceTest {
 
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val profileId = profile.id!!
 
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
@@ -662,17 +724,32 @@ class TransactionDraftServiceTest {
 
         transactionDraftService.createDraft(profileId, accountId)
 
-        transactionDraftService.addDocumentToDraft(profileId, DocumentType.Other, tempFile, "image/jpeg",  user.uuid!!, profile.stringId!!)
+        val userDraft = userDraftRepository.getDraftByProfile(profileId)!!
 
-        transactionDraftService.finishDraft(profileId, user.uuid!!, profile.stringId!!, ZoneId.of("UTC"))
+        var draft = transactionDraftService.getDraft(profileId)!!
+        val items = draft.items.toMutableList()
+        items[0] = items[0].copy(amount = BigDecimal(100))
+        draft = draft.copy(items = items)
+
+        val jsonString = gson.toJson(draft)
+        val json = JSON.json(jsonString)
+        userDraftRepository.updateDraft(profileId, userDraft.id!!, json)
+
+        val userUuidString = bytesToUUID(user.uuid!!).toString()
+        val profileUuidString = bytesToUUID(profile.uuid!!).toString()
+
+
+        transactionDraftService.addDocumentToDraft(profileId, DocumentType.Other, tempFile, "image/jpeg",  userUuidString, profileUuidString!!)
+
+        transactionDraftService.finishDraft(profileId, user.uuid!!, profile.uuid!!, ZoneId.of("UTC"))
 
         val draftDocumentsFolder = file(timeHandler.getRoot(),
-            Constants.FOLDER_NAME_USERS,user.uuid!!,
-            Constants.FOLDER_NAME_PROFILES, profile.stringId!!,
+            Constants.FOLDER_NAME_USERS,userUuidString,
+            Constants.FOLDER_NAME_PROFILES, profileUuidString,
             Constants.FOLDER_NAME_DRAFT, Constants.SUBFOLDER_NAME_DOCUMENTS)
         val mainDocumentsFolder = file(timeHandler.getRoot(),
-            Constants.FOLDER_NAME_USERS,user.uuid!!,
-            Constants.FOLDER_NAME_PROFILES, profile.stringId!!,
+            Constants.FOLDER_NAME_USERS,userUuidString,
+            Constants.FOLDER_NAME_PROFILES, profileUuidString,
             Constants.FOLDER_NAME_DATA, Constants.SUBFOLDER_NAME_DOCUMENTS,
             "2025","06","30")
 
@@ -691,7 +768,7 @@ class TransactionDraftServiceTest {
 
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val profileId = profile.id!!
 
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
@@ -699,15 +776,17 @@ class TransactionDraftServiceTest {
 
         transactionDraftService.createDraft(profileId, accountId)
         val draft = transactionDraftService.getDraft(profileId)!!
+        val userUuidString = bytesToUUID(user.uuid!!).toString()
+        val profileUuidString = bytesToUUID(profile.uuid!!).toString()
 
-        transactionDraftService.addDocumentToDraft(profileId, DocumentType.Other, tempFile, "image/jpeg",  user.uuid!!, profile.stringId!!)
-        transactionDraftService.addDocumentToDraft(profileId, DocumentType.Other, tempFile, "image/jpeg",  user.uuid!!, profile.stringId!!)
+        transactionDraftService.addDocumentToDraft(profileId, DocumentType.Other, tempFile, "image/jpeg",  userUuidString, profileUuidString)
+        transactionDraftService.addDocumentToDraft(profileId, DocumentType.Other, tempFile, "image/jpeg",  userUuidString, profileUuidString)
 
 
         val newDraft = transactionDraftService.getDraft(profileId)!!
         val draftDocumentsFolder = file(timeHandler.getRoot(),
-            Constants.FOLDER_NAME_USERS,user.uuid!!,
-            Constants.FOLDER_NAME_PROFILES, profile.stringId!!,
+            Constants.FOLDER_NAME_USERS,userUuidString,
+            Constants.FOLDER_NAME_PROFILES, profileUuidString,
             Constants.FOLDER_NAME_DRAFT, Constants.SUBFOLDER_NAME_DOCUMENTS)
 
         val documents = newDraft.documents
@@ -715,28 +794,28 @@ class TransactionDraftServiceTest {
         assertEquals(1, getHashCount(resource.sha256, draftDocumentsFolder))
     }
 
-    fun createTransactionWithImage(profileId: Long, userUuid: String, profileStringId: String, accountId: Long, classLoader: ClassLoader, resource: TestData.Resource): Long {
+    fun createTransactionWithImage(profileId: Long, userUuid: String, profileUuid: String, accountId: Long, classLoader: ClassLoader, resource: TestData.Resource): Long {
         val amount = BigDecimal.TEN
         val account = accountRepository.findByProfileIdAndId(profileId, accountId)!!
 
-        val maxOrdinal = transactionRepository.getMaxOrdinalInDayForAccount(profileId, accountId, MOCKED_DATE)?: 0
-        var transactionOrdinal = maxOrdinal + 1
+        val maxSortKey = transactionRepository.getMaxSortKeyInDayForAccount(profileId, accountId, MOCKED_DATE)?: 0
+        var transactionSortKey = maxSortKey + 1
 
-        val transaction = TransactionPojo(null, accountId, amount, account.currencyCode,
-            null, true.toByte(), MOCKED_DATE, transactionOrdinal,
-            TransactionMode.Other, null, null, null, MOCKED_DATE.atTime(MOCKED_TIME), MOCKED_TIME)
+        val transaction = TransactionPojo(null, accountId, amount,
+             true.toByte(), MOCKED_DATE, MOCKED_TIME, transactionSortKey,
+            TransactionMode.Other, null, null, null, MOCKED_DATE.atTime(MOCKED_TIME))
 
         val transactionId = transactionRepository.insertTransaction(transaction)
         val misc = categoryRepository.findByProfileIdAndStringId(profileId, "miscellaneous")!!
 
-        val item = TransactionItemPojo(null, transactionId, "Basic", amount, misc.id!!, 1, 1, null,
-            null, null, false.toByte(),
+        val item = TransactionItemPojo(null, transactionId, "Basic", amount, misc.id!!, 1000, 1, 1,
+            null, null, null, null, null, null,false.toByte(),
             MOCKED_DATE.atTime(MOCKED_TIME))
         val itemId = transactionItemRepository.insertTransactionItem(item)
         //TODO make this more convenient
         val newFileName = "${UUID.randomUUID()}.jpg"
-        val newPath = "/${Constants.FOLDER_NAME_PROFILES}/$profileStringId/${Constants.FOLDER_NAME_DATA}/${Constants.SUBFOLDER_NAME_IMAGES}/${newFileName}"
-        val destinationFolder = file(timeHandler.getRoot(), Constants.FOLDER_NAME_USERS, userUuid, Constants.FOLDER_NAME_PROFILES,profileStringId, Constants.FOLDER_NAME_DATA, Constants.SUBFOLDER_NAME_IMAGES)
+        val newPath = "/${Constants.FOLDER_NAME_PROFILES}/$profileUuid/${Constants.FOLDER_NAME_DATA}/${Constants.SUBFOLDER_NAME_IMAGES}/${newFileName}"
+        val destinationFolder = file(timeHandler.getRoot(), Constants.FOLDER_NAME_USERS, userUuid, Constants.FOLDER_NAME_PROFILES,profileUuid, Constants.FOLDER_NAME_DATA, Constants.SUBFOLDER_NAME_IMAGES)
         destinationFolder.mkdirs()
         val destination = File(destinationFolder, newFileName)
 
@@ -747,12 +826,12 @@ class TransactionDraftServiceTest {
         outputStream.close()
         val hashStream = destination.inputStream()
 
-        val hash = getSha256(hashStream)
+        val hash = getSha256AsBytes(hashStream)
         hashStream.close()
 
         val image = ImagePojo(null, profileId, destination.length(), hash, "image/jpeg", "", newPath, MOCKED_DATE.atTime(MOCKED_TIME))
         val imageId = imageRepository.insertImage(image)
-        val itemImage = TransactionItemImagesPojo(null, itemId, imageId, MOCKED_DATE.atTime(MOCKED_TIME))
+        val itemImage = TransactionItemImagesPojo(null, itemId, imageId, 1_000, 1, MOCKED_DATE.atTime(MOCKED_TIME))
         itemImagesRepository.insertItemImage(itemImage)
         return imageId
     }

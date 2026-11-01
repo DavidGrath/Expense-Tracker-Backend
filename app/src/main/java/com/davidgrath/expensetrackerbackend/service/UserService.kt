@@ -13,6 +13,7 @@ import com.davidgrath.expensetrackerbackend.utils.CATEGORY_IDS_ICONS_DEFAULT
 import com.davidgrath.expensetrackerbackend.utils.CORE_CATEGORIES
 import com.davidgrath.expensetrackerbackend.utils.Constants
 import com.davidgrath.expensetrackerbackend.utils.toByte
+import com.davidgrath.expensetrackerbackend.utils.uuidToBytes
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -42,16 +43,18 @@ class UserService {
         val date = ZonedDateTime.now(clock)
         val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
 
+        //TODO Transaction
         //Create User
         val encryptedPassword = passwordEncoder.encode(password)
-        val uuid = UUID.randomUUID().toString()
+        val uuid = uuidToBytes(UUID.randomUUID()) //TODO JUG UUIDv7
         val user = UserPojo(null, uuid, username, encryptedPassword, "", utcDate)
         val userId = userRepository.insertUser(user)
 
         LOGGER.info("Created user {}", username)
 
         //Create profile
-        val profile = ProfilePojo(null, userId, "Default Profile", Constants.DEFAULT_PROFILE_ID, utcDate)
+        val profileUuid = uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID))
+        val profile = ProfilePojo(null, userId, "Default Profile", profileUuid, utcDate)
         val profileId = profileRepository.insertProfile(profile)
         LOGGER.info("Created default profile for user {}", username)
 

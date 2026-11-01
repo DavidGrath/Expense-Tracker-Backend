@@ -8,7 +8,6 @@ import java.time.LocalTime
 data class TransactionWithItemAndAccount(
     val transactionId: Long,
     val transactionAmount: BigDecimal,
-    val transactionReferenceNumber: String?,
     val transactionDebitOrCredit: Byte,
     val transactionDatedAt: LocalDate,
     val transactionTime: LocalTime?,
@@ -26,7 +25,6 @@ data class TransactionWithItemAndAccount(
     val itemQuantity: Int,
     val itemBrand: String?,
     val itemVariation: String?,
-    val itemReferenceNumber: String?,
     val itemIsReduction: Byte,
     val categoryId: Long,
     val categoryName: String?,

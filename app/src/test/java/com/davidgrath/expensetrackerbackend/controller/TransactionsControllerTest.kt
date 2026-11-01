@@ -17,6 +17,7 @@ import com.davidgrath.expensetrackerbackend.testutils.*
 import com.davidgrath.expensetrackerbackend.utils.Constants
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.JWT_ALG
+import com.davidgrath.expensetrackerbackend.utils.bytesToUUID
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.ObjectWriter
 import org.hamcrest.Matchers
@@ -88,7 +89,7 @@ class TransactionsControllerTest {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
         val misc = categoryRepository.findByProfileIdAndStringId(profile.id!!, "miscellaneous")
         val objectWriter: ObjectWriter = ObjectMapper().writer()
@@ -99,7 +100,7 @@ class TransactionsControllerTest {
             .perform(
                 MockMvcRequestBuilders.post("/transactions/basic")
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!).toString())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(json)
             )
@@ -116,7 +117,7 @@ class TransactionsControllerTest {
             .perform(
                 MockMvcRequestBuilders.post("/transactions/basic")
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!).toString())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(json)
             )
@@ -133,10 +134,10 @@ class TransactionsControllerTest {
     fun givenAccountIdExistsAndAccountIdBelongsToAnotherUserWhenCreateTransactionThenNotFound() {
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 
         val userId = userService.createUser("user2", "password", Locale.US)
-        val profile2 = profileRepository.findByStringId(userId, Constants.DEFAULT_PROFILE_ID)!!
+        val profile2 = profileRepository.findByUuid(userId, Constants.DEFAULT_PROFILE_ID)!!
         val accounts = accountRepository.getAllByProfileId(profile2.id!!)
         val misc = categoryRepository.findByProfileIdAndStringId(profile.id!!, "miscellaneous") //TODO This should cause a failure
         var basicTransactionRequest = BasicTransactionCreateRequest(accounts[0].id!!, true, BigDecimal.TEN, "Description", misc!!.id, "Etc/UTC")
@@ -148,7 +149,7 @@ class TransactionsControllerTest {
             .perform(
                 MockMvcRequestBuilders.post("/transactions/basic")
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!).toString())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(json)
             )
@@ -164,10 +165,10 @@ class TransactionsControllerTest {
     fun givenCategoryIdExistsAndCategoryIdBelongsToAnotherUserWhenCreateTransactionThenNotFound() {
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 
         val userId = userService.createUser("user2", "password", Locale.US)
-        val profile2 = profileRepository.findByStringId(userId, Constants.DEFAULT_PROFILE_ID)!!
+        val profile2 = profileRepository.findByUuid(userId, Constants.DEFAULT_PROFILE_ID)!!
         val accounts = accountRepository.getAllByProfileId(profile.id!!)
         val misc = categoryRepository.findByProfileIdAndStringId(profile2.id!!, "miscellaneous") //TODO This should cause a failure
         var basicTransactionRequest = BasicTransactionCreateRequest(accounts[0].id!!, true, BigDecimal.TEN, "Description", misc!!.id, "Etc/UTC")
@@ -179,7 +180,7 @@ class TransactionsControllerTest {
             .perform(
                 MockMvcRequestBuilders.post("/transactions/basic")
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!).toString())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(json)
             )
@@ -233,7 +234,7 @@ class TransactionsControllerTest {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
         val misc = categoryRepository.findByProfileIdAndStringId(profile.id!!, "miscellaneous")
         val objectWriter: ObjectWriter = ObjectMapper().writer()
@@ -244,7 +245,7 @@ class TransactionsControllerTest {
             .perform(
                 MockMvcRequestBuilders.post("/transactions/basic")
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!).toString())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(json)
             )
@@ -290,7 +291,7 @@ class TransactionsControllerTest {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
         val misc = categoryRepository.findByProfileIdAndStringId(profile.id!!, "miscellaneous")
 
@@ -301,7 +302,7 @@ class TransactionsControllerTest {
                 MockMvcRequestBuilders.get(TransactionsApi.PATH_TRANSACTIONS_GET)
                     .param("accountIds", accountId.toString())
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!).toString())
             )
             .andExpectAll(
                 MockMvcResultMatchers.status().isOk,

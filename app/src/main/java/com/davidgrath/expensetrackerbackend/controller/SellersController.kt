@@ -33,7 +33,7 @@ class SellersController: SellersApi {
         val principal = authentication.principal as Jwt
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
-        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
 
         val sellers = sellerService.getAll(profile.id!!)
         val apiSellers = sellers.map { s ->
@@ -50,7 +50,7 @@ class SellersController: SellersApi {
         val principal = authentication.principal as Jwt
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
-        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
 
         if(!sellerService.isSellerForUser(user.id!!, id)) {
             val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
@@ -71,7 +71,7 @@ class SellersController: SellersApi {
         }
         val locations = sellerService.getAllSellerLocations(profile.id!!, id)
         val apiLocations = locations.map { l ->
-            SellerLocation(l.id, l.location)
+            SellerLocation(l.id, l.name)
         }
         val details = SellerDetails(seller.id, seller.name, apiLocations)
         return ResponseEntity.ok(details)
@@ -85,7 +85,7 @@ class SellersController: SellersApi {
         val principal = authentication.principal as Jwt
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
-        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
 
         if(!sellerService.isSellerForUser(user.id!!, id)) {
             val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
@@ -107,7 +107,7 @@ class SellersController: SellersApi {
         }
         val locations = sellerService.getAllSellerLocations(profile.id!!, id)
         val apiLocations = locations.map { l ->
-            SellerLocation(l.id, l.location)
+            SellerLocation(l.id, l.name)
         }
 
         return ResponseEntity.ok(apiLocations)
@@ -122,7 +122,7 @@ class SellersController: SellersApi {
         val principal = authentication.principal as Jwt
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
-        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
 
         if(!sellerService.isSellerForUser(user.id!!, id)) {
             val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
@@ -163,7 +163,7 @@ class SellersController: SellersApi {
             LOGGER.error("Location not found", exception)
             throw exception
         }
-        val apiLocation = SellerLocation(location.id, location.location)
+        val apiLocation = SellerLocation(location.id, location.name)
 
         return ResponseEntity.ok(apiLocation)
     }
@@ -178,7 +178,7 @@ class SellersController: SellersApi {
         val principal = authentication.principal as Jwt
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
-        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
 
         if(!sellerService.isSellerForUser(user.id!!, id)) {
             val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
@@ -236,7 +236,7 @@ class SellersController: SellersApi {
         val principal = authentication.principal as Jwt
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
-        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
 
 
         if(!sellerService.isSellerForUser(user.id!!, id)) {
@@ -265,13 +265,13 @@ class SellersController: SellersApi {
         }
 
 
-        val nameTrimmed = sellerLocationCreateRequest!!.name.trim()
+        val nameTrimmed = sellerLocationCreateRequest!!.name.trim() //TODO General category Control characters, Mark, Separator
         if(nameTrimmed.isBlank()) {
             val exception = CustomHttpException(ErrorCode.INVALID_INPUT, HttpStatus.BAD_REQUEST)
             LOGGER.error("Name blank", exception)
             throw exception
         }
-        val locationId = sellerService.createSellerLocation(id, nameTrimmed)
+        val locationId = sellerService.createSellerLocation(profile.id!!, id, nameTrimmed)
         return ResponseEntity.ok(locationId)
     }
 
@@ -284,7 +284,7 @@ class SellersController: SellersApi {
         val principal = authentication.principal as Jwt
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
-        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
 
 
         if(!sellerService.isSellerForUser(user.id!!, id)) {
@@ -323,7 +323,7 @@ class SellersController: SellersApi {
         val principal = authentication.principal as Jwt
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
-        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
 
         val sellerCount = sellerService.countAllSellers(profile.id!!)
         if(sellerCount >= Constants.Constraints.MAX_SELLERS_PER_PROFILE) {

@@ -35,7 +35,7 @@ fun file(vararg segments: String): File {
 fun getDefaultAccountId(userRepository: UserRepository, profileRepository: ProfileRepository, accountRepository: AccountRepository): Long {
 
     val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-    val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+    val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
     val accountId = accountRepository.getAllByProfileId(profile.id!!).firstOrNull()!!.id
     return accountId!!
 }
@@ -80,10 +80,10 @@ fun tempInit(component: TestUtilComponent, timeHandler: TimeHandler): Unit {
     val profileRepository = component.profileRepository
     val accountRepository = component.accountRepository
     val categoryRepository = component.categoryRepository
-    val user = UserPojo(null, TestConstants.DEFAULT_USER_ID, "username", "password", "", LocalDateTime.now(timeHandler.getClock()))
+    val user = UserPojo(null, uuidToBytes(UUID.fromString(TestConstants.DEFAULT_USER_ID)), "username", "password", "", LocalDateTime.now(timeHandler.getClock()))
     val id = userRepository.insertUser(user)
     val userDb = userRepository.findById(id)!!
-    val profile = profileRepository.findByStringId(userDb.id!!, Constants.DEFAULT_PROFILE_ID)
+    val profile = profileRepository.findByUuid(userDb.id!!, Constants.DEFAULT_PROFILE_ID)
         if(profile == null) {
             val defaultProfile = tempCreateDefaultProfile(userDb, profileRepository, timeHandler)
             tempInitProfile(defaultProfile, accountRepository, timeHandler)
@@ -95,9 +95,9 @@ fun tempCreateDefaultProfile(user: UserPojo, profileRepository: ProfileRepositor
     val clock = timeHandler.getClock()
     val date = ZonedDateTime.now(clock)
     val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
-    val profile = ProfilePojo(null, user.id!!, "Default", Constants.DEFAULT_PROFILE_ID, utcDate)
+    val profile = ProfilePojo(null, user.id!!, "Default", uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID)), utcDate)
     val id = profileRepository.insertProfile(profile)
-    return profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+    return profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 }
 
 fun tempInitProfile(profile: ProfilePojo, accountRepository: AccountRepository, timeHandler: TimeHandler): Long {
@@ -126,7 +126,7 @@ fun tempInitProfile(profile: ProfilePojo, accountRepository: AccountRepository, 
             )
             val id = accountRepository.insertAccount(account)
             defaultAccount = accountRepository.findByProfileIdAndId(profile.id!!, id)!!
-            LOGGER.info("Created default account for profile ${profile.stringId}")
+            LOGGER.info("Created default account for profile ${bytesToUUID(profile.uuid!!)}")
         }
         return profile.id!!
 

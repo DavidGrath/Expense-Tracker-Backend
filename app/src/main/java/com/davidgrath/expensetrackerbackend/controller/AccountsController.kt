@@ -39,7 +39,7 @@ class AccountsController: AccountsApi {
         val principal = authentication.principal as Jwt
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
-        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
 
         val accounts = accountService.getAccountsForProfile(profile.id!!)
         val apiAccounts = accounts.map { a ->
@@ -53,7 +53,7 @@ class AccountsController: AccountsApi {
         val principal = authentication.principal as Jwt
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
-        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
 
         val accounts = accountService.getAccountSummariesForProfile(profile.id!!)
         val apiAccounts = accounts.map { a ->
@@ -71,7 +71,7 @@ class AccountsController: AccountsApi {
         val principal = authentication.principal as Jwt
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
-        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
 
         val account = accountService.getAccountSummary(profile.id!!, id)
         if(account == null) {
@@ -92,7 +92,7 @@ class AccountsController: AccountsApi {
         val principal = authentication.principal as Jwt
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
-        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
 
         if(!accountService.isAccountForUser(user.id!!, id)) {
             val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
@@ -123,7 +123,7 @@ class AccountsController: AccountsApi {
         val principal = authentication.principal as Jwt
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
-        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
         val existing = accountService.getAccountsForProfile(profile.id!!)
         if(existing.size >= Constants.Constraints.MAX_ACCOUNTS_PER_PROFILE) {
             val exception = CustomHttpException(ErrorCode.LIMITS_EXCEEDED, HttpStatus.BAD_REQUEST)

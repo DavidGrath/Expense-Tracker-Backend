@@ -13,6 +13,7 @@ import com.davidgrath.expensetrackerbackend.testutils.createBearerToken
 import com.davidgrath.expensetrackerbackend.utils.Constants
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.JWT_ALG
+import com.davidgrath.expensetrackerbackend.utils.bytesToUUID
 import com.davidgrath.expensetrackerbackend.utils.file
 import com.davidgrath.expensetrackerbackend.utils.getSha256
 import org.hamcrest.Matchers
@@ -78,10 +79,13 @@ class FilesControllerTest {
         val userUuid = userService.getByUsername("username")!!.uuid
         val userProfile = profileRepository.findAllByUserId(userId)[0]
 
-        val documentsPath = "profiles/${userProfile.stringId}/data/documents"
+        val userUuidString = bytesToUUID(userUuid!!).toString()
+        val profileUuidString = bytesToUUID(userProfile.uuid!!).toString()
+
+        val documentsPath = "profiles/${profileUuidString}/data/documents"
         val resource = TestData.Resource.Documents.EVIDENCE_IMAGE
         val filePath = "$documentsPath/${resource.fileName}"
-        val documentsFolder = file(rootFolder, "users", userUuid!!, Constants.FOLDER_NAME_PROFILES, userProfile.stringId!!,
+        val documentsFolder = file(rootFolder, "users", userUuidString, Constants.FOLDER_NAME_PROFILES, profileUuidString,
             Constants.FOLDER_NAME_DATA, Constants.SUBFOLDER_NAME_DOCUMENTS)
         documentsFolder.mkdirs()
         val document = File(documentsFolder, resource.fileName)
@@ -122,10 +126,12 @@ class FilesControllerTest {
         val userUuid = userService.getByUsername("username")!!.uuid
         val userProfile = profileRepository.findAllByUserId(userId)[0]
 
-        val documentsPath = "profiles/${userProfile.stringId}/data/documents"
+        val userUuidString = bytesToUUID(userUuid!!).toString()
+        val profileUuidString = bytesToUUID(userProfile.uuid!!).toString()
+        val documentsPath = "profiles/${profileUuidString}/data/documents"
         val resource = TestData.Resource.Documents.EVIDENCE_IMAGE
         val filePath = "$documentsPath/${resource.fileName}"
-        val documentsFolder = file(rootFolder, "users", userUuid!!, Constants.FOLDER_NAME_PROFILES, userProfile.stringId!!,
+        val documentsFolder = file(rootFolder, "users", userUuidString, Constants.FOLDER_NAME_PROFILES, profileUuidString,
             Constants.FOLDER_NAME_DATA, Constants.SUBFOLDER_NAME_DOCUMENTS)
         documentsFolder.mkdirs()
         val document = File(documentsFolder, resource.fileName)

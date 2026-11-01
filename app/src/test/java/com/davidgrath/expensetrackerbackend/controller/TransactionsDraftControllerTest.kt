@@ -17,6 +17,8 @@ import com.davidgrath.expensetrackerbackend.service.UserService
 import com.davidgrath.expensetrackerbackend.testutils.*
 import com.davidgrath.expensetrackerbackend.utils.Constants
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.JWT_ALG
+import com.davidgrath.expensetrackerbackend.utils.bytesToUUID
+import com.davidgrath.expensetrackerbackend.utils.uuidToBytes
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.ObjectWriter
 import org.hamcrest.Matchers
@@ -90,8 +92,8 @@ class TransactionsDraftControllerTest {
     fun givenItemCountIsMaxWhenAddItemThenBadRequest() {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
-        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val user = userRepository.findByUuid(uuidToBytes(UUID.fromString(TestConstants.DEFAULT_USER_ID)))!!
+        val profile = profileRepository.findByUuid(user.id!!, uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID)))!!
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
 
         val remaining = Constants.Constraints.MAX_ITEMS_PER_TRANSACTION - 1
@@ -105,7 +107,7 @@ class TransactionsDraftControllerTest {
             .perform(
                 MockMvcRequestBuilders.post("/transactions/draft/items")
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", Constants.DEFAULT_PROFILE_ID)
             )
             .andExpectAll(
                 MockMvcResultMatchers.status().isBadRequest,
@@ -119,8 +121,8 @@ class TransactionsDraftControllerTest {
     fun givenDraftNotExistWhenPerformAnyOtherOperationThanPostThenNotFound() {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
-        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val user = userRepository.findByUuid(uuidToBytes(UUID.fromString(TestConstants.DEFAULT_USER_ID)))!!
+        val profile = profileRepository.findByUuid(user.id!!, uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID)))!!
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
         val misc = categoryRepository.findByProfileIdAndStringId(profile.id!!, "miscellaneous")
 
@@ -128,7 +130,7 @@ class TransactionsDraftControllerTest {
             .perform(
                 MockMvcRequestBuilders.post("/transactions/draft/items")
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", Constants.DEFAULT_PROFILE_ID)
             )
             .andExpectAll(
                 MockMvcResultMatchers.status().isNotFound,
@@ -147,11 +149,11 @@ class TransactionsDraftControllerTest {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
         val misc = categoryRepository.findByProfileIdAndStringId(profile.id!!, "miscellaneous")
         val user2Id = userService.createUser("user2", "password", Locale.US)
-        val profile2 = profileRepository.findByStringId(user2Id, Constants.DEFAULT_PROFILE_ID)!!
+        val profile2 = profileRepository.findByUuid(user2Id, Constants.DEFAULT_PROFILE_ID)!!
 
         val date = ZonedDateTime.now(timeHandler.getClock())
         val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
@@ -167,7 +169,7 @@ class TransactionsDraftControllerTest {
             .perform(
                 MockMvcRequestBuilders.put("/transactions/draft")
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(json)
             )
@@ -184,7 +186,7 @@ class TransactionsDraftControllerTest {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
         val misc = categoryRepository.findByProfileIdAndStringId(profile.id!!, "miscellaneous")
         transactionDraftService.createDraft(profile!!.id!!, accountId)
@@ -193,7 +195,7 @@ class TransactionsDraftControllerTest {
             .perform(
                 MockMvcRequestBuilders.post("/transactions/draft")
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
             )
             .andExpectAll(
                 MockMvcResultMatchers.status().isBadRequest,
@@ -208,7 +210,7 @@ class TransactionsDraftControllerTest {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
         val misc = categoryRepository.findByProfileIdAndStringId(profile.id!!, "miscellaneous")
         transactionDraftService.createDraft(profile!!.id!!, accountId)
@@ -231,7 +233,7 @@ class TransactionsDraftControllerTest {
                 MockMvcRequestBuilders.multipart("/transactions/draft/items/{uuid}/images", uuid)
                     .file(mockFile)
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
             )
             .andExpectAll(
                 MockMvcResultMatchers.status().isBadRequest
@@ -243,7 +245,7 @@ class TransactionsDraftControllerTest {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
         val misc = categoryRepository.findByProfileIdAndStringId(profile.id!!, "miscellaneous")
         transactionDraftService.createDraft(profile!!.id!!, accountId)
@@ -265,7 +267,7 @@ class TransactionsDraftControllerTest {
                 MockMvcRequestBuilders.multipart("/transactions/draft/items/{uuid}/images", uuid)
                     .file(mockFile)
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
             )
             .andExpectAll(
                 MockMvcResultMatchers.status().isOk
@@ -277,7 +279,7 @@ class TransactionsDraftControllerTest {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
         val misc = categoryRepository.findByProfileIdAndStringId(profile.id!!, "miscellaneous")
         transactionDraftService.createDraft(profile!!.id!!, accountId)
@@ -297,7 +299,7 @@ class TransactionsDraftControllerTest {
                     .file(mockFile)
                     .param("type", DocumentType.OTHER.value)
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
                     .content(byteArray)
             )
             .andExpectAll(
@@ -311,7 +313,7 @@ class TransactionsDraftControllerTest {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
         val misc = categoryRepository.findByProfileIdAndStringId(profile.id!!, "miscellaneous")
         transactionDraftService.createDraft(profile!!.id!!, accountId)
@@ -320,7 +322,7 @@ class TransactionsDraftControllerTest {
             .perform(
                 MockMvcRequestBuilders.post("/transactions")
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
             )
             .andExpectAll(
                 MockMvcResultMatchers.status().isBadRequest, // Pass an array of `errorCode`s or just a general bad request?
@@ -339,7 +341,7 @@ class TransactionsDraftControllerTest {
             .perform(
                 MockMvcRequestBuilders.put("/transactions/draft/items/{uuid}", uuid)
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(json)
             )
@@ -351,7 +353,7 @@ class TransactionsDraftControllerTest {
             .perform(
                 MockMvcRequestBuilders.post("/transactions")
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
             )
             .andExpectAll(
                 MockMvcResultMatchers.status().isBadRequest,
@@ -363,7 +365,7 @@ class TransactionsDraftControllerTest {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByStringId(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
 
 
@@ -378,7 +380,7 @@ class TransactionsDraftControllerTest {
             .perform(
                 MockMvcRequestBuilders.delete("/transactions/draft/items/{uuid}", uuid)
                     .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", profile.stringId)
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
             )
             .andExpectAll(
                 MockMvcResultMatchers.status().isBadRequest,

@@ -37,7 +37,7 @@ public class DocumentsController: DocumentsApi {
         val principal = authentication.principal as Jwt
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
-        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
 
         val scheme = httpServletRequest.scheme
         val host = httpServletRequest.serverName
@@ -59,7 +59,7 @@ public class DocumentsController: DocumentsApi {
         val principal = authentication.principal as Jwt
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
-        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
 
         if(!documentService.isDocumentForUser(user.id!!, id)) {
             val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
@@ -94,7 +94,7 @@ public class DocumentsController: DocumentsApi {
         val principal = authentication.principal as Jwt
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
-        val profile = profileService.getByUserIdAndStringId(user!!.id!!, profileId!!)!!
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
 
         val stats = documentService.getDocumentStats(profile.id!!)
         val countAndSize = ImageDocumentStats(stats.count, stats.totalSizeBytes)
