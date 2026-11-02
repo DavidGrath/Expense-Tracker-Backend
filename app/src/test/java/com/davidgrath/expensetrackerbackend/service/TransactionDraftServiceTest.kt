@@ -231,7 +231,7 @@ class TransactionDraftServiceTest {
 
         val draft = transactionDraftService.getDraft(profileId)
         val firstItem = draft!!.items[0]
-        val modifiedFirst = firstItem.copy(amount = BigDecimal.TEN)
+        val modifiedFirst = firstItem.copy(amount = BigDecimal.TEN, description = "Description")
         transactionDraftService.modifyDraftItem(profileId, firstItem.uuid!!, modifiedFirst)
 
         val transactionId = transactionDraftService.finishDraft(profileId, user.uuid!!, profile.uuid!!,ZoneId.of("UTC"))
@@ -261,7 +261,7 @@ class TransactionDraftServiceTest {
 
         var draft = transactionDraftService.getDraft(profileId)!!
         val items = draft.items.toMutableList()
-        items[0] = items[0].copy(amount = BigDecimal(100))
+        items[0] = items[0].copy(amount = BigDecimal(100), description = "Description")
         draft = draft.copy(items = items)
 
         val jsonString = gson.toJson(draft)
@@ -357,7 +357,7 @@ class TransactionDraftServiceTest {
 
         var draft = transactionDraftService.getDraft(profileId)!!
         val items = draft.items.toMutableList()
-        items[0] = items[0].copy(amount = BigDecimal(100))
+        items[0] = items[0].copy(amount = BigDecimal(100), description = "Description")
         draft = draft.copy(items = items)
 
         val jsonString = gson.toJson(draft)
@@ -399,7 +399,7 @@ class TransactionDraftServiceTest {
 
         var draft = transactionDraftService.getDraft(profileId)!!
         val items = draft.items.toMutableList()
-        items[0] = items[0].copy(amount = BigDecimal(100))
+        items[0] = items[0].copy(amount = BigDecimal(100), description = "Description")
         draft = draft.copy(items = items)
 
         val jsonString = gson.toJson(draft)
@@ -468,7 +468,7 @@ class TransactionDraftServiceTest {
         var draft = transactionDraftService.getDraft(profileId)!!.copy(imageHashes = map)
 
         val items = draft.items.toMutableList()
-        items[0] = items[0].copy(amount = BigDecimal(100))
+        items[0] = items[0].copy(amount = BigDecimal(100), description = "Description")
         draft = draft.copy(items = items)
 
         val gson = GsonBuilder()
@@ -559,8 +559,11 @@ class TransactionDraftServiceTest {
         val resources = arrayOf(
             TestData.Resource.Images.DUMBBELLS_1,
             TestData.Resource.Images.DUMBBELLS_2,
-            TestData.Resource.Images.DUMBBELLS_3
+            TestData.Resource.Images.DUMBBELLS_3,
+            TestData.Resource.Images.TOOTHBRUSH,
+            TestData.Resource.Images.HAMMER,
         )
+        assertEquals(Constants.Constraints.MAX_IMAGES_PER_ITEM, resources.size) //TODO remove this when I move to image modification
 
         val classLoader = TransactionDraftServiceTest::class.java.classLoader!!
         val tempFolder = Files.createTempDirectory("temp").toFile()
@@ -693,7 +696,7 @@ class TransactionDraftServiceTest {
 
         var draft = transactionDraftService.getDraft(profileId)!!.copy(documentHashes = map)
         val items = draft.items.toMutableList()
-        items[0] = items[0].copy(amount = BigDecimal(100))
+        items[0] = items[0].copy(amount = BigDecimal(100), description = "Description")
         draft = draft.copy(items = items)
 
         val jsonString = gson.toJson(draft)
@@ -728,7 +731,7 @@ class TransactionDraftServiceTest {
 
         var draft = transactionDraftService.getDraft(profileId)!!
         val items = draft.items.toMutableList()
-        items[0] = items[0].copy(amount = BigDecimal(100))
+        items[0] = items[0].copy(amount = BigDecimal(100), description = "Description")
         draft = draft.copy(items = items)
 
         val jsonString = gson.toJson(draft)

@@ -59,7 +59,6 @@ Also, Java version is 17
 * Coroutines with MDCContext
 * JaCoCo
 * detekt
-* Constraints and constraint tests
 * Consider using Hibernate validators
 * Time zone consistency
 ** JVM (`-Duser.timezone`)

@@ -1,4 +1,4 @@
-ALTER TABLE `category` ADD COLUMN `icon` VARCHAR(255) NOT NULL default 'materialsymbols:category';
+ALTER TABLE `category` ADD COLUMN `icon` VARCHAR(255) NOT NULL default 'materialsymbols:category';#TODO Maybe use a lookup table instead
 UPDATE `category` SET `icon`='materialsymbols:restaurant' WHERE `string_id`='food';
 UPDATE `category` SET `icon`='materialsymbols:home' WHERE `string_id`='rent';
 UPDATE `category` SET `icon`='materialsymbols:construction' WHERE `string_id`='utilities';

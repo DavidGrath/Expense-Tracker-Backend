@@ -10,7 +10,7 @@ import com.davidgrath.expensetrackerbackend.generatedapi.model.*
 import java.net.URI
 import java.util.*
 
-fun Boolean.toByte(): Byte {
+fun Boolean.toByte(): Byte { //TODO replace this: it's just 2 constants
     return if(this) {
         1
     } else {
@@ -18,7 +18,7 @@ fun Boolean.toByte(): Byte {
     }
 }
 
-fun Byte?.toBoolean(): Boolean {
+fun Byte?.toBoolean(): Boolean { //TODO But this one. we'll look into this a bit more
     return if(this == null) {
         false
     } else if (this == 0.toByte()){
