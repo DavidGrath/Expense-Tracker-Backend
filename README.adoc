@@ -68,6 +68,9 @@ Also, Java version is 17
 * sessionVariables cte_max_recursion_depth=36524
 * Use `with recursive` for date generation
 * Custom controller method to toggle log levels in production
+* Most of my controller tests that are meant to impose limits on the counts of things are prone to a
+TOCTOU bug: reinforce at the service layer, and, where applicable rely on the occupancy slots as well
+* Add currency code as a filter criteria for search
 
 === Naming conventions for constraints
 * Primary Keys: `pk_<table_name>`
@@ -100,3 +103,7 @@ create user 'flyway'@'localhost' IDENTIFIED BY 'xxxxxxxx';
 GRANT INSERT,SELECT,UPDATE,DELETE ON expense_tracker_database.* TO 'expense_tracker'@'localhost';
 GRANT CREATE,SELECT,ALTER,INDEX,INSERT,UPDATE,REFERENCES ON expense_tracker_database.* TO 'flyway'@'localhost';
 ----
+
+== Database Conventions
+* Create a `Repostiory` method that takes a jooq `DSLContext` as the first parameter when working with (database) transactions
+** Ensure the method name is suffixed with `'Trx'`

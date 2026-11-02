@@ -17,32 +17,39 @@ import org.springframework.stereotype.Repository
 open class CategoryRepository {
 
     @Autowired
-    open lateinit var dslContext: DSLContext
+    open lateinit var mainContext: DSLContext
     open var CATEGORY: Category = Category.CATEGORY
 
     fun insertCategory(category: CategoryPojo): Long {
-        val categoryDb = dslContext.newRecord(CATEGORY, category)
+        return insertCategoryTrx(mainContext, category)
+    }
+    fun insertCategoryTrx(trxContext: DSLContext, category: CategoryPojo): Long {
+        val categoryDb = trxContext.newRecord(CATEGORY, category)
         categoryDb.store()
         return categoryDb.id!!
     }
 
 
     fun findByProfileIdAndStringId(profileId: Long, stringId: String): CategoryPojo? {
-        val selectStep = dslContext.selectFrom(CATEGORY)
+        return findByProfileIdAndStringIdTrx(mainContext, profileId, stringId)
+    }
+
+    fun findByProfileIdAndStringIdTrx(trxContext: DSLContext, profileId: Long, stringId: String): CategoryPojo? {
+        val selectStep = trxContext.selectFrom(CATEGORY)
             .where(CATEGORY.PROFILE_ID.eq(profileId))
             .and(CATEGORY.STRING_ID.eq(stringId))
         return selectStep.fetchOne()?.into(CategoryPojo::class.java)
     }
 
     fun findByProfileIdAndId(profileId: Long, id: Long): CategoryPojo? {
-        val selectStep = dslContext.selectFrom(CATEGORY)
+        val selectStep = mainContext.selectFrom(CATEGORY)
             .where(CATEGORY.PROFILE_ID.eq(profileId))
             .and(CATEGORY.ID.eq(id))
         return selectStep.fetchOne()?.into(CategoryPojo::class.java)
     }
 
     fun findByUserIdAndId(userId: Long, id: Long): Long? {
-        val selectStep = dslContext.select(CATEGORY.ID)
+        val selectStep = mainContext.select(CATEGORY.ID)
             .from(CATEGORY)
             .innerJoin(PROFILE).on(PROFILE.ID.eq(CATEGORY.PROFILE_ID))
             .where(PROFILE.USER_ID.eq(userId))
@@ -51,7 +58,7 @@ open class CategoryRepository {
     }
 
     fun getAllByProfileId(profileId: Long): List<CategoryPojo> {
-        val selectStep = dslContext.selectFrom(CATEGORY)
+        val selectStep = mainContext.selectFrom(CATEGORY)
             .where(CATEGORY.PROFILE_ID.eq(profileId))
             .limit(DEFAULT_FETCH_LIMIT)
         val result = selectStep.fetch().into(CategoryPojo::class.java)
@@ -61,13 +68,13 @@ open class CategoryRepository {
 
     fun getAllByProfileIdWithStats(profileId: Long): List<CategoryWithStats> {
 
-        val selectStep = dslContext.select(
+        val selectStep = mainContext.select(
             CATEGORY.ID, CATEGORY.PROFILE_ID, CATEGORY.STRING_ID, CATEGORY.IS_CUSTOM, CATEGORY.NAME, CATEGORY.ICON,
-            dslContext.select(DSL.countDistinct(TRANSACTION.ID))
+            mainContext.select(DSL.countDistinct(TRANSACTION.ID))
                 .from(TRANSACTION)
                 .innerJoin(TRANSACTION_ITEM).on(TRANSACTION.ID.eq(TRANSACTION_ITEM.ID))
                 .where(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.eq(CATEGORY.ID)).asField<Long>("transactionCount"),
-            dslContext.select(DSL.count(TRANSACTION_ITEM.ID))
+            mainContext.select(DSL.count(TRANSACTION_ITEM.ID))
                 .from(TRANSACTION_ITEM)
                 .where(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.eq(CATEGORY.ID)).asField<Long>("itemCount")
 
@@ -81,7 +88,7 @@ open class CategoryRepository {
     }
 
     fun updateCategory(id: Long, profileId: Long, name: String, icon: String): Int {
-        val updateStep = dslContext.update(CATEGORY)
+        val updateStep = mainContext.update(CATEGORY)
             .set(CATEGORY.NAME, name)
             .set(CATEGORY.ICON, icon)
             .where(CATEGORY.ID.eq(id))

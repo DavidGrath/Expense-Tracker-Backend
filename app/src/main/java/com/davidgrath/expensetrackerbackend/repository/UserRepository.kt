@@ -10,23 +10,26 @@ import org.springframework.stereotype.Repository
 import java.util.UUID
 
 @Repository
-class UserRepository @Autowired constructor(open var dslContext: DSLContext) {
+class UserRepository @Autowired constructor(open var mainContext: DSLContext) {
 
 
     fun insertUser(user: UserPojo): Long {
-        val user = dslContext.newRecord(USER, user)
+        return insertUserTrx(mainContext, user)
+    }
+    fun insertUserTrx(trxContext: DSLContext, user: UserPojo): Long {
+        val user = trxContext.newRecord(USER, user)
         user.store()
         return user.id!!
     }
 
     fun findById(id: Long): UserPojo? {
-        val selectStep = dslContext.selectFrom(USER)
+        val selectStep = mainContext.selectFrom(USER)
             .where(USER.ID.eq(id))
         return selectStep.fetchOne()?.into(UserPojo::class.java)
     }
 
     fun findByUuid(uuid: ByteArray): UserPojo? {
-        val selectStep = dslContext.selectFrom(USER)
+        val selectStep = mainContext.selectFrom(USER)
             .where(USER.UUID.eq(uuid))
         return selectStep.fetchOne()?.into(UserPojo::class.java)
     }
@@ -37,7 +40,7 @@ class UserRepository @Autowired constructor(open var dslContext: DSLContext) {
     }
 
     fun findByUsername(username: String): UserPojo? {
-        val selectStep = dslContext.selectFrom(USER)
+        val selectStep = mainContext.selectFrom(USER)
             .where(USER.USERNAME.eq(username))
         return selectStep.fetchOne()?.into(UserPojo::class.java)
     }

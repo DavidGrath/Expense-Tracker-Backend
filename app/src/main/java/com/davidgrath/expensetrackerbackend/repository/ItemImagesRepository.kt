@@ -16,16 +16,22 @@ import java.time.LocalDate
 open class ItemImagesRepository {
 
     @Autowired
-    open lateinit var dslContext: DSLContext
+    open lateinit var mainContext: DSLContext
 
     fun insertItemImage(transactionItemImages: TransactionItemImagesPojo): Long {
-        val itemImageDb = dslContext.newRecord(TRANSACTION_ITEM_IMAGES, transactionItemImages)
+        val itemImageDb = mainContext.newRecord(TRANSACTION_ITEM_IMAGES, transactionItemImages)
+        itemImageDb.store()
+        return itemImageDb.id!!
+    }
+
+    fun insertItemImageTrx(trxContext: DSLContext, transactionItemImages: TransactionItemImagesPojo): Long {
+        val itemImageDb = trxContext.newRecord(TRANSACTION_ITEM_IMAGES, transactionItemImages)
         itemImageDb.store()
         return itemImageDb.id!!
     }
 
     fun findByItemId(profileId: Long, itemId: Long): List<ImagePojo> {
-        val selectStep = dslContext.select(IMAGE.asterisk())
+        val selectStep = mainContext.select(IMAGE.asterisk())
             .from(IMAGE)
             .innerJoin(TRANSACTION_ITEM_IMAGES).on(TRANSACTION_ITEM_IMAGES.IMAGE_ID.eq(IMAGE.ID))
             .where(IMAGE.PROFILE_ID.eq(profileId))
@@ -41,7 +47,7 @@ open class ItemImagesRepository {
                         accountIds: List<Long>,
                         dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>
     ): List<ImageWithItemId> {
-        var selectStep = dslContext.select(
+        var selectStep = mainContext.select(
             TRANSACTION_ITEM_IMAGES.TRANSACTION_ITEM_ID.`as`("itemId"), IMAGE.asterisk()
         )
             .from(IMAGE)
@@ -64,7 +70,7 @@ open class ItemImagesRepository {
         }
         if(categories.isNotEmpty()) {
             selectStep = selectStep.and(TRANSACTION.ID.`in`(
-                dslContext.select(TRANSACTION.ID).from(TRANSACTION).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.TRANSACTION_ID.eq(TRANSACTION.ID)).where(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.`in`(categories))
+                mainContext.select(TRANSACTION.ID).from(TRANSACTION).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.TRANSACTION_ID.eq(TRANSACTION.ID)).where(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.`in`(categories))
             ))
         }
         if(modes.isNotEmpty()) {

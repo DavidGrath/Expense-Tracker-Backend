@@ -18,12 +18,15 @@ import java.math.BigDecimal
 open class AccountRepository {
 
     @Autowired
-    open lateinit var dslContext: DSLContext
+    open lateinit var mainContext: DSLContext
 
     //region Create
 
     fun insertAccount(account: AccountPojo): Long {
-        val accountDb = dslContext.newRecord(ACCOUNT, account)
+        return insertAccountTrx(mainContext, account)
+    }
+    fun insertAccountTrx(trxContext: DSLContext, account: AccountPojo): Long {
+        val accountDb = trxContext.newRecord(ACCOUNT, account)
         accountDb.store()
         return accountDb.id!!
     }
@@ -38,7 +41,7 @@ open class AccountRepository {
     }*/
 
     fun findByProfileIdAndId(profileId: Long, id: Long): AccountPojo? {
-        val selectStep = dslContext.selectFrom(ACCOUNT)
+        val selectStep = mainContext.selectFrom(ACCOUNT)
             .where(ACCOUNT.PROFILE_ID.eq(profileId))
             .and(ACCOUNT.ID.eq(id))
         return selectStep.fetchOne()?.into(AccountPojo::class.java)
@@ -47,24 +50,28 @@ open class AccountRepository {
 
 
     fun getAllByProfileId(profileId: Long): List<AccountPojo> {
-        val selectStep = dslContext.selectFrom(ACCOUNT)
+        val selectStep = mainContext.selectFrom(ACCOUNT)
             .where(ACCOUNT.PROFILE_ID.eq(profileId))
             .limit(DEFAULT_FETCH_LIMIT)
         val result = selectStep.fetch().into(AccountPojo::class.java)
-        //TODO, also run pre-count queries for every single fetch and print whether the count exceeds the limit
+        //TODO, also run pre-count queries for every practical fetch and print whether the count exceeds the limit
         LOGGER.info("Result size: {}", result.size)
         return result
     }
 
     fun getByProfileIdAndId(profileId: Long, id: Long): AccountPojo? {
-        val selectStep = dslContext.selectFrom(ACCOUNT)
+        return getByProfileIdAndIdTrx(mainContext, profileId, id)
+    }
+
+    fun getByProfileIdAndIdTrx(trxContext: DSLContext, profileId: Long, id: Long): AccountPojo? {
+        val selectStep = trxContext.selectFrom(ACCOUNT)
             .where(ACCOUNT.PROFILE_ID.eq(profileId))
             .and(ACCOUNT.ID.eq(id))
         return selectStep.fetchOne()?.into(AccountPojo::class.java)
     }
 
     fun getByUserIdAndId(userId: Long, id: Long): AccountPojo? {
-        val selectStep = dslContext.select(ACCOUNT.asterisk())
+        val selectStep = mainContext.select(ACCOUNT.asterisk())
             .from(ACCOUNT)
             .innerJoin(PROFILE).on(PROFILE.ID.eq(ACCOUNT.PROFILE_ID))
             .where(PROFILE.USER_ID.eq(userId))
@@ -73,7 +80,7 @@ open class AccountRepository {
     }
 
     fun getAllByUserId(userId: Long): List<AccountPojo> {
-        val selectStep = dslContext.select(ACCOUNT.asterisk())
+        val selectStep = mainContext.select(ACCOUNT.asterisk())
             .from(ACCOUNT)
             .innerJoin(PROFILE).on(PROFILE.ID.eq(ACCOUNT.PROFILE_ID))
             .where(PROFILE.USER_ID.eq(userId))
@@ -84,12 +91,12 @@ open class AccountRepository {
     }
 
     fun getAccountSummary(profileId: Long, id: Long): AccountWithStats? {
-        val selectStep = dslContext
+        val selectStep = mainContext
             .select(ACCOUNT.asterisk(),
-                dslContext.select(DSL.ifnull(DSL.sum(TRANSACTION.AMOUNT), BigDecimal.ZERO)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID).and(TRANSACTION.DEBIT_OR_CREDIT.notEqual(0))).asField<BigDecimal>().`as`("expenses"),
-                dslContext.select(DSL.ifnull(DSL.sum(TRANSACTION.AMOUNT), BigDecimal.ZERO)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID).and(TRANSACTION.DEBIT_OR_CREDIT.equal(0))).asField<BigDecimal>().`as`("income"),
-                dslContext.select(DSL.count(TRANSACTION.ID)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID)).asField<Long>().`as`("transactionCount"),
-                dslContext.select(DSL.count(TRANSACTION_ITEM.ID)).from(TRANSACTION_ITEM)
+                mainContext.select(DSL.ifnull(DSL.sum(TRANSACTION.AMOUNT), BigDecimal.ZERO)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID).and(TRANSACTION.DEBIT_OR_CREDIT.notEqual(0))).asField<BigDecimal>().`as`("expenses"),
+                mainContext.select(DSL.ifnull(DSL.sum(TRANSACTION.AMOUNT), BigDecimal.ZERO)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID).and(TRANSACTION.DEBIT_OR_CREDIT.equal(0))).asField<BigDecimal>().`as`("income"),
+                mainContext.select(DSL.count(TRANSACTION.ID)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID)).asField<Long>().`as`("transactionCount"),
+                mainContext.select(DSL.count(TRANSACTION_ITEM.ID)).from(TRANSACTION_ITEM)
                     .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(TRANSACTION_ITEM.TRANSACTION_ID))
                     .where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID))
                     .asField<Long>().`as`("itemCount")
@@ -100,12 +107,12 @@ open class AccountRepository {
         return selectStep.fetchOne()?.into(AccountWithStats::class.java)
     }
     fun getAccountSummariesForProfile(profileId: Long): List<AccountWithStats> {
-        val selectStep = dslContext
+        val selectStep = mainContext
             .select(ACCOUNT.asterisk(),
-                dslContext.select(DSL.ifnull(DSL.sum(TRANSACTION.AMOUNT), BigDecimal.ZERO)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID).and(TRANSACTION.DEBIT_OR_CREDIT.notEqual(0))).asField<BigDecimal>().`as`("expenses"),
-                dslContext.select(DSL.ifnull(DSL.sum(TRANSACTION.AMOUNT), BigDecimal.ZERO)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID).and(TRANSACTION.DEBIT_OR_CREDIT.equal(0))).asField<BigDecimal>().`as`("income"),
-                dslContext.select(DSL.count(TRANSACTION.ID)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID)).asField<Long>().`as`("transactionCount"),
-                dslContext.select(DSL.count(TRANSACTION_ITEM.ID)).from(TRANSACTION_ITEM)
+                mainContext.select(DSL.ifnull(DSL.sum(TRANSACTION.AMOUNT), BigDecimal.ZERO)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID).and(TRANSACTION.DEBIT_OR_CREDIT.notEqual(0))).asField<BigDecimal>().`as`("expenses"),
+                mainContext.select(DSL.ifnull(DSL.sum(TRANSACTION.AMOUNT), BigDecimal.ZERO)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID).and(TRANSACTION.DEBIT_OR_CREDIT.equal(0))).asField<BigDecimal>().`as`("income"),
+                mainContext.select(DSL.count(TRANSACTION.ID)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID)).asField<Long>().`as`("transactionCount"),
+                mainContext.select(DSL.count(TRANSACTION_ITEM.ID)).from(TRANSACTION_ITEM)
                     .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(TRANSACTION_ITEM.TRANSACTION_ID))
                     .where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID))
                     .asField<Long>().`as`("itemCount")
@@ -122,7 +129,7 @@ open class AccountRepository {
     // region Update
 
     fun updateAccount(profileId: Long, id: Long, name: String): Int {
-        val updateStep = dslContext.update(ACCOUNT)
+        val updateStep = mainContext.update(ACCOUNT)
             .set(ACCOUNT.NAME, name)
             .where(ACCOUNT.ID.eq(id))
             .and(ACCOUNT.PROFILE_ID.eq(profileId))

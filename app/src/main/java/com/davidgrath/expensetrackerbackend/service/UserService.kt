@@ -43,51 +43,59 @@ class UserService {
         val date = ZonedDateTime.now(clock)
         val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
 
-        //TODO Transaction
+
         //Create User
         val encryptedPassword = passwordEncoder.encode(password)
         val uuid = uuidToBytes(UUID.randomUUID()) //TODO JUG UUIDv7
-        val user = UserPojo(null, uuid, username, encryptedPassword, "", utcDate)
-        val userId = userRepository.insertUser(user)
+        var userIdRet = -1L
+        profileRepository.transactionContext { trx ->
+            val trxContext = trx.dsl()
+            val user = UserPojo(null, uuid, username, encryptedPassword, "", utcDate)
+            val userId = userRepository.insertUserTrx(trxContext, user)
 
-        LOGGER.info("Created user {}", username)
 
-        //Create profile
-        val profileUuid = uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID))
-        val profile = ProfilePojo(null, userId, "Default Profile", profileUuid, utcDate)
-        val profileId = profileRepository.insertProfile(profile)
-        LOGGER.info("Created default profile for user {}", username)
+            LOGGER.info("Created user {}", username)
 
-        //Create Accounts
-        val currency = Currency.getInstance(locale)?.currencyCode ?: "USD"
-        val account = AccountPojo(null, profileId, currency, null, null, "Default Account", utcDate)
-        //TODO start transaction
-        accountRepository.insertAccount(account)
-        LOGGER.info("Created default account with currency code {}", currency)
-        //Create categories
+            //Create profile
+            val profileUuid = uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID))
+            val profile = ProfilePojo(null, userId, "Default Profile", profileUuid, utcDate)
+            val profileId = profileRepository.insertProfileTrx(trxContext, profile)
+            LOGGER.info("Created default profile for user {}", username)
 
-        var anyCategoryNotExist = false
-        for (category in CORE_CATEGORIES) {
-            val categoryDb = categoryRepository.findByProfileIdAndStringId(profileId, category)
-            if (categoryDb == null) {
-                val defaultIcon = CATEGORY_IDS_ICONS_DEFAULT[category]!!
-                anyCategoryNotExist = true
-                categoryRepository.insertCategory(
-                    CategoryPojo(
-                        null,
-                        profileId,
-                        category,
-                        false.toByte(),
-                        null,
-                        utcDate,
-                        defaultIcon
+
+            //Create Accounts
+            val currency = Currency.getInstance(locale)?.currencyCode ?: "USD"
+            val account = AccountPojo(null, profileId, currency, null, null, "Default Account", utcDate)
+
+            accountRepository.insertAccountTrx(trxContext, account) //TODO I made a mistake here where I didn't use the transaction context and it caused a lock wait timeout in 11 of my tests. I need to find a better way to make it more consistent
+            LOGGER.info("Created default account with currency code {}", currency)
+            //Create categories
+
+            var anyCategoryNotExist = false
+            for (category in CORE_CATEGORIES) {
+                val categoryDb = categoryRepository.findByProfileIdAndStringIdTrx(trxContext, profileId, category)
+                if (categoryDb == null) {
+                    val defaultIcon = CATEGORY_IDS_ICONS_DEFAULT[category]!!
+                    anyCategoryNotExist = true
+                    categoryRepository.insertCategoryTrx(trxContext,
+                        CategoryPojo(
+                            null,
+                            profileId,
+                            category,
+                            false.toByte(),
+                            null,
+                            utcDate,
+                            defaultIcon
+                        )
                     )
-                )
+                }
             }
+            LOGGER.info("Created default categories")
+            LOGGER.info("Any category not exist: {}", anyCategoryNotExist)
+            userIdRet = userId
         }
-        LOGGER.info("Created default categories")
-        LOGGER.info("Any category not exist: {}", anyCategoryNotExist)
-        return userId
+
+        return userIdRet
     }
 
     fun doesUserExist(username: String): Boolean {

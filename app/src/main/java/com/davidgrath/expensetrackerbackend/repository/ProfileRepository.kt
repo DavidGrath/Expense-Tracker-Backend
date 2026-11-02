@@ -5,6 +5,7 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ProfileP
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.DEFAULT_FETCH_LIMIT
 import com.davidgrath.expensetrackerbackend.utils.uuidToBytes
 import org.jooq.DSLContext
+import org.jooq.TransactionalRunnable
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Repository
@@ -14,17 +15,20 @@ import java.util.UUID
 open class ProfileRepository {
 
     @Autowired
-    open lateinit var dslContext: DSLContext
+    open lateinit var mainContext: DSLContext
     open var PROFILE: Profile = Profile.PROFILE
 
     fun insertProfile(profile: ProfilePojo): Long {
-        val profileDb = dslContext.newRecord(PROFILE, profile)
+        return insertProfileTrx(mainContext, profile)
+    }
+    fun insertProfileTrx(trxContext: DSLContext, profile: ProfilePojo): Long {
+        val profileDb = trxContext.newRecord(PROFILE, profile)
         profileDb.store()
         return profileDb.id!!
     }
 
     fun findByUuid(userId: Long, uuid: ByteArray): ProfilePojo? {
-        val selectStep = dslContext.selectFrom(PROFILE)
+        val selectStep = mainContext.selectFrom(PROFILE)
             .where(PROFILE.USER_ID.eq(userId))
             .and(PROFILE.UUID.eq(uuid))
         return selectStep.fetchOne()?.into(ProfilePojo::class.java)
@@ -36,12 +40,16 @@ open class ProfileRepository {
     }
 
     fun findAllByUserId(userId: Long): List<ProfilePojo> {
-        val selectStep = dslContext.selectFrom(PROFILE)
+        val selectStep = mainContext.selectFrom(PROFILE)
             .where(PROFILE.USER_ID.eq(userId))
             .limit(DEFAULT_FETCH_LIMIT)
         val result = selectStep.fetch().into(ProfilePojo::class.java)
         LOGGER.info("Result size: {}", result.size)
         return result
+    }
+
+    fun transactionContext(runnable: TransactionalRunnable) {
+        mainContext.transaction(runnable)
     }
 
     companion object {

@@ -211,7 +211,7 @@ class TransactionDraftServiceTest {
         //Fail - cannot have only reductions
         val isValid = transactionDraftService.validateDraft(profileId)
         assertFalse(isValid)
-        //Oh, also, in general, negatives aren't allowed. Add multiple levels of assertion
+        //TODO Oh, also, in general, negatives aren't allowed. Add multiple levels of assertion
     }
 
     @Test

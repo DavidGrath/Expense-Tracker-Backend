@@ -7,6 +7,7 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.*
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.DEFAULT_FETCH_LIMIT
 import com.davidgrath.expensetrackerbackend.utils.toByte
 import org.jooq.DSLContext
+import org.jooq.TransactionalRunnable
 import org.jooq.impl.DSL
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -18,12 +19,19 @@ import java.time.LocalDate
 open class TransactionRepository {
 
     @Autowired
-    open lateinit var dslContext: DSLContext
+    open lateinit var mainContext: DSLContext
 
     //region Create
 
     fun insertTransaction(transaction: TransactionPojo): Long {
-        val transactionDb = dslContext.newRecord(TRANSACTION, transaction)
+        val transactionDb = mainContext.newRecord(TRANSACTION, transaction)
+        transactionDb.store()
+        return transactionDb.id!!
+    }
+
+
+    fun insertTransactionTrx(trxContext: DSLContext, transaction: TransactionPojo): Long {
+        val transactionDb = trxContext.newRecord(TRANSACTION, transaction)
         transactionDb.store()
         return transactionDb.id!!
     }
@@ -39,7 +47,7 @@ open class TransactionRepository {
         dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>
     ): List<DateAmountSummary> {
         val aggregateDate = TRANSACTION.DATED_AT.`as`("aggregateDate")
-        var selectStep = dslContext.select(aggregateDate, DSL.sum(TRANSACTION.AMOUNT).`as`("sum")).from(TRANSACTION)
+        var selectStep = mainContext.select(aggregateDate, DSL.sum(TRANSACTION.AMOUNT).`as`("sum")).from(TRANSACTION)
             .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
             .where(ACCOUNT.PROFILE_ID.eq(profileId))
             .and(TRANSACTION.DEBIT_OR_CREDIT.eq(debitOrCredit.toByte()))
@@ -57,7 +65,7 @@ open class TransactionRepository {
         }
         if(categories.isNotEmpty()) {
             selectStep = selectStep.and(TRANSACTION.ID.`in`(
-                dslContext.select(TRANSACTION.ID).from(TRANSACTION).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.TRANSACTION_ID.eq(TRANSACTION.ID)).where(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.`in`(categories))
+                mainContext.select(TRANSACTION.ID).from(TRANSACTION).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.TRANSACTION_ID.eq(TRANSACTION.ID)).where(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.`in`(categories))
             ))
         }
         if(modes.isNotEmpty()) {
@@ -73,9 +81,12 @@ open class TransactionRepository {
         return result
     }
 
-
     fun getMaxSortKeyInDayForAccount(profileId: Long, accountId: Long, date: LocalDate): Int? {
-        val selectStep = dslContext.select(DSL.max(TRANSACTION.SORT_KEY))
+        return getMaxSortKeyInDayForAccountTrx(mainContext, profileId, accountId, date)
+    }
+
+    fun getMaxSortKeyInDayForAccountTrx(trxContext: DSLContext, profileId: Long, accountId: Long, date: LocalDate): Int? {
+        val selectStep = trxContext.select(DSL.max(TRANSACTION.SORT_KEY))
             .from(TRANSACTION)
             .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
             .where(TRANSACTION.ACCOUNT_ID.eq(accountId))
@@ -96,7 +107,7 @@ open class TransactionRepository {
     }*/
 
     fun getByProfileIdAndId(profileId: Long, id: Long): TransactionPojo? {
-        val selectStep = dslContext.select(TRANSACTION.asterisk())
+        val selectStep = mainContext.select(TRANSACTION.asterisk())
             .from(TRANSACTION)
             .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
             .where(ACCOUNT.PROFILE_ID.eq(profileId))
@@ -112,7 +123,7 @@ open class TransactionRepository {
         dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>
     ): List<TransactionPojo> {
 
-        var selectStep = dslContext.select(TRANSACTION.asterisk())
+        var selectStep = mainContext.select(TRANSACTION.asterisk())
             .from(TRANSACTION)
             .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
             .where(ACCOUNT.PROFILE_ID.eq(profileId))
@@ -130,7 +141,7 @@ open class TransactionRepository {
         }
         if(categories.isNotEmpty()) {
             selectStep = selectStep.and(TRANSACTION.ID.`in`(
-                dslContext.select(TRANSACTION.ID).from(TRANSACTION).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.TRANSACTION_ID.eq(TRANSACTION.ID)).where(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.`in`(categories))
+                mainContext.select(TRANSACTION.ID).from(TRANSACTION).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.TRANSACTION_ID.eq(TRANSACTION.ID)).where(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.`in`(categories))
             ))
         }
         if(modes.isNotEmpty()) {
@@ -153,7 +164,7 @@ open class TransactionRepository {
         dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>
     ): List<TransactionWithItemAndAccount> {
         val transactionItemId = TRANSACTION_ITEM.ID.`as`("itemId")
-        var selectStep = dslContext.select(
+        var selectStep = mainContext.select(
             TRANSACTION.ID.`as`("transactionId"),
             TRANSACTION.AMOUNT.`as`("transactionAmount"),
             TRANSACTION.DEBIT_OR_CREDIT.`as`("transactionDebitOrCredit"),
@@ -161,24 +172,24 @@ open class TransactionRepository {
             TRANSACTION.TIME.`as`("transactionTime"),
             TRANSACTION.MODE.`as`("transactionMode"),
             TRANSACTION.NOTE.`as`("transactionNote"),
-                (dslContext.select(DSL.count(DOCUMENT.ID)).from(DOCUMENT).where(DOCUMENT.TRANSACTION_ID.eq(TRANSACTION.ID))).asField<Int>("documentCount"),
+                (mainContext.select(DSL.count(DOCUMENT.ID)).from(DOCUMENT).where(DOCUMENT.TRANSACTION_ID.eq(TRANSACTION.ID))).asField<Int>("documentCount"),
             TRANSACTION.ACCOUNT_ID.`as`("accountId"),
             ACCOUNT.PROFILE_ID.`as`("accountProfileId"),
             ACCOUNT.CURRENCY_CODE.`as`("accountCurrencyCode"),
             ACCOUNT.NAME.`as`("accountName"),
             transactionItemId,
-            (dslContext.select(DSL.count(IMAGE.ID)).from(IMAGE).innerJoin(TRANSACTION_ITEM_IMAGES).on(TRANSACTION_ITEM_IMAGES.IMAGE_ID.eq(IMAGE.ID)).where(TRANSACTION_ITEM_IMAGES.TRANSACTION_ITEM_ID.eq(TRANSACTION_ITEM.ID)).asField<Int>("itemImageCount")),
+            (mainContext.select(DSL.count(IMAGE.ID)).from(IMAGE).innerJoin(TRANSACTION_ITEM_IMAGES).on(TRANSACTION_ITEM_IMAGES.IMAGE_ID.eq(IMAGE.ID)).where(TRANSACTION_ITEM_IMAGES.TRANSACTION_ITEM_ID.eq(TRANSACTION_ITEM.ID)).asField<Int>("itemImageCount")),
             TRANSACTION_ITEM.DESCRIPTION.`as`("itemDescription"),
             TRANSACTION_ITEM.AMOUNT.`as`("itemAmount"),
             TRANSACTION_ITEM.QUANTITY.`as`("itemQuantity"),
             TRANSACTION_ITEM.BRAND.`as`("itemBrand"),
             TRANSACTION_ITEM.VARIATION.`as`("itemVariation"),
             TRANSACTION_ITEM.IS_REDUCTION.`as`("itemIsReduction"),
-            (dslContext.select(CATEGORY.ID).from(CATEGORY).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.eq(CATEGORY.ID)).where(TRANSACTION_ITEM.ID.eq(transactionItemId)).asField<Long>("categoryId")),
-            (dslContext.select(CATEGORY.NAME).from(CATEGORY).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.eq(CATEGORY.ID)).where(TRANSACTION_ITEM.ID.eq(transactionItemId)).asField<String>("categoryName")),
-            (dslContext.select(CATEGORY.IS_CUSTOM).from(CATEGORY).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.eq(CATEGORY.ID)).where(TRANSACTION_ITEM.ID.eq(transactionItemId)).asField<Byte>("categoryIsCustom")),
-            (dslContext.select(CATEGORY.STRING_ID).from(CATEGORY).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.eq(CATEGORY.ID)).where(TRANSACTION_ITEM.ID.eq(transactionItemId)).asField<String>("categoryStringId")),
-            (dslContext.select(CATEGORY.ICON).from(CATEGORY).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.eq(CATEGORY.ID)).where(TRANSACTION_ITEM.ID.eq(transactionItemId)).asField<String>("categoryIcon")),
+            (mainContext.select(CATEGORY.ID).from(CATEGORY).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.eq(CATEGORY.ID)).where(TRANSACTION_ITEM.ID.eq(transactionItemId)).asField<Long>("categoryId")),
+            (mainContext.select(CATEGORY.NAME).from(CATEGORY).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.eq(CATEGORY.ID)).where(TRANSACTION_ITEM.ID.eq(transactionItemId)).asField<String>("categoryName")),
+            (mainContext.select(CATEGORY.IS_CUSTOM).from(CATEGORY).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.eq(CATEGORY.ID)).where(TRANSACTION_ITEM.ID.eq(transactionItemId)).asField<Byte>("categoryIsCustom")),
+            (mainContext.select(CATEGORY.STRING_ID).from(CATEGORY).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.eq(CATEGORY.ID)).where(TRANSACTION_ITEM.ID.eq(transactionItemId)).asField<String>("categoryStringId")),
+            (mainContext.select(CATEGORY.ICON).from(CATEGORY).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.eq(CATEGORY.ID)).where(TRANSACTION_ITEM.ID.eq(transactionItemId)).asField<String>("categoryIcon")),
         )
             .from(TRANSACTION)
             .innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.TRANSACTION_ID.eq(TRANSACTION.ID))
@@ -198,7 +209,7 @@ open class TransactionRepository {
         }
         if(categories.isNotEmpty()) {
             selectStep = selectStep.and(TRANSACTION.ID.`in`(
-                dslContext.select(TRANSACTION.ID).from(TRANSACTION).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.TRANSACTION_ID.eq(TRANSACTION.ID)).where(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.`in`(categories))
+                mainContext.select(TRANSACTION.ID).from(TRANSACTION).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.TRANSACTION_ID.eq(TRANSACTION.ID)).where(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.`in`(categories))
             ))
         }
         if(modes.isNotEmpty()) {
@@ -224,7 +235,7 @@ open class TransactionRepository {
         modes: List<TransactionMode>,
         sellers: List<Long>
     ): BigDecimal {
-        var selectStep = dslContext.select(DSL.sum(TRANSACTION.AMOUNT)).from(TRANSACTION)
+        var selectStep = mainContext.select(DSL.sum(TRANSACTION.AMOUNT)).from(TRANSACTION)
             .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
             .where(ACCOUNT.PROFILE_ID.eq(profileId))
             .and(TRANSACTION.DEBIT_OR_CREDIT.eq(debitOrCredit.toByte()))
@@ -242,7 +253,7 @@ open class TransactionRepository {
         }
         if(categories.isNotEmpty()) {
             selectStep = selectStep.and(TRANSACTION.ID.`in`(
-                dslContext.select(TRANSACTION.ID).from(TRANSACTION).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.TRANSACTION_ID.eq(TRANSACTION.ID)).where(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.`in`(categories))
+                mainContext.select(TRANSACTION.ID).from(TRANSACTION).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.TRANSACTION_ID.eq(TRANSACTION.ID)).where(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.`in`(categories))
             ))
         }
         if(modes.isNotEmpty()) {
@@ -260,7 +271,7 @@ open class TransactionRepository {
         fromDate: LocalDate?, toDate: LocalDate?, accountIds: List<Long>, dates: List<LocalDate>, categories: List<Long>,
         modes: List<TransactionMode>, sellers: List<Long>): List<ItemSumByCategory> {
 
-        var selectStep = dslContext.select(
+        var selectStep = mainContext.select(
             CATEGORY.ID.`as`("categoryId"),
             CATEGORY.STRING_ID, CATEGORY.IS_CUSTOM, CATEGORY.NAME, DSL.sum(TRANSACTION_ITEM.AMOUNT).`as`("sum"), CATEGORY.ICON.`as`("categoryIcon")
         )
@@ -310,7 +321,7 @@ open class TransactionRepository {
         modes: List<TransactionMode>,
         sellers: List<Long>
     ): TransactionAndItemCount {
-        var selectStep = dslContext.select(
+        var selectStep = mainContext.select(
             DSL.countDistinct(TRANSACTION.ID).`as`("transactionCount"),
             DSL.count(TRANSACTION_ITEM.ID).`as`("itemCount")
         )
@@ -347,7 +358,7 @@ open class TransactionRepository {
     fun getEarliestTransactionDate(
         profileId: Long,
         accountIds: List<Long>): LocalDate? {
-        var selectStep = dslContext.select(
+        var selectStep = mainContext.select(
             DSL.min(TRANSACTION.DATED_AT)
         )
             .from(TRANSACTION)
@@ -368,7 +379,7 @@ open class TransactionRepository {
     ): List<DateAmountSummary> {
 
         val window = DSL.orderBy(TRANSACTION.DATED_AT).rangeBetweenUnboundedPreceding().andCurrentRow()
-        var selectStep = dslContext.select(
+        var selectStep = mainContext.select(
             TRANSACTION.DATED_AT.`as`("aggregateDate"),
             DSL.sum(TRANSACTION.AMOUNT).over(window)
                 .`as`("sum"))
@@ -390,7 +401,7 @@ open class TransactionRepository {
         }
         if(categories.isNotEmpty()) {
             selectStep = selectStep.and(TRANSACTION.ID.`in`(
-                dslContext.select(TRANSACTION.ID).from(TRANSACTION).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.TRANSACTION_ID.eq(TRANSACTION.ID)).where(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.`in`(categories))
+                mainContext.select(TRANSACTION.ID).from(TRANSACTION).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.TRANSACTION_ID.eq(TRANSACTION.ID)).where(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.`in`(categories))
             ))
         }
         if(modes.isNotEmpty()) {
@@ -400,7 +411,7 @@ open class TransactionRepository {
             selectStep = selectStep.and(TRANSACTION.SELLER_ID.`in`(sellers))
         }
         val alias = selectStep.asTable("x")
-            val selectFrom = dslContext.select(
+            val selectFrom = mainContext.select(
                 alias.field("aggregateDate"),
                 DSL.max(alias.field("sum"))).from(alias)
         val seekStep =  selectFrom
@@ -426,7 +437,7 @@ open class TransactionRepository {
         val sum = DSL.sum(TRANSACTION_ITEM.AMOUNT).over(window).`as`("sum")
 
         val rank = DSL.denseRank().over(window).`as`("denseRank")
-        var selectStep = dslContext.select(
+        var selectStep = mainContext.select(
             TRANSACTION_ITEM.ID.`as`("itemId"),TRANSACTION_ITEM.DESCRIPTION.`as`("itemDescription"),
             TRANSACTION_ITEM.AMOUNT.`as`("itemAmount"), rank,
             CATEGORY.ID.`as`("categoryId"),
@@ -466,8 +477,12 @@ open class TransactionRepository {
         val seekStep = selectStep
             .orderBy(sum.desc())
         val alias = seekStep.asTable()
-        val finalSelect = dslContext.selectFrom(alias).where(rank.lessOrEqual(n))
+        val finalSelect = mainContext.selectFrom(alias).where(rank.lessOrEqual(n))
         return finalSelect.fetch().into(TopItemSumByCategory::class.java)
+    }
+
+    fun transactionContext(runnable: TransactionalRunnable) {
+        mainContext.transaction(runnable)
     }
     //endregion
 

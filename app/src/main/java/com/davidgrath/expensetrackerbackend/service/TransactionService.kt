@@ -32,29 +32,34 @@ class TransactionService {
         val date = ZonedDateTime.now(timeHandler.getClock())
         val utcDate = date.withZoneSameInstant(ZoneId.of("UTC"))
         val userTime = date.withZoneSameInstant(zoneId).toLocalTime()
+        var transactionIdRet = -1L
+        transactionRepository.transactionContext { trx ->
+            val trxContext = trx.dsl()
 
-        val account = accountRepository.findByProfileIdAndId(profileId, accountId)!!
-        val maxSortKey = transactionRepository.getMaxSortKeyInDayForAccount(profileId, accountId, utcDate.toLocalDate())?: 0
-        val sortKey = maxSortKey + 1_000
-        val transaction = TransactionPojo(
-            null,
-            accountId,
-            amount,
-            debitOrCredit.toByte(),
-            utcDate.toLocalDate(),
-            userTime,
-            sortKey,
-            TransactionMode.Other,
-            null,
-            null,
-            null,
-            utcDate.toLocalDateTime()
-        )
-        val transactionId = transactionRepository.insertTransaction(transaction)
+            val maxSortKey = transactionRepository.getMaxSortKeyInDayForAccountTrx(trxContext, profileId, accountId, utcDate.toLocalDate())?: 0
+            val sortKey = maxSortKey + 1_000
+            val transaction = TransactionPojo(
+                null,
+                accountId,
+                amount,
+                debitOrCredit.toByte(),
+                utcDate.toLocalDate(),
+                userTime,
+                sortKey,
+                TransactionMode.Other,
+                null,
+                null,
+                null,
+                utcDate.toLocalDateTime()
+            )
+            val transactionId = transactionRepository.insertTransactionTrx(trxContext, transaction)
 
-        val item = TransactionItemPojo(null, transactionId, description, amount, categoryId, 1_000, 1, 1, null,null, null, null, null, null,false.toByte(), utcDate.toLocalDateTime())
-        transactionItemRepository.insertTransactionItem(item)
-        return transactionId
+            val item = TransactionItemPojo(null, transactionId, description, amount, categoryId, 1_000, 1, 1, null,null, null, null, null, null,false.toByte(), utcDate.toLocalDateTime())
+            transactionItemRepository.insertTransactionItemTrx(trxContext, item)
+            transactionIdRet = transactionId
+        }
+
+        return transactionIdRet
     }
 
     fun getTotalAmountByDate(

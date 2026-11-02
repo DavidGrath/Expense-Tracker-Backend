@@ -20,17 +20,21 @@ import org.springframework.stereotype.Repository
 open class ImageRepository {
 
     @Autowired
-    open lateinit var dslContext: DSLContext
+    open lateinit var mainContext: DSLContext
     open var IMAGE: Image = Image.IMAGE
 
     fun insertImage(image: ImagePojo): Long {
-        val imageDb = dslContext.newRecord(IMAGE, image)
+        return insertImageTrx(mainContext, image)
+    }
+
+    fun insertImageTrx(trxContext: DSLContext, image: ImagePojo): Long {
+        val imageDb = trxContext.newRecord(IMAGE, image)
         imageDb.store()
         return imageDb.id!!
     }
 
     fun findBySha256(profileId: Long, sha256: ByteArray): ImagePojo? {
-        val selectStep = dslContext.select(IMAGE.fields().toList()) //TO work around the generated columns
+        val selectStep = mainContext.select(IMAGE.fields().toList()) //TO work around the generated columns
             .from(IMAGE)
             .where(IMAGE.PROFILE_ID.eq(profileId))
             .and(IMAGE.SHA_256.eq(sha256))
@@ -39,7 +43,7 @@ open class ImageRepository {
 
 
     fun findByUserIdAndId(userId: Long, id: Long): ImagePojo? {
-        val selectStep = dslContext.select(IMAGE.fields().toList()) //TO work around the generated columns
+        val selectStep = mainContext.select(IMAGE.fields().toList()) //TO work around the generated columns
             .from(IMAGE)
             .innerJoin(PROFILE).on(PROFILE.ID.eq(IMAGE.PROFILE_ID))
             .where(IMAGE.ID.eq(id))
@@ -48,17 +52,17 @@ open class ImageRepository {
         return selectStep.fetchOne()?.into(ImagePojo::class.java)
     }
     fun findByProfileIdAndId(profileId: Long, id: Long): ImageWithStats? {
-        val selectStep = dslContext.select(
+        val selectStep = mainContext.select(
             IMAGE.ID, IMAGE.PROFILE_ID, IMAGE.SIZE_BYTES,
             IMAGE.SHA_256, IMAGE.MIME_TYPE, IMAGE.PATH,
-            dslContext.select(
+            mainContext.select(
                 DSL.countDistinct(TRANSACTION.ID)
             ).from(IMAGE)
                 .innerJoin(TRANSACTION_ITEM_IMAGES).on(TRANSACTION_ITEM_IMAGES.IMAGE_ID.eq(IMAGE.ID))
                 .innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.ID.eq(TRANSACTION_ITEM_IMAGES.TRANSACTION_ITEM_ID))
                 .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(TRANSACTION_ITEM.TRANSACTION_ID))
                 .where(IMAGE.PROFILE_ID.eq(profileId)).asField<Long>("transactionCount"),
-            dslContext.select(
+            mainContext.select(
                 DSL.count(TRANSACTION_ITEM.ID)
             ).from(IMAGE)
                 .innerJoin(TRANSACTION_ITEM_IMAGES).on(TRANSACTION_ITEM_IMAGES.IMAGE_ID.eq(IMAGE.ID))
@@ -73,17 +77,17 @@ open class ImageRepository {
     }
 
     fun findAll(profileId: Long): List<ImageWithStats> {
-        val selectStep = dslContext.select(
+        val selectStep = mainContext.select(
             IMAGE.ID, IMAGE.PROFILE_ID, IMAGE.SIZE_BYTES,
             IMAGE.SHA_256, IMAGE.MIME_TYPE, IMAGE.PATH,
-            dslContext.select(
+            mainContext.select(
                 DSL.countDistinct(TRANSACTION.ID)
             ).from(IMAGE)
                 .innerJoin(TRANSACTION_ITEM_IMAGES).on(TRANSACTION_ITEM_IMAGES.IMAGE_ID.eq(IMAGE.ID))
                 .innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.ID.eq(TRANSACTION_ITEM_IMAGES.TRANSACTION_ITEM_ID))
                 .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(TRANSACTION_ITEM.TRANSACTION_ID))
                 .where(IMAGE.PROFILE_ID.eq(profileId)).asField<Long>("transactionCount"),
-            dslContext.select(
+            mainContext.select(
                 DSL.count(TRANSACTION_ITEM.ID)
             ).from(IMAGE)
                 .innerJoin(TRANSACTION_ITEM_IMAGES).on(TRANSACTION_ITEM_IMAGES.IMAGE_ID.eq(IMAGE.ID))
@@ -100,7 +104,7 @@ open class ImageRepository {
     }
 
     fun getOverallStats(profileId: Long): ImageDocumentStats {
-        val selectStep = dslContext.select(
+        val selectStep = mainContext.select(
             DSL.count(IMAGE.ID).`as`("count"),
             DSL.ifnull(DSL.sum(IMAGE.SIZE_BYTES), 0L).`as`("totalSizeBytes")
         )
@@ -111,7 +115,7 @@ open class ImageRepository {
     }
 
     fun getImageStats(profileId: Long, id: Long): TransactionAndItemCount {
-        val selectStep = dslContext.select(
+        val selectStep = mainContext.select(
             DSL.countDistinct(TRANSACTION.ID).`as`("transactionCount"),
             DSL.count(TRANSACTION_ITEM.ID).`as`("itemCount")
         ).from(IMAGE)

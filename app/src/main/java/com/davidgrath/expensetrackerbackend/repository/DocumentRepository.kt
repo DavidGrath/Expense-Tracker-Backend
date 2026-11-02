@@ -26,6 +26,12 @@ open class DocumentRepository {
         return documentDb.id!!
     }
 
+    fun insertDocumentTrx(trxContext: DSLContext, document: DocumentPojo): Long {
+        val documentDb = trxContext.newRecord(DOCUMENT, document)
+        documentDb.store()
+        return documentDb.id!!
+    }
+
     fun findByTransactionIdAndHash(profileId: Long, transactionId: Long, sha256: ByteArray): DocumentPojo? {
         val selectStep = dslContext.select(DOCUMENT.fields().toList()) //To work around the excluded generated fields
             .from(DOCUMENT)

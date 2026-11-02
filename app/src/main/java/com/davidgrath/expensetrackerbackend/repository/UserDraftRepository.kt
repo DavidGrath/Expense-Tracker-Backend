@@ -10,12 +10,12 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Repository
 
 @Repository
-class UserDraftRepository @Autowired constructor(open var dslContext: DSLContext) {
+class UserDraftRepository @Autowired constructor(open var mainContext: DSLContext) {
 
     // region Create
 
     fun insertDraft(userDraftPojo: UserDraftPojo): Long {
-        val userDraft = dslContext.newRecord(USER_DRAFT, userDraftPojo)
+        val userDraft = mainContext.newRecord(USER_DRAFT, userDraftPojo)
         userDraft.store()
         return userDraft.id!!
     }
@@ -25,7 +25,7 @@ class UserDraftRepository @Autowired constructor(open var dslContext: DSLContext
     // region Read
 
     fun getDraftByProfile(profileId: Long): UserDraftPojo? {
-        val selectStep = dslContext.selectFrom(USER_DRAFT)
+        val selectStep = mainContext.selectFrom(USER_DRAFT)
             .where(USER_DRAFT.DRAFT_TYPE.eq(UserDraftType.Create))
             .and(USER_DRAFT.PROFILE_ID.eq(profileId))
         return selectStep.fetchOne()?.into(UserDraftPojo::class.java)
@@ -36,7 +36,7 @@ class UserDraftRepository @Autowired constructor(open var dslContext: DSLContext
     // region Update
 
     fun updateDraft(profileId: Long, id: Long, json: JSON): Int {
-        val updateStep = dslContext.update(USER_DRAFT)
+        val updateStep = mainContext.update(USER_DRAFT)
             .set(USER_DRAFT.DRAFT, json)
             .where(USER_DRAFT.ID.eq(id))
             .and(USER_DRAFT.PROFILE_ID.eq(profileId))
@@ -52,7 +52,7 @@ class UserDraftRepository @Autowired constructor(open var dslContext: DSLContext
 
     //region Delete
     fun deleteDraft(profileId: Long, id: Long): Int {
-        val deleteStep = dslContext.deleteFrom(USER_DRAFT)
+        val deleteStep = mainContext.deleteFrom(USER_DRAFT)
             .where(USER_DRAFT.ID.eq(id))
             .and(USER_DRAFT.PROFILE_ID.eq(profileId))
         val deletedCount = deleteStep.execute()
@@ -62,6 +62,20 @@ class UserDraftRepository @Autowired constructor(open var dslContext: DSLContext
         }
         return deletedCount
     }
+
+    fun deleteDraftTrx(trxContext: DSLContext, profileId: Long, id: Long): Int {
+        val deleteStep = trxContext.deleteFrom(USER_DRAFT)
+            .where(USER_DRAFT.ID.eq(id))
+            .and(USER_DRAFT.PROFILE_ID.eq(profileId))
+        val deletedCount = deleteStep.execute()
+        LOGGER.info("Deleted rows: {}", deletedCount)
+        if(deletedCount != 1) {
+            LOGGER.warn("Not exactly 1 row deleted")
+        }
+        return deletedCount
+    }
+
+    //endregion
 
 
     companion object {

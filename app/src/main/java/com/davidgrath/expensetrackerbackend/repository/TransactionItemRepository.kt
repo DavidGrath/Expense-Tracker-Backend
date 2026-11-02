@@ -24,6 +24,12 @@ open class TransactionItemRepository {
         return itemDb.id!!
     }
 
+    fun insertTransactionItemTrx(trxContext: DSLContext, item: TransactionItemPojo): Long {
+        val itemDb = trxContext.newRecord(TRANSACTION_ITEM, item)
+        itemDb.store()
+        return itemDb.id!!
+    }
+
     fun getAllByTransactionId(profileId: Long, transactionId: Long): List<TransactionItemPojo> {
         val selectStep = dslContext.select(TRANSACTION_ITEM.asterisk())
             .from(TRANSACTION_ITEM)

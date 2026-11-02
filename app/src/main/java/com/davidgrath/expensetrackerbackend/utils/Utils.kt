@@ -237,3 +237,30 @@ fun bytesToUUID(bytes: ByteArray): UUID {
     val uuid = UUID(high, low)
     return uuid
 }
+
+fun binaryIndexSearchPrevious(sortKeys: IntArray, previous: Int, current: Int): Int? {
+    return null
+}
+
+//TODO Test cases: range filled up, first half of range filled up, range mostly filled up except for 1 free slot, half range mostly filled up except for 1 free slot
+fun binaryIndexSearchNext(sortKeys: IntArray, current: Int, next: Int): Int? {
+    return null
+}
+
+/**
+ * @param slots assumed to be sorted
+ * @param max It is assumed that 1 is the starting point, so the range 1..max is searched
+ */
+fun findEarliestOccupancySlot(slots: IntArray, max: Int): Int? {
+    return null
+    //TODO Test cases: full range, empty range, 1<=n<max is filled up
+    // singular gap m such that 1<m<n and 1<=n<max is filled up
+//    var listIndex = 0
+//    for(i in 1..max) {
+//        if(slots[listIndex] != 1) {
+//            return i
+//        }
+//        listIndex++
+//    }
+//    return null
+}

@@ -111,7 +111,7 @@ class AccountsController: AccountsApi {
             LOGGER.error("Name blank", exception)
             throw exception
         }
-        val id = accountService.updateAccount(profile.id!!, id, nameTrimmed)
+        val id = accountService.updateAccount(profile.id!!, id, nameTrimmed) //TODO Technically a TOCTOU possibility, although it feels quite unlikely that a delete happens. Guard, regardless, since we're on this tangent
         return ResponseEntity.ok().build()
     }
 
@@ -124,7 +124,7 @@ class AccountsController: AccountsApi {
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
-        val existing = accountService.getAccountsForProfile(profile.id!!)
+        val existing = accountService.getAccountsForProfile(profile.id!!) //TODO TOC
         if(existing.size >= Constants.Constraints.MAX_ACCOUNTS_PER_PROFILE) {
             val exception = CustomHttpException(ErrorCode.LIMITS_EXCEEDED, HttpStatus.BAD_REQUEST)
             LOGGER.error("Max accounts reached", exception)
@@ -147,7 +147,8 @@ class AccountsController: AccountsApi {
             LOGGER.error("Name blank", exception)
             throw exception
         }
-        val id = accountService.createAccount(profile.id!!, nameTrimmed, accountCreateRequest.currencyCode)
+        val id = accountService.createAccount(profile.id!!, nameTrimmed, accountCreateRequest.currencyCode) //TODO TOU
+        //TODO TOCTOU
         return ResponseEntity.ok(id)
     }
 
