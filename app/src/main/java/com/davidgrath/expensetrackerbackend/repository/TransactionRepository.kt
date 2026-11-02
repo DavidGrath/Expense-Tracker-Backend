@@ -7,8 +7,10 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.*
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.DEFAULT_FETCH_LIMIT
 import com.davidgrath.expensetrackerbackend.utils.toByte
 import org.jooq.DSLContext
+import org.jooq.DatePart
 import org.jooq.TransactionalRunnable
 import org.jooq.impl.DSL
+import org.jooq.impl.SQLDataType
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Repository
@@ -40,7 +42,7 @@ open class TransactionRepository {
 
     //region Read
 
-    fun getTransactionSumByDate( //TODO Improve with recursive CTE, as I did on Android
+    fun getTransactionSumByDate(
         profileId: Long, debitOrCredit: Boolean,
         fromDate: LocalDate? = null, toDate: LocalDate? = null,
         accountIds: List<Long>,

@@ -62,7 +62,7 @@ class TransactionService {
         return transactionIdRet
     }
 
-    fun getTotalAmountByDate(
+    fun getTotalAmountByDateOld(
         profileId: Long, debitOrCredit: Boolean, fromDate: LocalDate?, toDate: LocalDate? = null,
         accountIds: List<Long>, dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>
     ): List<DateAmountSummary> {
@@ -117,6 +117,63 @@ class TransactionService {
         val filledSummary = newList.toList()
 
         return filledSummary
+    }
+
+    fun getTotalAmountByDate(
+        profileId: Long, debitOrCredit: Boolean, fromDate: LocalDate?, toDate: LocalDate? = null,
+        accountIds: List<Long>, dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>
+    ): List<DateAmountSummary> {
+
+        val today = LocalDate.now(timeHandler.getClock())
+        if(fromDate != null && fromDate.compareTo(today) > 0) {
+            LOGGER.info("getTotalAmountByDate: fromDate in future. Returning empty list")
+            return emptyList()
+        }
+
+        var adjustedFromDate: LocalDate?
+        if(fromDate != null) {
+            adjustedFromDate = fromDate
+            LOGGER.info("getTotalAmountByDate: adjustedFromDate set to fromDate")
+        } else {
+            val minDate = transactionItemRepository.getEarliestItemTransactionDate(profileId, debitOrCredit , accountIds, dates, categories, modes,  sellers, today)
+            adjustedFromDate = minDate
+        }
+
+        val adjustedToDate = if(toDate == null) {
+            val maxDate = transactionItemRepository.getLatestItemTransactionDate(profileId, debitOrCredit , accountIds, dates, categories, modes,  sellers, today)
+            LOGGER.debug("Max Date: {}", maxDate)
+            if(maxDate == null) {
+                today
+            } else {
+                if(maxDate.compareTo(today) > 0) {
+                    LOGGER.info("getTotalAmountByDate: maxDate found is greater than current date. Value clamped")
+                    today
+                } else {
+                    maxDate
+                }
+            }
+        } else if(toDate.compareTo(today) > 0) {
+            LOGGER.info("getTotalAmountByDate: toDate greater than current date. Value clamped")
+            today
+        } else {
+            toDate
+        }
+
+        LOGGER.debug("Pair: {}", adjustedFromDate to adjustedToDate)
+        if(adjustedFromDate == null || adjustedToDate == null) {
+            LOGGER.info("getTotalAmountByDate: Returning empty list because adjusted date is null")
+            return emptyList()
+        }
+        val summary =
+            transactionItemRepository.getTransactionItemSumByDateRecursive(profileId, debitOrCredit,
+                adjustedFromDate,
+                adjustedToDate,
+                accountIds,  dates, categories,
+                modes, sellers)
+
+        LOGGER.info("getTotalAmountByDate: Result count: {}", summary.size)
+        return summary
+
     }
 
     fun getByProfileIdAndId(profileId: Long, id: Long): TransactionPojo? {

@@ -7,8 +7,12 @@ import com.davidgrath.expensetrackerbackend.repository.*
 import com.davidgrath.expensetrackerbackend.testutils.*
 import com.davidgrath.expensetrackerbackend.utils.Constants
 import com.davidgrath.expensetrackerbackend.utils.uuidToBytes
+import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers.empty
+import org.hamcrest.Matchers.`is`
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -104,9 +108,11 @@ class TransactionServiceTest {
             .commit()
 
         //Just 1 transaction
-        transactionSumByDates = transactionService.getTotalAmountByDate(profileId, true, LocalDate.parse("2025-01-02"), null, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
-        val daysBetweenJan2AndJun30Inclusive = 180
-        assertEquals(daysBetweenJan2AndJun30Inclusive, transactionSumByDates.size)
+//        transactionSumByDates = transactionService.getTotalAmountByDate(profileId, true, LocalDate.parse("2025-01-02"), null, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+//        val daysBetweenJan2AndJun30Inclusive = 180
+//        assertEquals(daysBetweenJan2AndJun30Inclusive, transactionSumByDates.size)
+        //This behavior is no longer consistent with my recent changes. Specifically, a null `fromDate` does NOT imply that the current date should be used instead
+        //TODO Clean after next commit
 
         dataBuilder.createTransaction()
             .withItem("Description", "miscellaneous", BigDecimal(450.00))
@@ -126,11 +132,11 @@ class TransactionServiceTest {
         val sum1 = transactionSumByDates.find { it.aggregateDate == firstTransactionDate }!!
         var missingSum1 = transactionSumByDates.find { it.aggregateDate == LocalDate.parse("2025-01-03") }!!
         val missingSum2 = transactionSumByDates.find { it.aggregateDate == LocalDate.parse("2025-01-08") }!!
-        val missingSum3 = transactionSumByDates.find { it.aggregateDate == LocalDate.parse("2025-01-10") }!!
+//        val missingSum3 = transactionSumByDates.find { it.aggregateDate == LocalDate.parse("2025-01-10") }!!
         assertEqualsBD(BigDecimal(410), sum1.sum)
         assertEqualsBD(BigDecimal.ZERO, missingSum1.sum)
         assertEqualsBD(BigDecimal.ZERO, missingSum2.sum)
-        assertEqualsBD(BigDecimal.ZERO, missingSum3.sum)
+//        assertEqualsBD(BigDecimal.ZERO, missingSum3.sum)  No longer the expected behavior
 
         transactionSumByDates = transactionService.getTotalAmountByDate(profileId, true, firstTransactionDate, thirdTransactionDate, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
         val daysBetweenFirstAndThirdTransactionInclusive = 6
@@ -393,5 +399,207 @@ class TransactionServiceTest {
         assertEqualsBD(grandSumRegular, grandSumCumulative)
         assertEqualsBD(BigDecimal(860), grandSumCumulative)
         assertEqualsBD(BigDecimal(410), missingSum1.sum)
+    }
+
+    /**
+     * GTT-5,GTT-6, GTT-7,GTT-8,GTT-13,GTT-14
+     */
+    @Test
+    fun givenDateRangeInFutureWhenGetTotalByDateThenEmptySet() {
+        val folder = Files.createTempDirectory("temp").toFile()
+        folder.deleteOnExit()
+        val dataBuilder = DataBuilder(folder, timeHandler, null, Constants.DEFAULT_PROFILE_ID, testUtilComponent)
+        val transactionDate = LocalDate.parse("2025-01-01")
+
+        val user = userRepository.findByUuid(uuidToBytes(UUID.fromString(TestConstants.DEFAULT_USER_ID)))!!
+        val profile = profileRepository.findByUuid(user.id!!, uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID)))!!
+        val profileId = profile.id!!
+
+        dataBuilder.createTransaction()
+            .withItem("Description", "miscellaneous", BigDecimal(110.00))
+            .atDate(transactionDate)
+            .commit()
+
+        val dateAfterToday = LocalDate.parse("2025-07-01")
+        val transactionSumByDates = transactionService.getTotalAmountByDate(profileId, true, dateAfterToday, null, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+        assertEquals(0, transactionSumByDates.size)
+    }
+
+    /**
+     * GTT-9
+     */
+    @Test
+    fun givenToDateIsNullAndNoTransactionIsWithinRangeFromStartTillCurrentDateWhenGetTransactionsThenAllZeroes() {
+        val folder = Files.createTempDirectory("temp").toFile()
+        folder.deleteOnExit()
+
+        val user = userRepository.findByUuid(uuidToBytes(UUID.fromString(TestConstants.DEFAULT_USER_ID)))!!
+        val profile = profileRepository.findByUuid(user.id!!, uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID)))!!
+        val profileId = profile.id!!
+
+        //Multiple days and empty
+        var startDate = LocalDate.parse("2025-06-01")
+        val today = LocalDate.parse("2025-06-30")
+        val endDate = today
+        val transactionSumByDates = transactionService.getTotalAmountByDate(profileId, true, startDate, endDate, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+        val daysInJune = 30
+        var grandSum = transactionSumByDates.map { it.sum }.reduce { acc, bigDecimal -> acc.plus(bigDecimal) }
+        assertEquals(daysInJune, transactionSumByDates.size)
+        assertEqualsBD(BigDecimal.ZERO, grandSum)
+    }
+
+
+    /**
+     * GTT-10
+     */
+    @Test
+    fun givenToDateIsNullAndAtLeast1TransactionIsWithinRangeFromNonNullStartTillCurrentDateWhenGetTransactionsThenMaxDateIsUsedAndDataReturned() {
+
+        val folder = Files.createTempDirectory("temp").toFile()
+        folder.deleteOnExit()
+        val dataBuilder = DataBuilder(folder, timeHandler, null, Constants.DEFAULT_PROFILE_ID, testUtilComponent)
+        val transactionDate = LocalDate.parse("2025-01-01")
+
+        val user = userRepository.findByUuid(uuidToBytes(UUID.fromString(TestConstants.DEFAULT_USER_ID)))!!
+        val profile = profileRepository.findByUuid(user.id!!, uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID)))!!
+        val profileId = profile.id!!
+
+        val dateInNormalRange = LocalDate.parse("2025-06-01")
+        val dateInFuture = LocalDate.parse("2025-07-01")
+
+
+
+        dataBuilder.createTransaction()
+            .withItem("Description", "miscellaneous", BigDecimal(110.00))
+            .atDate(dateInNormalRange)
+            .commit()
+        dataBuilder.createTransaction()
+            .withItem("Description", "miscellaneous", BigDecimal(300.00))
+            .atDate(dateInFuture)
+            .commit()
+
+
+        val startDate = LocalDate.parse("2025-06-01")
+        val transactionSumByDates = transactionService.getTotalAmountByDate(profileId, true, startDate, null, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+        val grandSum = transactionSumByDates.map { it.sum }.reduce { acc, bigDecimal -> acc.plus(bigDecimal) }
+        assertEquals(1, transactionSumByDates.size)
+        val today = LocalDate.parse("2025-06-30")
+        assertEquals(dateInNormalRange, transactionSumByDates.first().aggregateDate)
+        val sumOnDateOutsideRange = transactionSumByDates.find { it.aggregateDate == dateInFuture }
+        assertEqualsBD(BigDecimal(110), transactionSumByDates.first().sum)
+        assertNull(sumOnDateOutsideRange)
+    }
+
+    /**
+     * GTT-17,GTT-19,GTT-25
+     */
+    @Test
+    fun givenFromDateIsNullAndThereIsNoTransactionBeforeCurrentDateWhenGetTransactionsByDateThenEmptyListReturned() {
+
+
+        val user = userRepository.findByUuid(uuidToBytes(UUID.fromString(TestConstants.DEFAULT_USER_ID)))!!
+        val profile = profileRepository.findByUuid(user.id!!, uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID)))!!
+        val profileId = profile.id!!
+
+        val today = LocalDate.parse("2025-06-30")
+        val endDate = today
+        val transactionSumByDates = transactionService.getTotalAmountByDate(profileId, true, null, endDate, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+        assertThat(transactionSumByDates, `is`(empty()))
+
+    }
+
+    /**
+     * GTT-18
+     */
+    @Test
+    fun givenFromDateIsNullAndAtLeast1TransactionIsWithinRangeTillCurrentDateThenMinDateIsUsedAndDataReturned() {
+
+        val folder = Files.createTempDirectory("temp").toFile()
+        folder.deleteOnExit()
+        val dataBuilder = DataBuilder(folder, timeHandler, null, Constants.DEFAULT_PROFILE_ID, testUtilComponent)
+
+        val user = userRepository.findByUuid(uuidToBytes(UUID.fromString(TestConstants.DEFAULT_USER_ID)))!!
+        val profile = profileRepository.findByUuid(user.id!!, uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID)))!!
+        val profileId = profile.id!!
+
+        val dateInNormalRange = LocalDate.parse("2025-01-02")
+        val dateInFuture = LocalDate.parse("2025-07-01")
+
+
+
+        dataBuilder.createTransaction()
+            .withItem("Description", "miscellaneous", BigDecimal(110.00))
+            .atDate(dateInNormalRange)
+            .commit()
+        dataBuilder.createTransaction()
+            .withItem("Description", "miscellaneous", BigDecimal(300.00))
+            .atDate(dateInFuture)
+            .commit()
+
+
+        val today = LocalDate.parse("2025-06-30")
+        val transactionSumByDates = transactionService.getTotalAmountByDate(profileId, true, null, today, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+        val grandSum = transactionSumByDates.map { it.sum }.reduce { acc, bigDecimal -> acc.plus(bigDecimal) }
+
+        val daysBetweenJan2AndJun30Inclusive = 180
+        assertEquals(daysBetweenJan2AndJun30Inclusive, transactionSumByDates.size)
+        assertEquals(today, transactionSumByDates.last().aggregateDate)
+        val firstSummary = transactionSumByDates.firstOrNull()
+        assertEquals(dateInNormalRange, firstSummary?.aggregateDate)
+        assertEqualsBD(BigDecimal(110), firstSummary?.sum!!)
+        val sumOnDateOutsideRange = transactionSumByDates.find { it.aggregateDate == dateInFuture }
+        assertEqualsBD(BigDecimal(110), grandSum)
+        assertNull(sumOnDateOutsideRange)
+    }
+
+
+    /**
+     * GTT-26
+     */
+    @Test
+    fun givenFromAndToDateAreNullAndAtLeast1TransactionIsWithinRangeTillCurrentDateThenMinAndMaxUsedAndDataReturned() {
+
+        val folder = Files.createTempDirectory("temp").toFile()
+        folder.deleteOnExit()
+        val dataBuilder = DataBuilder(folder, timeHandler, null, Constants.DEFAULT_PROFILE_ID, testUtilComponent)
+
+        val user = userRepository.findByUuid(uuidToBytes(UUID.fromString(TestConstants.DEFAULT_USER_ID)))!!
+        val profile = profileRepository.findByUuid(user.id!!, uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID)))!!
+        val profileId = profile.id!!
+
+        val firstTransactionDate = LocalDate.parse("2025-01-02")
+        val secondTransactionDate = LocalDate.parse("2025-01-31")
+        val dateInFuture = LocalDate.parse("2025-07-01")
+
+
+        dataBuilder.createTransaction()
+            .withItem("Description", "miscellaneous", BigDecimal(110.00))
+            .atDate(firstTransactionDate)
+            .commit()
+
+        dataBuilder.createTransaction()
+            .withItem("Description", "miscellaneous", BigDecimal(300.00))
+            .atDate(secondTransactionDate)
+            .commit()
+
+        dataBuilder.createTransaction()
+            .withItem("Description", "miscellaneous", BigDecimal(400.00))
+            .atDate(dateInFuture)
+            .commit()
+
+
+        val transactionSumByDates = transactionService.getTotalAmountByDate(profileId, true, null, null, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+        val grandSum = transactionSumByDates.map { it.sum }.reduce { acc, bigDecimal -> acc.plus(bigDecimal) }
+
+        val daysBetweenJan2AndJan31Inclusive = 30
+        assertEquals(daysBetweenJan2AndJan31Inclusive, transactionSumByDates.size)
+        assertEquals(firstTransactionDate, transactionSumByDates.first().aggregateDate)
+        assertEquals(secondTransactionDate, transactionSumByDates.last().aggregateDate)
+
+        assertEqualsBD(BigDecimal(110), transactionSumByDates.first().sum)
+        assertEqualsBD(BigDecimal(300), transactionSumByDates.last().sum)
+        val sumOnDateOutsideRange = transactionSumByDates.find { it.aggregateDate == dateInFuture }
+        assertEqualsBD(BigDecimal(410), grandSum)
+        assertNull(sumOnDateOutsideRange)
     }
 }

@@ -66,7 +66,6 @@ Also, Java version is 17
 ** MySQL itself (`--default-time-zone`)
 * Transaction isolation readcommitted
 * sessionVariables cte_max_recursion_depth=36524
-* Use `with recursive` for date generation
 * Custom controller method to toggle log levels in production
 * Most of my controller tests that are meant to impose limits on the counts of things are prone to a
 TOCTOU bug: reinforce at the service layer, and, where applicable rely on the occupancy slots as well

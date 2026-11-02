@@ -60,7 +60,7 @@ class TransactionRepositoryTest {
     }
 
     @Test
-    fun sumByDateTest() {
+    fun sumByDateTest() { //TODO These tests are wrong. Move
 
         val folder = Files.createTempDirectory("temp").toFile()
         folder.deleteOnExit()
