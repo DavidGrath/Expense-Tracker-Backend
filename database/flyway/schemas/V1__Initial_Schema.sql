@@ -17,7 +17,7 @@ CREATE TABLE profile (
     `uuid` BINARY(16) NOT NULL COMMENT "A UUIDv7",
     `uuid_display` CHAR(36) GENERATED ALWAYS AS (bin_to_uuid(`uuid`)) VIRTUAL COMMENT 'Display value for UUID column',#TODO occupancy_slot and sort_key, size 2
     created_at DATETIME NOT NULL DEFAULT(NOW(3)),
-    FOREIGN KEY fk_profile_user (user_id) REFERENCES `user` (id), #--TODO "In MySQL 8.0.16 and higher, the FOREIGN_KEY index_name is ignored"
+    CONSTRAINT fk_profile_user FOREIGN KEY (user_id) REFERENCES `user` (id),
     UNIQUE KEY uq_user_string_id (user_id, uuid),
     CONSTRAINT chk_profile_name_valid CHECK (NOT `name` REGEXP '[\\p{Cc}\\p{Zl}\\p{Zp}]' AND NOT `name` REGEXP '^[\\p{Zs}\\p{M}\\p{Cf}]+$' AND char_length(`name`) > 0)
 );
@@ -29,7 +29,7 @@ CREATE TABLE category (
     is_custom BOOLEAN NOT NULL,
     `name` VARCHAR(50),
     created_at DATETIME NOT NULL DEFAULT(NOW(3)), #TODO occupancy_slot and sort_key, size 30
-    FOREIGN KEY fk_category_profile (profile_id) REFERENCES profile (id),
+    CONSTRAINT fk_category_profile FOREIGN KEY (profile_id) REFERENCES profile (id),
     UNIQUE KEY uq_category_profile_string_id (profile_id, string_id),
     CONSTRAINT chk_category_is_custom_valid CHECK ((is_custom AND string_id IS NULL AND `name` IS NOT NULL) OR (NOT is_custom AND string_id IS NOT NULL AND `name` IS NULL)),
     CONSTRAINT chk_category_name_valid CHECK (NOT is_custom OR (`name` NOT REGEXP '[\\p{Cc}\\p{Zl}\\p{Zp}]' AND NOT `name` REGEXP '^[\\p{Zs}\\p{M}\\p{Cf}]+$')  AND char_length(`name`) > 0)
@@ -40,7 +40,7 @@ CREATE TABLE financial_institution (
     profile_id BIGINT NOT NULL,
     name VARCHAR(50) NOT NULL,
     created_at DATETIME NOT NULL DEFAULT(NOW(3)),
-    FOREIGN KEY fk_financial_institution_profile (profile_id) REFERENCES profile (id)
+    CONSTRAINT fk_financial_institution_profile FOREIGN KEY (profile_id) REFERENCES profile (id)
 ) COMMENT "An entity that holds accounts";
 
 CREATE TABLE `account` (
@@ -51,8 +51,8 @@ CREATE TABLE `account` (
     reference_number VARCHAR(50),
     `name` VARCHAR(50) NOT NULL, # TODO occupancy_slot and sort_key
     created_at DATETIME NOT NULL DEFAULT(NOW(3)),
-    FOREIGN KEY fk_account_financial_institution (financial_institution_id) REFERENCES financial_institution (id),
-    FOREIGN KEY fk_account_profile (profile_id) REFERENCES `profile` (id),
+    CONSTRAINT fk_account_financial_institution FOREIGN KEY (financial_institution_id) REFERENCES financial_institution (id),
+    CONSTRAINT fk_account_profile FOREIGN KEY (profile_id) REFERENCES `profile` (id),
     CONSTRAINT chk_account_currency_code_valid CHECK (REGEXP_LIKE(currency_code, '[A-Z]{3}', 'c')),
     CONSTRAINT chk_account_name_valid CHECK (`name` NOT REGEXP '[\\p{Cc}\\p{Zl}\\p{Zp}]' AND NOT `name` REGEXP '^[\\p{Zs}\\p{M}\\p{Cf}]+$' AND char_length(`name`) > 0)
 );
@@ -62,7 +62,7 @@ CREATE TABLE seller (
     profile_id BIGINT NOT NULL,
     `name` VARCHAR(50) NOT NULL, #TODO occupancy_slot and sort_key, max 15
     created_at DATETIME NOT NULL DEFAULT(NOW(3)),
-    FOREIGN KEY fk_seller_profile (profile_id) REFERENCES profile (id),
+    CONSTRAINT fk_seller_profile FOREIGN KEY (profile_id) REFERENCES profile (id),
     CONSTRAINT chk_seller_name_valid CHECK (NOT `name` REGEXP '[\\p{Cc}\\p{Zl}\\p{Zp}]' AND NOT `name` REGEXP '^[\\p{Zs}\\p{M}\\p{Cf}]+$' AND char_length(`name`) > 0)
 ) COMMENT "An entity that sells items";
 
@@ -75,7 +75,7 @@ CREATE TABLE seller_location (
     latitude DOUBLE,
     address VARCHAR(500) COMMENT "The kind of address you'd put in Google Maps",
     created_at DATETIME NOT NULL DEFAULT(NOW(3)), #TODO occupancy_slot and sort_key, limit 10
-    FOREIGN KEY fk_seller_location_seller (seller_id) REFERENCES seller (id),
+    CONSTRAINT fk_seller_location_seller FOREIGN KEY (seller_id) REFERENCES seller (id),
     UNIQUE KEY seller_location_seller_ordinal (seller_id, `ordinal`),
     CONSTRAINT chk_seller_location_name_valid CHECK (NOT `name` REGEXP '[\\p{Cc}\\p{Zl}\\p{Zp}]' AND NOT `name` REGEXP '^[\\p{Zs}\\p{M}\\p{Cf}]+$' AND char_length(`name`) > 0),
     CONSTRAINT chk_seller_location_longitude_valid CHECK (longitude IS NULL OR (-180 <= longitude AND longitude <= 180)),
@@ -97,9 +97,9 @@ CREATE TABLE `transaction` (
     seller_id BIGINT,
     seller_location_ordinal INT,
     created_at DATETIME NOT NULL DEFAULT(NOW(3)),
-    FOREIGN KEY fk_transaction_account (account_id) REFERENCES account (id),
-    FOREIGN KEY fk_transaction_seller (seller_id) REFERENCES seller (id),
-    FOREIGN KEY fk_transaction_seller_location (seller_id, seller_location_ordinal) REFERENCES seller_location (seller_id, ordinal),
+    CONSTRAINT fk_transaction_account FOREIGN KEY (account_id) REFERENCES account (id),
+    CONSTRAINT fk_transaction_seller FOREIGN KEY (seller_id) REFERENCES seller (id),
+    CONSTRAINT fk_transaction_seller_location FOREIGN KEY (seller_id, seller_location_ordinal) REFERENCES seller_location (seller_id, ordinal),
     UNIQUE KEY uq_transaction_account_dated_at_sort_key (account_id, dated_at, sort_key),
     CONSTRAINT transaction_mode_enum CHECK (
         `mode` IN ( #TODO Im reworking this soon, also collation ascii
@@ -131,8 +131,8 @@ CREATE TABLE transaction_item (
     volume_unit VARCHAR(20), #TODO UCUM enumeration
     is_reduction BOOLEAN NOT NULL COMMENT "Basically discounts for expenses and deductions for income",
     created_at DATETIME NOT NULL DEFAULT(NOW(3)),
-    FOREIGN KEY fk_transaction_item_transaction (transaction_id) REFERENCES transaction (id),
-    FOREIGN KEY fk_transaction_item_category (primary_category_id) REFERENCES category (id),
+    CONSTRAINT fk_transaction_item_transaction FOREIGN KEY (transaction_id) REFERENCES transaction (id),
+    CONSTRAINT fk_transaction_item_category FOREIGN KEY (primary_category_id) REFERENCES category (id),
     UNIQUE KEY uq_transaction_item_transaction_sort_key (transaction_id, sort_key),
     UNIQUE KEY uq_transaction_item_transaction_occupancy_slot (transaction_id, occupancy_slot),
     CONSTRAINT chk_transaction_item_amount_valid CHECK (0 < amount AND amount <= 100000000),
@@ -156,7 +156,7 @@ CREATE TABLE `image` (
     uri VARCHAR(500) NOT NULL, #TODO if a regex is feasible then use it, otherwise at least ensure it starts with http(s)?
     `path` VARCHAR(500) NOT NULL, #TODO regex to start with leading slash and valid characters if pragmatic
     created_at DATETIME NOT NULL DEFAULT(NOW(3)),
-    FOREIGN KEY fk_image_profile (profile_id) REFERENCES profile (id),
+    CONSTRAINT fk_image_profile FOREIGN KEY (profile_id) REFERENCES profile (id),
     UNIQUE KEY uq_image_profile_sha_256 (profile_id, sha_256),
     CONSTRAINT chk_image_size_bytes_valid CHECK (size_bytes > 0),
     CONSTRAINT chk_image_mime_type_valid CHECK (REGEXP_LIKE(`mime_type`, '^[a-z]+/[a-z]+$', 'c'))
@@ -175,7 +175,7 @@ CREATE TABLE document (
     sort_key INT NOT NULL COMMENT 'To allow for reordering of items within transactions',
     occupancy_slot INT NOT NULL COMMENT 'To ensure a maximum number of items can exist per transaction',
     created_at DATETIME NOT NULL DEFAULT(NOW(3)),
-    FOREIGN KEY fk_document_transaction (transaction_id) REFERENCES `transaction` (id),
+    CONSTRAINT fk_document_transaction FOREIGN KEY (transaction_id) REFERENCES `transaction` (id),
     UNIQUE KEY uq_document_transaction_sha_256 (transaction_id, sha_256),
     UNIQUE KEY uq_document_sort_key (transaction_id, sort_key),
     UNIQUE KEY uq_document_occupancy_slot (transaction_id, occupancy_slot),
@@ -200,8 +200,8 @@ CREATE TABLE transaction_item_images (
     sort_key INT NOT NULL COMMENT 'To allow for reordering of items within transactions',
     occupancy_slot INT NOT NULL COMMENT 'To ensure a maximum number of items can exist per transaction',
     created_at DATETIME NOT NULL DEFAULT(NOW(3)),
-    FOREIGN KEY fk_transaction_item_images_tranaction_item (transaction_item_id) REFERENCES transaction_item (id),
-    FOREIGN KEY fk_transaction_item_images_image (image_id) REFERENCES `image` (id),
+    CONSTRAINT fk_transaction_item_images_tranaction_item FOREIGN KEY (transaction_item_id) REFERENCES transaction_item (id),
+    CONSTRAINT fk_transaction_item_images_image FOREIGN KEY (image_id) REFERENCES `image` (id),
     UNIQUE KEY uq_transaction_item_images_transaction_item_image (transaction_item_id, image_id),
     UNIQUE KEY uq_transaction_item_images_transaction_item_sort_key (transaction_item_id, sort_key),
     UNIQUE KEY uq_transaction_item_images_transaction_item_occupancy_slot (transaction_item_id, occupancy_slot),
@@ -213,8 +213,8 @@ CREATE TABLE transaction_item_categories (
     transaction_item_id BIGINT NOT NULL,
     category_id BIGINT NOT NULL,
     created_at DATETIME NOT NULL DEFAULT(NOW(3)), #TODO not sure if I wanna keep this table, but if I do: create occupancy_slot and check 1 <= occupancy_slot <= 4
-    FOREIGN KEY fk_transaction_item_categories_tranaction_item (transaction_item_id) REFERENCES transaction_item (id),
-    FOREIGN KEY fk_transaction_item_categories_category (category_id) REFERENCES category (id),
+    CONSTRAINT fk_transaction_item_categories_tranaction_item FOREIGN KEY (transaction_item_id) REFERENCES transaction_item (id),
+    CONSTRAINT fk_transaction_item_categories_category FOREIGN KEY (category_id) REFERENCES category (id),
     UNIQUE KEY uq_transaction_item_categories_transaction_item_category (
         transaction_item_id,
         category_id

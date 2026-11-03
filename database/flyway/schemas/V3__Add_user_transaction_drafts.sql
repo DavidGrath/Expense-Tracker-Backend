@@ -5,8 +5,8 @@ CREATE TABLE `user_draft` (
     `draft_type` VARCHAR(6) NOT NULL,
     `draft` JSON NOT NULL,
     `created_at` DATETIME NOT NULL DEFAULT(NOW(3)),
-    FOREIGN KEY `fk_user_draft_profile` (`profile_id`) REFERENCES `profile` (`id`),
-    FOREIGN KEY `fk_document_transaction` (`transaction_id`) REFERENCES `transaction` (`id`),
+    CONSTRAINT `fk_user_draft_profile` FOREIGN KEY (`profile_id`) REFERENCES `profile` (`id`),
+    CONSTRAINT `fk_user_draft_transaction` FOREIGN KEY (`transaction_id`) REFERENCES `transaction` (`id`),
     CONSTRAINT `draft_type_enum` CHECK (
         `draft_type` IN (
             "create",
