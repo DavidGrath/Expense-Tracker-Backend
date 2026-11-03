@@ -220,13 +220,13 @@ class TransactionService {
     fun getTransactionDebitSum(profileId: Long, fromDate: LocalDate?, toDate: LocalDate?,
                                accountIds: List<Long>,
                                dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>): BigDecimal {
-        return transactionRepository.getTransactionSum(profileId, true, fromDate, toDate, accountIds, dates, categories, modes, sellers)
+        return transactionItemRepository.getTransactionItemDebitSum(profileId, fromDate, toDate, accountIds, dates, categories, modes, sellers)
     }
 
     fun getTransactionCreditSum(profileId: Long, fromDate: LocalDate?, toDate: LocalDate?,
                                 accountIds: List<Long>,
                                 dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>): BigDecimal {
-        return transactionRepository.getTransactionSum(profileId, false, fromDate, toDate, accountIds, dates, categories, modes, sellers)
+        return transactionItemRepository.getTransactionItemCreditSum(profileId, fromDate, toDate, accountIds, dates, categories, modes, sellers)
     }
 
     fun getTransactionDebitSumByCategory(profileId: Long, fromDate: LocalDate?, toDate: LocalDate?,

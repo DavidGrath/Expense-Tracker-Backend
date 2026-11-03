@@ -21,12 +21,12 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
                   private val testUtilComponent: TestUtilComponent
     ) {
     fun createTransaction(): TransactionBuilder {
-        val transactionBuilder = TransactionBuilderImpl(root, timeHandler, userUuid, profileUuid, testUtilComponent.transactionRepository, testUtilComponent.categoryRepository, testUtilComponent.profileRepository, testUtilComponent.accountRepository, testUtilComponent.itemRepository, testUtilComponent.imageRepository, testUtilComponent.itemImagesRepository, testUtilComponent.userRepository, testUtilComponent.documentRepository)
+        val transactionBuilder = TransactionBuilderImpl(root, timeHandler, userUuid, profileUuid, testUtilComponent.transactionRepository, testUtilComponent.categoryRepository, testUtilComponent.profileRepository, testUtilComponent.accountRepository, testUtilComponent.itemRepository, testUtilComponent.imageRepository, testUtilComponent.itemImagesRepository, testUtilComponent.userRepository, testUtilComponent.documentRepository, testUtilComponent.sellerRepository)
         return transactionBuilder
     }
 
     fun createBasicTransaction(description: String, category: String, amount: BigDecimal): Long {
-        val transactionBuilder = TransactionBuilderImpl(root, timeHandler, userUuid, profileUuid, testUtilComponent.transactionRepository, testUtilComponent.categoryRepository, testUtilComponent.profileRepository, testUtilComponent.accountRepository, testUtilComponent.itemRepository, testUtilComponent.imageRepository, testUtilComponent.itemImagesRepository, testUtilComponent.userRepository, testUtilComponent.documentRepository)
+        val transactionBuilder = TransactionBuilderImpl(root, timeHandler, userUuid, profileUuid, testUtilComponent.transactionRepository, testUtilComponent.categoryRepository, testUtilComponent.profileRepository, testUtilComponent.accountRepository, testUtilComponent.itemRepository, testUtilComponent.imageRepository, testUtilComponent.itemImagesRepository, testUtilComponent.userRepository, testUtilComponent.documentRepository, testUtilComponent.sellerRepository)
             .withItem(description, category, amount)
         val id = transactionBuilder.commit().first()
         return id
@@ -37,7 +37,7 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
                                          private val accountRepository: AccountRepository,
                                          private val transactionItemRepository: TransactionItemRepository,
                                          private val imagesRepository: ImageRepository,
-                                         private val itemImagesRepository: ItemImagesRepository, private val userRepository: UserRepository, val documentRepository: DocumentRepository
+                                         private val itemImagesRepository: ItemImagesRepository, private val userRepository: UserRepository, val documentRepository: DocumentRepository, val sellerRepository: SellerRepository
         ): TransactionBuilder {
         private val items = arrayListOf<TransactionItemPojo>()
         private var account: AccountPojo
@@ -49,6 +49,9 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
         private var time: LocalTime? = null
         private var timeSet = false
         private var useDatesAsCreationDates: Boolean = false
+        private var customMode: TransactionMode? = null
+
+        private var customSeller: SellerPojo? = null
 
 
         private var hasCommitted = false
@@ -126,7 +129,7 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
             return this
         }
 
-        fun getAccount(): AccountPojo {
+        override fun getAccount(): AccountPojo {
             return newAccount?: account
         }
 
@@ -160,13 +163,14 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
             val mainDocumentsFolder = file(root, Constants.FOLDER_NAME_USERS, userUuid, Constants.FOLDER_NAME_PROFILES, profileUuid, Constants.FOLDER_NAME_DATA, Constants.SUBFOLDER_NAME_DOCUMENTS)
             mainDocumentsFolder.mkdirs()
 
+            val mode = customMode?: TransactionMode.Other
 
             val ids = repeats.map { repeatDate ->
                 if(useDatesAsCreationDates) {
                     dateTime = repeatDate.atTime(LocalTime.parse("08:00:00"))
                 }
                 val sortKey = transactionRepository.getMaxSortKeyInDayForAccount(profile.id!!, account.id!!, repeatDate)?: 0
-                val transaction = TransactionPojo(null, account.id!!, sum,  debitOrCredit.toByte(), repeatDate, null, sortKey + 1_000, TransactionMode.Other,null, null, null, dateTime)
+                val transaction = TransactionPojo(null, account.id!!, sum,  debitOrCredit.toByte(), repeatDate, time, sortKey + 1_000, mode,null, customSeller?.id, null, dateTime)
                 val transactionId = transactionRepository.insertTransaction(transaction)
 
                 documents.forEachIndexed { i, doc ->
@@ -188,8 +192,11 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
                     val list = imagesMap[index]
                     if(list != null) {
                         list.forEachIndexed { i, resource ->
+                            val existingDbImage = imagesRepository.findBySha256(profile.id!!, HexFormat.of().parseHex(resource.sha256))
                             val imageId = if(sha256Map.contains(resource.sha256)) {
                                 sha256Map[resource.sha256]!!
+                            } else if(existingDbImage != null) {
+                                existingDbImage.id!!
                             } else {
                                 val resourceInputStream = classLoader.getResourceAsStream(resource.resourceName)
                                 val file = File(mainImagesFolder, resource.fileName)
@@ -248,6 +255,29 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
             this.documents.add(resource)
             return this
         }
+
+        override fun withNewSeller(name: String): TransactionBuilder {
+            if(customSeller != null) {
+                throw IllegalArgumentException("Custom seller already set")
+            }
+
+            val seller = SellerPojo(null, profile.id!!, name, LocalDateTime.now(timeHandler.getClock()))
+            val sellerId = sellerRepository.insertSeller(seller)
+            this.customSeller = sellerRepository.getByProfileIdAndId(profile.id!!, sellerId)
+            return this
+        }
+
+        override fun getSeller(): SellerPojo? {
+            return customSeller
+        }
+
+        override fun withMode(mode: TransactionMode): TransactionBuilder {
+            if(customMode != null) {
+                throw IllegalArgumentException("Mode already set")
+            }
+            this.customMode = mode
+            return this
+        }
     }
 
     private class TransactionItemBuilderImpl(private val xTransactionBuilderImpl: TransactionBuilderImpl, private val categoryRepository: CategoryRepository, private val profileDb: ProfilePojo): TransactionItemBuilder {
@@ -278,7 +308,7 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
             return this
         }
 
-        override fun otherDetails(brand: String?, quantity: Int, variation: String, referenceNumber: String?, isReduction: Boolean, weight: BigDecimal?, weightUnit: String?, volume: BigDecimal?, volumeUnit: String?): TransactionItemBuilder {
+        override fun otherDetails(brand: String?, quantity: Int, variation: String?, referenceNumber: String?, isReduction: Boolean, weight: BigDecimal?, weightUnit: String?, volume: BigDecimal?, volumeUnit: String?): TransactionItemBuilder {
             item = item.copy(brand = brand, quantity = quantity, variation = variation, isReduction = isReduction.toByte(), weight = weight, weightUnit = weightUnit, volume = volume, volumeUnit = volumeUnit)
             return this
         }

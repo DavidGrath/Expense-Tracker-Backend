@@ -17,7 +17,7 @@ CREATE TABLE profile (
     `uuid` BINARY(16) NOT NULL COMMENT "A UUIDv7",
     `uuid_display` CHAR(36) GENERATED ALWAYS AS (bin_to_uuid(`uuid`)) VIRTUAL COMMENT 'Display value for UUID column',#TODO occupancy_slot and sort_key, size 2
     created_at DATETIME NOT NULL DEFAULT(NOW(3)),
-    FOREIGN KEY fk_profile_user (user_id) REFERENCES `user` (id),
+    FOREIGN KEY fk_profile_user (user_id) REFERENCES `user` (id), #--TODO "In MySQL 8.0.16 and higher, the FOREIGN_KEY index_name is ignored"
     UNIQUE KEY uq_user_string_id (user_id, uuid),
     CONSTRAINT chk_profile_name_valid CHECK (NOT `name` REGEXP '[\\p{Cc}\\p{Zl}\\p{Zp}]' AND NOT `name` REGEXP '^[\\p{Zs}\\p{M}\\p{Cf}]+$' AND char_length(`name`) > 0)
 );

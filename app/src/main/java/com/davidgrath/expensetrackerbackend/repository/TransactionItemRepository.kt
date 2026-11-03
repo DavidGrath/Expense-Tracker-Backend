@@ -8,6 +8,8 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.Transact
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.ACCOUNT
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.DEFAULT_FETCH_LIMIT
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.FALSE_BYTE
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.TRUE_BYTE
 import com.davidgrath.expensetrackerbackend.utils.toByte
 import org.jooq.DSLContext
 import org.jooq.DatePart
@@ -235,6 +237,86 @@ open class TransactionItemRepository {
             selectStep = selectStep.and(TRANSACTION.SELLER_ID.`in`(sellers))
         }
         return selectStep.fetchOne()?.value1()
+    }
+
+    fun getTransactionItemDebitSum(
+        profileId: Long,
+        fromDate: LocalDate?, toDate: LocalDate?,
+        accountIds: List<Long>,
+        dates: List<LocalDate>,
+        categories: List<Long>,
+        modes: List<TransactionMode>,
+        sellers: List<Long>
+    ): BigDecimal {
+        var selectStep = mainContext.select(DSL.sum(TRANSACTION_ITEM.AMOUNT)).from(TRANSACTION_ITEM)
+            .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(TRANSACTION_ITEM.TRANSACTION_ID))
+            .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
+            .where(ACCOUNT.PROFILE_ID.eq(profileId))
+            .and( TRANSACTION.DEBIT_OR_CREDIT.eq(TRUE_BYTE))
+            .and( TRANSACTION_ITEM.IS_REDUCTION.eq(FALSE_BYTE))
+        if(fromDate != null) {
+            selectStep = selectStep.and(TRANSACTION.DATED_AT.greaterOrEqual(fromDate))
+        }
+        if(toDate != null) {
+            selectStep = selectStep.and(TRANSACTION.DATED_AT.lessOrEqual(toDate))
+        }
+        if(accountIds.isNotEmpty()) {
+            selectStep = selectStep.and(TRANSACTION.ACCOUNT_ID.`in`(accountIds))
+        }
+        if(dates.isNotEmpty()) {
+            selectStep = selectStep.and(TRANSACTION.DATED_AT.`in`(dates))
+        }
+        if(categories.isNotEmpty()) {
+            selectStep = selectStep.and(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.`in`(categories))
+        }
+        if(modes.isNotEmpty()) {
+            selectStep = selectStep.and(TRANSACTION.MODE.`in`(modes))
+        }
+        if(sellers.isNotEmpty()) {
+            selectStep = selectStep.and(TRANSACTION.SELLER_ID.`in`(sellers))
+        }
+
+        return selectStep.fetchOne()?.value1()?: BigDecimal.ZERO
+    }
+
+    fun getTransactionItemCreditSum(
+        profileId: Long,
+        fromDate: LocalDate?, toDate: LocalDate?,
+        accountIds: List<Long>,
+        dates: List<LocalDate>,
+        categories: List<Long>,
+        modes: List<TransactionMode>,
+        sellers: List<Long>
+    ): BigDecimal {
+        var selectStep = mainContext.select(DSL.sum(TRANSACTION_ITEM.AMOUNT)).from(TRANSACTION_ITEM)
+            .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(TRANSACTION_ITEM.TRANSACTION_ID))
+            .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
+            .where(ACCOUNT.PROFILE_ID.eq(profileId))
+            .and( TRANSACTION.DEBIT_OR_CREDIT.eq(FALSE_BYTE))
+            .and( TRANSACTION_ITEM.IS_REDUCTION.eq(FALSE_BYTE))
+        if(fromDate != null) {
+            selectStep = selectStep.and(TRANSACTION.DATED_AT.greaterOrEqual(fromDate))
+        }
+        if(toDate != null) {
+            selectStep = selectStep.and(TRANSACTION.DATED_AT.lessOrEqual(toDate))
+        }
+        if(accountIds.isNotEmpty()) {
+            selectStep = selectStep.and(TRANSACTION.ACCOUNT_ID.`in`(accountIds))
+        }
+        if(dates.isNotEmpty()) {
+            selectStep = selectStep.and(TRANSACTION.DATED_AT.`in`(dates))
+        }
+        if(categories.isNotEmpty()) {
+            selectStep = selectStep.and(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.`in`(categories))
+        }
+        if(modes.isNotEmpty()) {
+            selectStep = selectStep.and(TRANSACTION.MODE.`in`(modes))
+        }
+        if(sellers.isNotEmpty()) {
+            selectStep = selectStep.and(TRANSACTION.SELLER_ID.`in`(sellers))
+        }
+
+        return selectStep.fetchOne()?.value1()?: BigDecimal.ZERO
     }
 
 

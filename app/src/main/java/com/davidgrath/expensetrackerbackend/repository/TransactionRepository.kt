@@ -67,7 +67,7 @@ open class TransactionRepository {
         }
         if(categories.isNotEmpty()) {
             selectStep = selectStep.and(TRANSACTION.ID.`in`(
-                mainContext.select(TRANSACTION.ID).from(TRANSACTION).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.TRANSACTION_ID.eq(TRANSACTION.ID)).where(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.`in`(categories))
+                mainContext.select(TRANSACTION.ID).from(TRANSACTION).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.TRANSACTION_ID.eq(TRANSACTION.ID)).where(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.`in`(categories)) //TODO get rid of this from the whole codebase
             ))
         }
         if(modes.isNotEmpty()) {
@@ -227,46 +227,6 @@ open class TransactionRepository {
         return result
     }
 
-    fun getTransactionSum(
-        profileId: Long,
-        debitOrCredit: Boolean,
-        fromDate: LocalDate?, toDate: LocalDate?,
-        accountIds: List<Long>,
-        dates: List<LocalDate>,
-        categories: List<Long>,
-        modes: List<TransactionMode>,
-        sellers: List<Long>
-    ): BigDecimal {
-        var selectStep = mainContext.select(DSL.sum(TRANSACTION.AMOUNT)).from(TRANSACTION)
-            .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
-            .where(ACCOUNT.PROFILE_ID.eq(profileId))
-            .and(TRANSACTION.DEBIT_OR_CREDIT.eq(debitOrCredit.toByte()))
-        if(fromDate != null) {
-            selectStep = selectStep.and(TRANSACTION.DATED_AT.greaterOrEqual(fromDate))
-        }
-        if(toDate != null) {
-            selectStep = selectStep.and(TRANSACTION.DATED_AT.lessOrEqual(toDate))
-        }
-        if(accountIds.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.ACCOUNT_ID.`in`(accountIds))
-        }
-        if(dates.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.DATED_AT.`in`(dates))
-        }
-        if(categories.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.ID.`in`(
-                mainContext.select(TRANSACTION.ID).from(TRANSACTION).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.TRANSACTION_ID.eq(TRANSACTION.ID)).where(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.`in`(categories))
-            ))
-        }
-        if(modes.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.MODE.`in`(modes))
-        }
-        if(sellers.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.SELLER_ID.`in`(sellers))
-        }
-
-        return selectStep.fetchOne()?.value1()?: BigDecimal.ZERO
-    }
 
     fun getSumByCategory(
         profileId: Long, debitOrCredit: Boolean,
