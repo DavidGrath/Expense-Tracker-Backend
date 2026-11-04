@@ -56,6 +56,8 @@ class TransactionDraftService {
 
     @Autowired
     lateinit var documentRepository: DocumentRepository
+    @Autowired
+    lateinit var genericRepository: GenericRepository
 
     @Autowired
     lateinit var timeHandler: TimeHandler
@@ -92,25 +94,30 @@ class TransactionDraftService {
     }
 
     fun addItemToDraft(profileId: Long): UUID? {
-        val userDraft = userDraftRepository.getDraftByProfile(profileId)
-        if (userDraft != null) {
-            var transactionDraft = gson.fromJson(userDraft.draft.toString(), TransactionDraft::class.java)
-            if (transactionDraft.items.size >= Constants.Constraints.MAX_ITEMS_PER_TRANSACTION) {
-                LOGGER.info("Too many items for draft")
-                return null
-            } else {
-                val uuid = UUID.randomUUID()
-                val misc = categoryRepository.findByProfileIdAndStringId(profileId, "miscellaneous")!!
-                val item = TransactionDraftItem(uuid, null, misc.id!!, BigDecimal.ZERO, "")
-                transactionDraft = transactionDraft.copy(items = transactionDraft.items + item)
-                val jsonString = gson.toJson(transactionDraft)
-                val json = JSON.json(jsonString)
-                userDraftRepository.updateDraft(profileId, userDraft!!.id!!, json)
-                return uuid
+        var uuidRet: UUID? = null
+        genericRepository.transactionContext { trx ->
+            val trxContext = trx.dsl()
+            val userDraft = userDraftRepository.getDraftByProfileForUpdateTrx(trxContext, profileId)
+            LOGGER.info("Acquired lock for profile draft")
+
+            if (userDraft != null) {
+                var transactionDraft = gson.fromJson(userDraft.draft.toString(), TransactionDraft::class.java)
+                if (transactionDraft.items.size >= Constants.Constraints.MAX_ITEMS_PER_TRANSACTION) {
+                    LOGGER.info("Too many items for draft")
+                    return@transactionContext
+                } else {
+                    val uuid = UUID.randomUUID()
+                    val misc = categoryRepository.findByProfileIdAndStringIdTrx(trxContext, profileId, "miscellaneous")!!
+                    val item = TransactionDraftItem(uuid, null, misc.id!!, BigDecimal.ZERO, "")
+                    transactionDraft = transactionDraft.copy(items = transactionDraft.items + item)
+                    val jsonString = gson.toJson(transactionDraft)
+                    val json = JSON.json(jsonString)
+                    userDraftRepository.updateDraftTrx(trxContext, profileId, userDraft!!.id!!, json)
+                    uuidRet = uuid
+                }
             }
-        } else {
-            return null
         }
+        return uuidRet
     }
 
     fun getDraft(profileId: Long): TransactionDraft? {
@@ -148,13 +155,18 @@ class TransactionDraftService {
 
     fun finishDraft(profileId: Long, userUuid: ByteArray, profileUuid: ByteArray, zoneId: ZoneId): Long {
         val start = System.currentTimeMillis()
-        val userDraft = userDraftRepository.getDraftByProfile(profileId)
+        var transactionIdRet: Long = -1
+        transactionRepository.transactionContext { trx ->
+            val trxContext = trx.dsl()
+        val userDraft = userDraftRepository.getDraftByProfileForUpdateTrx(trxContext, profileId)
+
 
         val userUuidString = bytesToUUID(userUuid).toString()
         val profileUuidString = bytesToUUID(profileUuid).toString()
         if (userDraft == null) {
             //TODO
         }
+            validateDraft(userDraft!!)
         val draft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
         val total = draft.items.map {
             if (it.isReduction) {
@@ -174,9 +186,8 @@ class TransactionDraftService {
                 .filter { it.dbId == null }.toSet()
         val imagesMap = mutableMapOf<String, Long>()
 
-        var transactionIdRet: Long = -1
-        transactionRepository.transactionContext { trx ->
-            val trxContext = trx.dsl()
+
+
             for (image in actuallyUsedNewImages) {
                 if (imagesMap[image.sha256!!] != null) {
                     continue
@@ -419,12 +430,8 @@ class TransactionDraftService {
         return customDate to customTime
     }
 
-    fun validateDraft(profileId: Long): Boolean {
-        val userDraft = userDraftRepository.getDraftByProfile(profileId)
-        if (userDraft == null) {
-            //TODO
-        }
-        val draft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
+    fun validateDraft(userDraftPojo: UserDraftPojo): Boolean {
+        val draft = gson.fromJson(userDraftPojo.draft.toString(), TransactionDraft::class.java)
         val items = draft.items
         var valid = true
         if (items.isEmpty()) {
@@ -474,6 +481,13 @@ class TransactionDraftService {
             }
         }
         return valid
+    }
+    fun validateDraft(profileId: Long): Boolean {
+        val userDraft = userDraftRepository.getDraftByProfile(profileId)
+        if (userDraft == null) {
+            //TODO
+        }
+        return validateDraft(userDraft!!)
     }
 
     fun setDate(profileId: Long, localDate: LocalDate?) {

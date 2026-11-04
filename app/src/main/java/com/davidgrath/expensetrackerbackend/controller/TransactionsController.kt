@@ -228,7 +228,7 @@ open class TransactionsController: TransactionsApi {
             throw exception
 
         }
-        if(!transactionDraftService.validateDraft(profile.id!!)) { //TODO TOC
+        if(!transactionDraftService.validateDraft(profile.id!!)) {
             val exception = CustomHttpException(ErrorCode.DRAFT_NOT_VALID, HttpStatus.BAD_REQUEST)
             LOGGER.error("Invalid draft ", exception)
             throw exception
@@ -244,8 +244,7 @@ open class TransactionsController: TransactionsApi {
             LOGGER.error("Bad time zone", exception)
             throw exception
         }
-        transactionDraftService.finishDraft(profile.id!!, userUuid, uuidToBytes(UUID.fromString(profileId)), zone) //TODO TOU
-        //TODO TOCTOU
+        transactionDraftService.finishDraft(profile.id!!, userUuid, uuidToBytes(UUID.fromString(profileId)), zone)
         return ResponseEntity.ok().build()
     }
 
@@ -329,7 +328,7 @@ open class TransactionsController: TransactionsApi {
             LOGGER.error("Draft does not exist ", exception)
             throw exception
         }
-        val uuid = transactionDraftService.addItemToDraft(profile.id!!) //TODO Potential TOCTOU?
+        val uuid = transactionDraftService.addItemToDraft(profile.id!!)
         if(uuid == null) {
             val exception = CustomHttpException(ErrorCode.LIMITS_EXCEEDED, HttpStatus.BAD_REQUEST)
             LOGGER.error("Too many draft items ", exception)
@@ -390,7 +389,7 @@ open class TransactionsController: TransactionsApi {
             throw exception
         }
         val account = accountService.getAccountsForProfile(profile.id)[0]
-        transactionDraftService.createDraft(profile.id!!, account.id!!) //TODO Is there a unique constraint to enforce this? Potential TOCTOU. I also potentially plan on having multiple drafts active at once, though that's an entire rework, so maybe not as simple to resolve
+        transactionDraftService.createDraft(profile.id!!, account.id!!) //TODO There isn't a unique constraint to enforce this. Potential TOCTOU. Add in next commit
         val scheme = httpServletRequest.scheme
         val host = httpServletRequest.serverName
         val port = httpServletRequest.serverPort

@@ -18,10 +18,10 @@ import java.math.BigDecimal
 import java.time.LocalDate
 
 @Repository
-open class TransactionRepository {
+class TransactionRepository {
 
     @Autowired
-    open lateinit var mainContext: DSLContext
+    lateinit var mainContext: DSLContext
 
     //region Create
 

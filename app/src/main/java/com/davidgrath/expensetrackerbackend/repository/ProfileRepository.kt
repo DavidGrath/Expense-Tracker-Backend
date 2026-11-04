@@ -39,6 +39,15 @@ open class ProfileRepository {
         return findByUuid(userId, uuidBytes)
     }
 
+
+
+    fun getByIdForUpdateTrx(trxContext: DSLContext, profileId: Long): ProfilePojo {
+        val selectStep = trxContext.selectFrom(PROFILE)
+            .where(PROFILE.ID.eq(profileId))
+            .forUpdate()
+        return selectStep.fetchOne()!!.into(ProfilePojo::class.java)
+    }
+
     fun findAllByUserId(userId: Long): List<ProfilePojo> {
         val selectStep = mainContext.selectFrom(PROFILE)
             .where(PROFILE.USER_ID.eq(userId))

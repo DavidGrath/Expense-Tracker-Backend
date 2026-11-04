@@ -325,20 +325,13 @@ class SellersController: SellersApi {
         val user = userService.getByUsername(principal.subject!!)
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
 
-        val sellerCount = sellerService.countAllSellers(profile.id!!) //TODO TOC
-        if(sellerCount >= Constants.Constraints.MAX_SELLERS_PER_PROFILE) {
-            val exception = CustomHttpException(ErrorCode.LIMITS_EXCEEDED, HttpStatus.BAD_REQUEST)
-            LOGGER.error("Max sellers reached", exception)
-            throw exception
-        }
         val nameTrimmed = sellerCreateRequest!!.name.trim()
         if(nameTrimmed.isBlank()) {
             val exception = CustomHttpException(ErrorCode.INVALID_INPUT, HttpStatus.BAD_REQUEST)
             LOGGER.error("Name blank", exception)
             throw exception
         }
-        val sellerId = sellerService.createSeller(profile.id, nameTrimmed) //TODO TOU
-        //TODO This is prone to TOCTOU: start a transaction, place a lock on the profile, and populate the seller only if the count is valid. occupancy slots are the last line of defense
+        val sellerId = sellerService.createSeller(profile.id!!, nameTrimmed)
         return ResponseEntity.ok(sellerId)
     }
 

@@ -1,12 +1,19 @@
 package com.davidgrath.expensetrackerbackend.service
 
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
+import com.davidgrath.expensetrackerbackend.controller.CategoriesController
+import com.davidgrath.expensetrackerbackend.controller.exception.CustomHttpException
+import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.entities.views.CategoryWithStats
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.CategoryPojo
 import com.davidgrath.expensetrackerbackend.repository.CategoryRepository
+import com.davidgrath.expensetrackerbackend.repository.GenericRepository
+import com.davidgrath.expensetrackerbackend.repository.ProfileRepository
+import com.davidgrath.expensetrackerbackend.utils.Constants
 import com.davidgrath.expensetrackerbackend.utils.toByte
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -15,6 +22,10 @@ import java.time.ZonedDateTime
 class CategoryService {
     @Autowired
     lateinit var categoryRepository: CategoryRepository
+    @Autowired
+    lateinit var profileRepository: ProfileRepository
+    @Autowired
+    lateinit var genericRepository: GenericRepository
     @Autowired
     lateinit var timeHandler: TimeHandler
 
@@ -48,11 +59,28 @@ class CategoryService {
         return categories
     }
 
+    //I'll eventually introduce occupancy slots to make violating the capacity constraint virtually impossible at the database layer, but for now this should work
     fun createCategory(profileId: Long, name: String, icon: String): Long {
-        val date = ZonedDateTime.now(timeHandler.getClock())
-        val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
-        val category = CategoryPojo(null, profileId, null, true.toByte(), name, utcDate, icon)
-        return categoryRepository.insertCategory(category)
+        var retId = -1L
+        genericRepository.transactionContext { trx ->
+            val trxContext = trx.dsl()
+            val profile = profileRepository.getByIdForUpdateTrx(trxContext, profileId)
+            LOGGER.info("Acquired lock for profile {}", profile.id)
+
+            val existing = categoryRepository.getAllByProfileIdTrx(trxContext,profile.id!!)
+            if(existing.size >= Constants.Constraints.MAX_CATEGORIES_PER_PROFILE) {
+                val exception = CustomHttpException(ErrorCode.LIMITS_EXCEEDED, HttpStatus.BAD_REQUEST)
+                LOGGER.error("Too many categories", exception)
+                throw exception
+            }
+            val date = ZonedDateTime.now(timeHandler.getClock())
+            val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
+            val category = CategoryPojo(null, profileId, null, true.toByte(), name, utcDate, icon)
+            val id = categoryRepository.insertCategoryTrx(trxContext, category)
+            LOGGER.info("ID: {}", id)
+            retId = id
+        }
+        return retId
     }
 
     fun updateCategory(categoryId: Long, profileId: Long, name: String, icon: String): Int {

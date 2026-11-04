@@ -1,11 +1,18 @@
 package com.davidgrath.expensetrackerbackend.service
 
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
+import com.davidgrath.expensetrackerbackend.controller.AccountsController
+import com.davidgrath.expensetrackerbackend.controller.exception.CustomHttpException
+import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.entities.views.AccountWithStats
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.AccountPojo
 import com.davidgrath.expensetrackerbackend.repository.AccountRepository
+import com.davidgrath.expensetrackerbackend.repository.GenericRepository
+import com.davidgrath.expensetrackerbackend.repository.ProfileRepository
+import com.davidgrath.expensetrackerbackend.utils.Constants
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -17,6 +24,10 @@ class AccountService {
     lateinit var timeHandler: TimeHandler
     @Autowired
     lateinit var accountRepository: AccountRepository
+    @Autowired
+    lateinit var profileRepository: ProfileRepository
+    @Autowired
+    lateinit var genericRepository: GenericRepository
 
     fun isAccountInProfile(profileId: Long, accountId: Long): Boolean {
         val account = accountRepository.getByProfileIdAndId(profileId, accountId)
@@ -47,12 +58,26 @@ class AccountService {
     }
 
     fun createAccount(profileId: Long, name: String, currencyCode: String): Long {
-        val date = ZonedDateTime.now(timeHandler.getClock())
-        val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
-        val accountPojo = AccountPojo(null, profileId, currencyCode, null, null, name, utcDate)
-        val id = accountRepository.insertAccount(accountPojo)
-        LOGGER.info("ID: {}", id)
-        return id
+        var retId = -1L
+        genericRepository.transactionContext { trx ->
+            val trxContext = trx.dsl()
+            val profile = profileRepository.getByIdForUpdateTrx(trxContext, profileId)
+            LOGGER.info("Acquired lock for profile {}", profile.id)
+
+            val existing = accountRepository.getAllByProfileIdTrx(trxContext, profile.id!!)
+            if(existing.size >= Constants.Constraints.MAX_ACCOUNTS_PER_PROFILE) {
+                val exception = CustomHttpException(ErrorCode.LIMITS_EXCEEDED, HttpStatus.BAD_REQUEST) //TODO I'm not sure if I wanna throw CustomHttpExceptions at the service layer, but they're a good placeholder for now
+                LOGGER.error("Max accounts reached", exception)
+                throw exception
+            }
+            val date = ZonedDateTime.now(timeHandler.getClock())
+            val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
+            val accountPojo = AccountPojo(null, profileId, currencyCode, null, null, name, utcDate)
+            val id = accountRepository.insertAccountTrx(trxContext, accountPojo)
+            LOGGER.info("ID: {}", id)
+            retId = id
+        }
+        return retId
     }
 
     fun updateAccount(profileId: Long, id: Long, name: String): Int {

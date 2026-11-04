@@ -1,13 +1,20 @@
 package com.davidgrath.expensetrackerbackend.service
 
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
+import com.davidgrath.expensetrackerbackend.controller.SellersController
+import com.davidgrath.expensetrackerbackend.controller.exception.CustomHttpException
+import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.SellerLocationPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.SellerPojo
+import com.davidgrath.expensetrackerbackend.repository.GenericRepository
+import com.davidgrath.expensetrackerbackend.repository.ProfileRepository
 import com.davidgrath.expensetrackerbackend.repository.SellerLocationRepository
 import com.davidgrath.expensetrackerbackend.repository.SellerRepository
+import com.davidgrath.expensetrackerbackend.utils.Constants
 import com.davidgrath.expensetrackerbackend.utils.toByte
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -19,6 +26,10 @@ class SellerService {
     lateinit var sellerRepository: SellerRepository
     @Autowired
     lateinit var sellerLocationRepository: SellerLocationRepository
+    @Autowired
+    lateinit var profileRepository: ProfileRepository
+    @Autowired
+    lateinit var genericRepository: GenericRepository
     @Autowired
     lateinit var timeHandler: TimeHandler
 
@@ -86,12 +97,25 @@ class SellerService {
     }
 
     fun createSeller(profileId: Long, name: String): Long {
-        val date = ZonedDateTime.now(timeHandler.getClock())
-        val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
-        val sellerPojo = SellerPojo(null, profileId, name, utcDate)
-        val id = sellerRepository.insertSeller(sellerPojo)
-        LOGGER.info("ID: {}", id)
-        return id
+        var retId = -1L
+        genericRepository.transactionContext { trx ->
+            val trxContext = trx.dsl()
+            val profile = profileRepository.getByIdForUpdateTrx(trxContext, profileId)
+            LOGGER.info("Acquired lock for profile {}", profile.id)
+
+            val sellerCount = sellerRepository.countAllTrx(trxContext, profile.id!!)
+            if(sellerCount >= Constants.Constraints.MAX_SELLERS_PER_PROFILE) {
+                val exception = CustomHttpException(ErrorCode.LIMITS_EXCEEDED, HttpStatus.BAD_REQUEST)
+                LOGGER.error("Max sellers reached", exception)
+                throw exception
+            }
+            val date = ZonedDateTime.now(timeHandler.getClock())
+            val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
+            val sellerPojo = SellerPojo(null, profileId, name, utcDate)
+            val id = sellerRepository.insertSellerTrx(trxContext, sellerPojo)
+            LOGGER.info("ID: {}", id)
+        }
+        return retId
     }
 
 

@@ -11,12 +11,16 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 
 @Service
-class SellerRepository @Autowired constructor(open var dslContext: DSLContext) {
+class SellerRepository @Autowired constructor(open var mainContext: DSLContext) {
 
     // region Create
 
     fun insertSeller(sellerPojo: SellerPojo): Long {
-        val seller = dslContext.newRecord(SELLER, sellerPojo)
+        return insertSellerTrx(mainContext, sellerPojo)
+    }
+
+    fun insertSellerTrx(trxContext: DSLContext, sellerPojo: SellerPojo): Long {
+        val seller = trxContext.newRecord(SELLER, sellerPojo)
         seller.store()
         return seller.id!!
     }
@@ -26,14 +30,14 @@ class SellerRepository @Autowired constructor(open var dslContext: DSLContext) {
     // region Read
 
     fun getByProfileIdAndId(profileId: Long, id: Long): SellerPojo? {
-        val selectStep = dslContext.selectFrom(SELLER)
+        val selectStep = mainContext.selectFrom(SELLER)
             .where(SELLER.ID.eq(id))
             .and(SELLER.PROFILE_ID.eq(profileId))
         return selectStep.fetchOne()?.into(SellerPojo::class.java)
     }
 
     fun getByUserIdAndId(userId: Long, id: Long): SellerPojo? {
-        val selectStep = dslContext.select(SELLER.asterisk())
+        val selectStep = mainContext.select(SELLER.asterisk())
             .from(SELLER)
             .innerJoin(PROFILE).on(PROFILE.ID.eq(SELLER.PROFILE_ID))
             .where(SELLER.ID.eq(id))
@@ -42,7 +46,7 @@ class SellerRepository @Autowired constructor(open var dslContext: DSLContext) {
     }
 
     fun getAll(profileId: Long): List<SellerPojo> {
-        val selectStep = dslContext.select(SELLER.asterisk())
+        val selectStep = mainContext.select(SELLER.asterisk())
             .from(SELLER)
             .where(SELLER.PROFILE_ID.eq(profileId))
             .limit(DEFAULT_FETCH_LIMIT)
@@ -54,14 +58,18 @@ class SellerRepository @Autowired constructor(open var dslContext: DSLContext) {
 
     //TODO Replace get with count queries for when I want to check limits, and also getAll with get all ID queries for when I want to check for existence by user
     fun countAll(profileId: Long): Int {
-        val selectStep = dslContext.select(DSL.count(SELLER.ID))
+        return countAllTrx(mainContext, profileId)
+    }
+
+    fun countAllTrx(trxContext: DSLContext, profileId: Long): Int {
+        val selectStep = trxContext.select(DSL.count(SELLER.ID))
             .from(SELLER)
             .where(SELLER.PROFILE_ID.eq(profileId))
         return selectStep.fetchOne()!!.value1()
     }
 
     fun updateSeller(profileId: Long, id: Long, name: String): Int {
-        val updateStep = dslContext.update(SELLER)
+        val updateStep = mainContext.update(SELLER)
             .set(SELLER.NAME, name)
             .where(SELLER.ID.eq(id))
             .and(SELLER.PROFILE_ID.eq(profileId))

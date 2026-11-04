@@ -30,13 +30,24 @@ class UserDraftRepository @Autowired constructor(open var mainContext: DSLContex
             .and(USER_DRAFT.PROFILE_ID.eq(profileId))
         return selectStep.fetchOne()?.into(UserDraftPojo::class.java)
     }
+    fun getDraftByProfileForUpdateTrx(trxContext: DSLContext, profileId: Long): UserDraftPojo? {
+        val selectStep = trxContext.selectFrom(USER_DRAFT)
+            .where(USER_DRAFT.DRAFT_TYPE.eq(UserDraftType.Create))
+            .and(USER_DRAFT.PROFILE_ID.eq(profileId))
+            .forUpdate()
+        return selectStep.fetchOne()?.into(UserDraftPojo::class.java)
+    }
 
     // endregion
 
     // region Update
 
     fun updateDraft(profileId: Long, id: Long, json: JSON): Int {
-        val updateStep = mainContext.update(USER_DRAFT)
+        return updateDraftTrx(mainContext, profileId, id, json)
+    }
+
+    fun updateDraftTrx(trxContext: DSLContext, profileId: Long, id: Long, json: JSON): Int {
+        val updateStep = trxContext.update(USER_DRAFT)
             .set(USER_DRAFT.DRAFT, json)
             .where(USER_DRAFT.ID.eq(id))
             .and(USER_DRAFT.PROFILE_ID.eq(profileId))

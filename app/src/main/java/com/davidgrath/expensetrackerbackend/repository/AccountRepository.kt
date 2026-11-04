@@ -50,7 +50,11 @@ open class AccountRepository {
 
 
     fun getAllByProfileId(profileId: Long): List<AccountPojo> {
-        val selectStep = mainContext.selectFrom(ACCOUNT)
+        return getAllByProfileIdTrx(mainContext, profileId)
+    }
+
+    fun getAllByProfileIdTrx(trxContext: DSLContext, profileId: Long): List<AccountPojo> {
+        val selectStep = trxContext.selectFrom(ACCOUNT)
             .where(ACCOUNT.PROFILE_ID.eq(profileId))
             .limit(DEFAULT_FETCH_LIMIT)
         val result = selectStep.fetch().into(AccountPojo::class.java)

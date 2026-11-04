@@ -104,12 +104,6 @@ class CategoriesController: CategoriesApi {
         val user = userService.getByUsername(principal.subject!!)
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
 
-        val existing = categoryService.getCategoriesForProfile(profile.id!!) //TODO TOC
-        if(existing.size >= Constants.Constraints.MAX_CATEGORIES_PER_PROFILE) {
-            val exception = CustomHttpException(ErrorCode.LIMITS_EXCEEDED, HttpStatus.BAD_REQUEST)
-            LOGGER.error("Too many categories", exception)
-            throw exception
-        }
         val nameTrimmed = categoryCreateRequest!!.name.trim()
         if(nameTrimmed.isBlank()) {
             val exception = CustomHttpException(ErrorCode.INVALID_INPUT, HttpStatus.BAD_REQUEST)
@@ -135,8 +129,7 @@ class CategoriesController: CategoriesApi {
             LOGGER.error("Icon name not correct", exception)
             throw exception
         }
-        val categoryId = categoryService.createCategory(profile.id!!, categoryCreateRequest.name, categoryCreateRequest.icon) //TODO TOU
-        //TODO TOCTOU
+        val categoryId = categoryService.createCategory(profile.id!!, categoryCreateRequest.name, categoryCreateRequest.icon)
         return ResponseEntity.ok(categoryId)
     }
 

@@ -58,7 +58,11 @@ open class CategoryRepository {
     }
 
     fun getAllByProfileId(profileId: Long): List<CategoryPojo> {
-        val selectStep = mainContext.selectFrom(CATEGORY)
+        return getAllByProfileIdTrx(mainContext, profileId)
+    }
+
+    fun getAllByProfileIdTrx(trxContext: DSLContext, profileId: Long): List<CategoryPojo> {
+        val selectStep = trxContext.selectFrom(CATEGORY)
             .where(CATEGORY.PROFILE_ID.eq(profileId))
             .limit(DEFAULT_FETCH_LIMIT)
         val result = selectStep.fetch().into(CategoryPojo::class.java)
