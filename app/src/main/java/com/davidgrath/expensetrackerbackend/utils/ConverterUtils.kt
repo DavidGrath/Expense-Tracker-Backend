@@ -1,6 +1,7 @@
 package com.davidgrath.expensetrackerbackend.utils
 
 import com.davidgrath.expensetrackerbackend.entities.DocumentType
+import com.davidgrath.expensetrackerbackend.entities.StatisticsFilterDb
 import com.davidgrath.expensetrackerbackend.entities.TransactionDraft
 import com.davidgrath.expensetrackerbackend.entities.TransactionDraftItem
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
@@ -8,6 +9,7 @@ import com.davidgrath.expensetrackerbackend.entities.views.*
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.*
 import com.davidgrath.expensetrackerbackend.generatedapi.model.*
 import java.net.URI
+import java.time.DayOfWeek
 import java.util.*
 
 fun Boolean.toByte(): Byte { //TODO replace this: it's just 2 constants
@@ -145,4 +147,14 @@ fun transactionDraftToApiDraft(draft: TransactionDraft, baseUrl: Triple<String, 
         draft.dbOriginalDate, draft.dbOriginalTime?.toString(), draft.accountId, draft.debitOrCredit, draft.note, draft.mode.toApiMode(), draft.sellerId, draft.sellerLocationId
     )
     return apiDraft
+}
+
+fun statisticsFilterToStatisticsFilterDb(statisticsFilter: StatisticsFilter): StatisticsFilterDb {
+    val sf = statisticsFilter
+
+    val currency: Currency? = null //TODO add
+    val modes = sf.transactionModes.map { it.toDbMode()!! }
+    val locations = emptyList<Long>() //TODO add
+    val weekdays = emptyList<DayOfWeek>()
+    return StatisticsFilterDb(sf.from, sf.to, currency, sf.accounts, sf.categories, modes, sf.includeDates, weekdays, sf.sellers, locations)
 }

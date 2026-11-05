@@ -68,7 +68,7 @@ Also, Java version is 17
 * sessionVariables cte_max_recursion_depth=36524
 * Custom controller method to toggle log levels in production
 * Rely on the occupancy slots for count limits
-* Add currency code as a filter criteria for search
+* Add currency code as a filter criteria for search. Rework seller locations and weekdays, too
 
 === Naming conventions for constraints
 * Primary Keys: `pk_<table_name>`

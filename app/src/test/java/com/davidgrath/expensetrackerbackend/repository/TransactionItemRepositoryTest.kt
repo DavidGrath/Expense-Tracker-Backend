@@ -66,7 +66,7 @@ class TransactionItemRepositoryTest {
     }
 
     @Test
-    fun totalSpentTestFilters() {
+    fun totalSpentFiltersTest() {
 
         val folder = Files.createTempDirectory("temp").toFile()
         folder.deleteOnExit()
@@ -130,6 +130,8 @@ class TransactionItemRepositoryTest {
         assertEqualsBD(BigDecimal(450.00), sumFilteredByMode)
         assertEqualsBD(BigDecimal(750.00), sumFilteredBySeller)
         assertEqualsBD(BigDecimal(2800.00), sumFilteredByDateRange)
+//        assertEqualsBD(BigDecimal(2800.00), sumFilteredByCurrency)
+//        assertEqualsBD(BigDecimal(2800.00), sumFilteredByLocationIds)
 
     }
 
@@ -137,7 +139,7 @@ class TransactionItemRepositoryTest {
      * Essentially a mirror copy of the debit tests so I don't rely on assumptions
      */
     @Test
-    fun totalEarnedTestFilters() {
+    fun totalEarnedFiltersTest() {
 
 
         val folder = Files.createTempDirectory("temp").toFile()

@@ -21,23 +21,22 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
                   private val testUtilComponent: TestUtilComponent
     ) {
     fun createTransaction(): TransactionBuilder {
-        val transactionBuilder = TransactionBuilderImpl(root, timeHandler, userUuid, profileUuid, testUtilComponent.transactionRepository, testUtilComponent.categoryRepository, testUtilComponent.profileRepository, testUtilComponent.accountRepository, testUtilComponent.itemRepository, testUtilComponent.imageRepository, testUtilComponent.itemImagesRepository, testUtilComponent.userRepository, testUtilComponent.documentRepository, testUtilComponent.sellerRepository)
+        val transactionBuilder = TransactionBuilderImpl(root, timeHandler, userUuid, profileUuid, testUtilComponent.transactionRepository, testUtilComponent.categoryRepository, testUtilComponent.profileRepository, testUtilComponent.accountRepository, testUtilComponent.itemRepository, testUtilComponent.imageRepository, testUtilComponent.itemImagesRepository, testUtilComponent.userRepository, testUtilComponent.documentRepository, testUtilComponent.sellerRepository, testUtilComponent.sellerLocationRepository)
         return transactionBuilder
     }
 
     fun createBasicTransaction(description: String, category: String, amount: BigDecimal): Long {
-        val transactionBuilder = TransactionBuilderImpl(root, timeHandler, userUuid, profileUuid, testUtilComponent.transactionRepository, testUtilComponent.categoryRepository, testUtilComponent.profileRepository, testUtilComponent.accountRepository, testUtilComponent.itemRepository, testUtilComponent.imageRepository, testUtilComponent.itemImagesRepository, testUtilComponent.userRepository, testUtilComponent.documentRepository, testUtilComponent.sellerRepository)
+        val transactionBuilder = TransactionBuilderImpl(root, timeHandler, userUuid, profileUuid, testUtilComponent.transactionRepository, testUtilComponent.categoryRepository, testUtilComponent.profileRepository, testUtilComponent.accountRepository, testUtilComponent.itemRepository, testUtilComponent.imageRepository, testUtilComponent.itemImagesRepository, testUtilComponent.userRepository, testUtilComponent.documentRepository, testUtilComponent.sellerRepository, testUtilComponent.sellerLocationRepository)
             .withItem(description, category, amount)
         val id = transactionBuilder.commit().first()
         return id
     }
 
-    private class TransactionBuilderImpl(private val root: File, private val timeHandler: TimeHandler, private val _userUuid: String?, private val profileUuid: String, private val transactionRepository: TransactionRepository,
-                                         private val categoryRepository: CategoryRepository, private val profileRepository: ProfileRepository,
-                                         private val accountRepository: AccountRepository,
-                                         private val transactionItemRepository: TransactionItemRepository,
-                                         private val imagesRepository: ImageRepository,
-                                         private val itemImagesRepository: ItemImagesRepository, private val userRepository: UserRepository, val documentRepository: DocumentRepository, val sellerRepository: SellerRepository
+    private class TransactionBuilderImpl(
+        private val root: File, private val timeHandler: TimeHandler, private val _userUuid: String?, private val profileUuid: String, private val transactionRepository: TransactionRepository,
+        private val categoryRepository: CategoryRepository, private val profileRepository: ProfileRepository, private val accountRepository: AccountRepository,
+        private val transactionItemRepository: TransactionItemRepository, private val imagesRepository: ImageRepository, private val itemImagesRepository: ItemImagesRepository,
+        private val userRepository: UserRepository, val documentRepository: DocumentRepository, val sellerRepository: SellerRepository, private val sellerLocationRepository: SellerLocationRepository
         ): TransactionBuilder {
         private val items = arrayListOf<TransactionItemPojo>()
         private var account: AccountPojo
@@ -52,6 +51,7 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
         private var customMode: TransactionMode? = null
 
         private var customSeller: SellerPojo? = null
+        private var customSellerLocation: SellerLocationPojo? = null
 
 
         private var hasCommitted = false
@@ -170,7 +170,15 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
                     dateTime = repeatDate.atTime(LocalTime.parse("08:00:00"))
                 }
                 val sortKey = transactionRepository.getMaxSortKeyInDayForAccount(profile.id!!, account.id!!, repeatDate)?: 0
-                val transaction = TransactionPojo(null, account.id!!, sum,  debitOrCredit.toByte(), repeatDate, time, sortKey + 1_000, mode,null, customSeller?.id, null, dateTime)
+
+                if(customSellerLocation != null) {
+                    val maxOrdinal = sellerLocationRepository.getMaxOrdinalForSeller(profile.id!!, customSeller!!.id!!)?: 0
+                    val newOrdinal = maxOrdinal + 1
+                    val fixedLocation = customSellerLocation!!.copy(ordinal = newOrdinal)
+                    val newLocationId = sellerLocationRepository.insertSellerLocation(fixedLocation)
+                    customSellerLocation = sellerLocationRepository.getByProfileIdAndId(profile!!.id!!, newLocationId)
+                }
+                val transaction = TransactionPojo(null, account.id!!, sum,  debitOrCredit.toByte(), repeatDate, time, sortKey + 1_000, mode,null, customSeller?.id, customSellerLocation?.ordinal, dateTime)
                 val transactionId = transactionRepository.insertTransaction(transaction)
 
                 documents.forEachIndexed { i, doc ->
@@ -216,6 +224,7 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
                         }
                     }
                 }
+
                 transactionId
             }
             hasCommitted = true
@@ -264,6 +273,19 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
             val seller = SellerPojo(null, profile.id!!, name, LocalDateTime.now(timeHandler.getClock()))
             val sellerId = sellerRepository.insertSeller(seller)
             this.customSeller = sellerRepository.getByProfileIdAndId(profile.id!!, sellerId)
+            return this
+        }
+
+        override fun withSeller(sellerId: Long): TransactionBuilder {
+            this.customSeller = sellerRepository.getByProfileIdAndId(profile.id!!, sellerId)
+            return this
+        }
+
+        override fun withNewSellerLocation(name: String): TransactionBuilder {
+            if(customSeller == null) {
+                throw IllegalArgumentException("Custom seller not created yet")
+            }
+            this.customSellerLocation = SellerLocationPojo(null, this.customSeller!!.id!!, -1 ,name)
             return this
         }
 

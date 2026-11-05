@@ -223,11 +223,8 @@ class StatisticsController: StatisticsApi {
         val principal = authentication.principal as Jwt
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
-        val userUuid = user!!.uuid!!
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
-        val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
-        val counts = transactionService.getTransactionAndItemCount(profile.id!!, statisticsFilter.from,
-            statisticsFilter.to, statisticsFilter.accounts, statisticsFilter.includeDates, statisticsFilter.categories, modes, statisticsFilter.sellers)
+        val counts = transactionService.getTransactionAndItemCount(profile.id!!, statisticsFilterToStatisticsFilterDb(statisticsFilter!!))
         return ResponseEntity.ok(StatsTransactionAndItemCount(counts.transactionCount, counts.itemCount))
     }
 

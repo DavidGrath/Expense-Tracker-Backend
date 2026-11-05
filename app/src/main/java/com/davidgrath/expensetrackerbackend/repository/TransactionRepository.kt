@@ -1,5 +1,6 @@
 package com.davidgrath.expensetrackerbackend.repository
 
+import com.davidgrath.expensetrackerbackend.entities.StatisticsFilterDb
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import com.davidgrath.expensetrackerbackend.entities.views.*
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionPojo
@@ -7,14 +8,14 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.*
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.DEFAULT_FETCH_LIMIT
 import com.davidgrath.expensetrackerbackend.utils.toByte
 import org.jooq.DSLContext
-import org.jooq.DatePart
+import org.jooq.Record
+import org.jooq.SelectConditionStep
+import org.jooq.SelectOnConditionStep
 import org.jooq.TransactionalRunnable
 import org.jooq.impl.DSL
-import org.jooq.impl.SQLDataType
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Repository
-import java.math.BigDecimal
 import java.time.LocalDate
 
 @Repository
@@ -118,6 +119,7 @@ class TransactionRepository {
         return selectStep.fetchOne()?.into(TransactionPojo::class.java)
     }
 
+    //TODO Do I actually need this?
     fun getTransactions(
         profileId: Long,
         fromDate: LocalDate? = null, toDate: LocalDate? = null,
@@ -159,6 +161,7 @@ class TransactionRepository {
         return result
     }
 
+    //TODO add filter test. Consider moving all statistics methods to new class
     fun getTransactionsWithItems(
         profileId: Long,
         fromDate: LocalDate? = null, toDate: LocalDate? = null,
@@ -228,6 +231,7 @@ class TransactionRepository {
     }
 
 
+    //TODO add filter test. Consider moving all statistics methods to new class
     fun getSumByCategory(
         profileId: Long, debitOrCredit: Boolean,
         fromDate: LocalDate?, toDate: LocalDate?, accountIds: List<Long>, dates: List<LocalDate>, categories: List<Long>,
@@ -274,15 +278,12 @@ class TransactionRepository {
     }
 
 
+    //TODO Consider moving all statistics methods to new class
     fun getTransactionAndItemCount(
         profileId: Long,
-        fromDate: LocalDate? = null, toDate: LocalDate? = null,
-        accountIds: List<Long>,
-        dates: List<LocalDate>,
-        categories: List<Long>,
-        modes: List<TransactionMode>,
-        sellers: List<Long>
-    ): TransactionAndItemCount {
+        statisticsFilter: StatisticsFilterDb,
+
+        ): TransactionAndItemCount {
         var selectStep = mainContext.select(
             DSL.countDistinct(TRANSACTION.ID).`as`("transactionCount"),
             DSL.count(TRANSACTION_ITEM.ID).`as`("itemCount")
@@ -290,33 +291,51 @@ class TransactionRepository {
             .from(TRANSACTION)
             .innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.TRANSACTION_ID.eq(TRANSACTION.ID))
             .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
+            .leftJoin(SELLER_LOCATION).on(SELLER_LOCATION.SELLER_ID.eq(TRANSACTION.SELLER_ID).and(SELLER_LOCATION.ORDINAL.eq(TRANSACTION.SELLER_LOCATION_ORDINAL)))
             .where(ACCOUNT.PROFILE_ID.eq(profileId))
-        if(fromDate != null) {
-            selectStep = selectStep.and(TRANSACTION.DATED_AT.greaterOrEqual(fromDate))
-        }
-        if(toDate != null) {
-            selectStep = selectStep.and(TRANSACTION.DATED_AT.lessOrEqual(toDate))
-        }
-        if(accountIds.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.ACCOUNT_ID.`in`(accountIds))
-        }
-        if(dates.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.DATED_AT.`in`(dates))
-        }
-        if(categories.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.`in`(categories))
-        }
-        if(modes.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.MODE.`in`(modes))
-        }
-        if(sellers.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.SELLER_ID.`in`(sellers))
-        }
+        selectStep = applyFilters(selectStep, statisticsFilter)
 
         return selectStep.fetchOne()?.into(TransactionAndItemCount::class.java)!!
     }
 
+    fun <T: Record> applyFilters(sStep: SelectConditionStep<T>, statisticsFilter: StatisticsFilterDb): SelectConditionStep<T> {
+        var selectStep = sStep
+        if(statisticsFilter.fromDate != null) {
+            selectStep = selectStep.and(TRANSACTION.DATED_AT.greaterOrEqual(statisticsFilter.fromDate))
+        }
+        if(statisticsFilter.toDate != null) {
+            selectStep = selectStep.and(TRANSACTION.DATED_AT.lessOrEqual(statisticsFilter.toDate))
+        }
+        if(statisticsFilter.accountIds.isNotEmpty() && statisticsFilter.currencyCode == null) {
+            selectStep = selectStep.and(TRANSACTION.ACCOUNT_ID.`in`(statisticsFilter.accountIds))
+        }
+        if(statisticsFilter.currencyCode != null) {
+            selectStep = selectStep.and(ACCOUNT.CURRENCY_CODE.`eq`(statisticsFilter.currencyCode.toString()))
+        }
+        if(statisticsFilter.includeDates.isNotEmpty()) {
+            selectStep = selectStep.and(TRANSACTION.DATED_AT.`in`(statisticsFilter.includeDates))
+        }
+        if(statisticsFilter.weekDays.isNotEmpty()) {
+            val weekdaysInts = statisticsFilter.weekDays.map { it.value }
+            selectStep = selectStep.and(DSL.isoDayOfWeek(TRANSACTION.DATED_AT).`in`(weekdaysInts))
+        }
+        if(statisticsFilter.categoryIds.isNotEmpty()) {
+            selectStep = selectStep.and(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.`in`(statisticsFilter.categoryIds))
+        }
+        if(statisticsFilter.transactionModes.isNotEmpty()) {
+            selectStep = selectStep.and(TRANSACTION.MODE.`in`(statisticsFilter.transactionModes))
+        }
+        if(statisticsFilter.sellerIds.isNotEmpty() || statisticsFilter.sellerLocationIds.isNotEmpty()) {
+            var condition = TRANSACTION.SELLER_ID.`in`(statisticsFilter.sellerIds)
+            if(statisticsFilter.sellerLocationIds.isNotEmpty()) {
+                condition = condition.or(SELLER_LOCATION.ID.`in`(statisticsFilter.sellerLocationIds))
+            }
+            selectStep = selectStep.and(condition)
+        }
+        return selectStep
+    }
 
+    //TODO Consider moving all statistics methods to new class
     fun getEarliestTransactionDate(
         profileId: Long,
         accountIds: List<Long>): LocalDate? {
@@ -333,6 +352,7 @@ class TransactionRepository {
         return selectStep.fetchOne()?.value1()
     }
 
+    //TODO add filter test. Consider moving all statistics methods to new class
     fun getTransactionCumSumByDate(
         profileId: Long, debitOrCredit: Boolean,
         fromDate: LocalDate? = null, toDate: LocalDate? = null,
@@ -386,7 +406,7 @@ class TransactionRepository {
         return result
     }
 
-
+    //TODO add filter test. Consider moving all statistics methods to new class
     fun getTopNExpensesByCategory(
         profileId: Long, debitOrCredit: Boolean, n: Int,
         fromDate: LocalDate? = null, toDate: LocalDate? = null,

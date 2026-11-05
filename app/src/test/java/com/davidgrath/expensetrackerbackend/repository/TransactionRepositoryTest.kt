@@ -2,6 +2,9 @@ package com.davidgrath.expensetrackerbackend.repository
 
 import com.davidgrath.expensetrackerbackend.configuration.TestRunConfiguration
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
+import com.davidgrath.expensetrackerbackend.entities.StatisticsFilterDb
+import com.davidgrath.expensetrackerbackend.entities.TransactionMode
+import com.davidgrath.expensetrackerbackend.entities.views.TransactionAndItemCount
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.AccountPojo
 import com.davidgrath.expensetrackerbackend.testutils.*
 import com.davidgrath.expensetrackerbackend.utils.Constants
@@ -18,9 +21,10 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringRunner
 import java.math.BigDecimal
 import java.nio.file.Files
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
+import java.util.Currency
 
 @SpringBootTest
 @RunWith(SpringRunner::class)
@@ -44,6 +48,10 @@ class TransactionRepositoryTest {
     lateinit var accountRepository: AccountRepository
     @Autowired
     lateinit var categoryRepository: CategoryRepository
+    @Autowired
+    lateinit var sellerRepository: SellerRepository
+    @Autowired
+    lateinit var sellerLocationRepository: SellerLocationRepository
     @Autowired
     lateinit var timeHandler: TimeHandler
     @Autowired
@@ -168,16 +176,12 @@ class TransactionRepositoryTest {
     }
 
     @Test
-    fun transactionAndItemCountTest() {
+    fun transactionAndItemCountFiltersTest() {
 
         val folder = Files.createTempDirectory("temp").toFile()
         folder.deleteOnExit()
 
 
-        val transactionCount = 3L
-        val itemCount = 7L
-        val filteredTransactionCount = 2L
-        val filteredItemCount = 4L
 
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
@@ -191,38 +195,117 @@ class TransactionRepositoryTest {
         val clothing = categoryRepository.findByProfileIdAndStringId(profile.id!!, "clothing")!!
         val transport = categoryRepository.findByProfileIdAndStringId(profile.id!!, "transportation")!!
 
-        val date = LocalDate.parse("2025-01-01")
-        val id = dataBuilder.createTransaction()
-            .atDate(date)
+        val firstDate = LocalDate.parse("2025-01-01") // Wednesday
+        val secondDate = LocalDate.parse("2025-01-02")
+        val thirdDate = LocalDate.parse("2025-01-03")
+        val forthDate = LocalDate.parse("2025-01-04")
+        val fifthDate = LocalDate.parse("2025-01-05")
+        val sixthDate = LocalDate.parse("2025-01-06")
+        val seventhDate = LocalDate.parse("2025-01-07")
+        val eighthDate = LocalDate.parse("2025-01-08")
+
+        val transactionBuilder = dataBuilder.createTransaction()
+            .atDate(firstDate)
             .withItem("Bread", "food", BigDecimal(1_500))
             .withItem("Dumbbells", "fitness", BigDecimal(2_500))
-            .commit().first()
+            .withNewAccount("USD", "Test Account")
+        val newAccountId = transactionBuilder.getAccount().id!!
+        val id = transactionBuilder.commit().first()
 
         val id2 = dataBuilder.createTransaction()
-            .atDate(date)
+            .atDate(secondDate)
             .withItem("Hammer", "utilities", BigDecimal(5_000))
             .withItem("Sweatpants", "fitness", BigDecimal(5_000))
             .commit().first()
 
         val id3 = dataBuilder.createTransaction()
-            .atDate(date)
+            .atDate(thirdDate)
             .withItem("Fish", "food", BigDecimal(3_000))
             .withItem("Red shirt", "clothing", BigDecimal(5_000))
             .withItem("Fuel", "transportation", BigDecimal(5_000))
             .commit()
 
+        dataBuilder.createTransaction()
+            .atDate(forthDate)
+            .withItem("Medicine", "healthcare", BigDecimal(1_000))
+            .withNewSeller("Generic Hospital")
+            .withNewAccount("USD", "Test Account 2")
+            .commit()
 
-        val counts = transactionRepository.getTransactionAndItemCount(profile!!.id!!, date, null, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+        val firstSellerId = sellerRepository.getAll(profile.id!!).first()!!.id!!
+
+        dataBuilder.createTransaction()
+            .atDate(fifthDate)
+            .withItem("Vitamin C", "healthcare", BigDecimal(1_000))
+            .withSeller(firstSellerId)
+            .withNewSellerLocation("Brand New Branch")
+            .withNewAccount("USD", "Test Account 3")
+            .commit()
+
+        dataBuilder.createTransaction()
+            .atDate(sixthDate)
+            .withItem("Bandages", "healthcare", BigDecimal(1_000))
+            .withSeller(firstSellerId)
+            .withNewSellerLocation("New New Branch")
+            .withNewAccount("USD", "Test Account 4")
+            .commit()
+
+        dataBuilder.createTransaction()
+            .atDate(seventhDate)
+            .withItem("Light bulb", "household", BigDecimal(1_000))
+            .withNewSeller("Generic Hardware Store")
+            .withNewAccount("USD", "Test Account 5")
+            .withMode(TransactionMode.Card)
+            .commit()
 
 
-        assertEquals(transactionCount, counts.transactionCount)
-        assertEquals(itemCount, counts.itemCount)
+        val secondSellerId = sellerRepository.getAll(profile.id!!)[1].id!!
+
+        dataBuilder.createTransaction()
+            .atDate(eighthDate)
+            .withItem("Paint", "household", BigDecimal(1_000))
+            .withItem("Light bulb", "household", BigDecimal(1_000))
+            .withSeller(secondSellerId)
+            .withNewSellerLocation("Somewhere out there")
+            .withNewAccount("USD", "Test Account 6")
+            .withMode(TransactionMode.Card)
+            .commit()
+
+        var statisticsFilter = StatisticsFilterDb()
+
+        val countsNoFilter = transactionRepository.getTransactionAndItemCount(profile!!.id!!, statisticsFilter)
+
+
 
         val categories = listOf(food, clothing, transport).map { it.id!! }
-        val countsFiltered = transactionRepository.getTransactionAndItemCount(profile.id!!, date, null, emptyList(), emptyList(), categories, emptyList(), emptyList())
+        statisticsFilter = StatisticsFilterDb(categoryIds = categories)
+        val countsFilteredByCategory = transactionRepository.getTransactionAndItemCount(profile.id!!, statisticsFilter)
+        statisticsFilter = StatisticsFilterDb(currencyCode = Currency.getInstance("USD"), accountIds = listOf(newAccountId))
+        val countsFilteredByCurrency = transactionRepository.getTransactionAndItemCount(profile.id!!, statisticsFilter)
+        statisticsFilter = StatisticsFilterDb(accountIds = listOf(accountId))
+        val countsFilteredByAccount = transactionRepository.getTransactionAndItemCount(profile.id!!, statisticsFilter)
 
-        assertEquals(filteredTransactionCount, countsFiltered.transactionCount)
-        assertEquals(filteredItemCount, countsFiltered.itemCount)
+        statisticsFilter = StatisticsFilterDb(weekDays = listOf(DayOfWeek.WEDNESDAY))
+        val countsFilteredByWeekday = transactionRepository.getTransactionAndItemCount(profile.id!!, statisticsFilter)
+        statisticsFilter = StatisticsFilterDb(transactionModes = listOf(TransactionMode.Card))
+        val countsFilteredByMode = transactionRepository.getTransactionAndItemCount(profile.id!!, statisticsFilter)
+        val firstSellerFirstLocationId = sellerLocationRepository.getByProfileIdAndSellerId(profile.id!!, firstSellerId).first().id!!
+        val firstSellerSecondLocationId = sellerLocationRepository.getByProfileIdAndSellerId(profile.id!!, firstSellerId)[1].id!!
+
+        val secondSellerLocationId =  sellerLocationRepository.getByProfileIdAndSellerId(profile.id!!, secondSellerId).first().id!!
+        statisticsFilter = StatisticsFilterDb(sellerIds = listOf(firstSellerId), sellerLocationIds = listOf(secondSellerLocationId))
+        val countsFilteredBySeller = transactionRepository.getTransactionAndItemCount(profile.id!!, statisticsFilter)
+        statisticsFilter = StatisticsFilterDb(sellerLocationIds = listOf(firstSellerFirstLocationId, secondSellerLocationId))
+        val countsFilteredByLocation = transactionRepository.getTransactionAndItemCount(profile.id!!, statisticsFilter)
+
+        assertEquals(TransactionAndItemCount(8, 13), countsNoFilter)
+        assertEquals(TransactionAndItemCount(2, 4), countsFilteredByCategory)
+        assertEquals(TransactionAndItemCount(2, 4), countsFilteredByWeekday)
+        assertEquals(TransactionAndItemCount(8, 13), countsFilteredByCurrency)
+        assertEquals(TransactionAndItemCount(2, 5), countsFilteredByAccount)
+        assertEquals(TransactionAndItemCount(2, 3), countsFilteredByMode)
+        assertEquals(TransactionAndItemCount(4, 5), countsFilteredBySeller)
+        assertEquals(TransactionAndItemCount(2, 3), countsFilteredByLocation)
     }
 
 

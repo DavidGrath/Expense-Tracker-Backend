@@ -317,7 +317,7 @@
         }
       },
       "StatisticsFilter": {
-        "description": "For lists, emptiness is the same as selecting everything",
+        "description": "For lists, emptiness is the same as selecting everything. TODO Create search filter; the main difference is that statistics enforces exactly 1 currency code, while search doesn't",
         "type": "object",
         "properties": {
           "from": {
@@ -331,7 +331,7 @@
             "nullable": true
           },
           "accounts": {
-            "description": "Accounts with multiple distinct currency codes will cause a bad request",
+            "description": "Accounts with multiple distinct currency codes will cause a bad request. TODO Create currency code",
             "type": "array",
             "items": {
               "type": "integer",
@@ -359,6 +359,7 @@
             }
           },
           "includeDates": {
+            "description": "Any dates that fall outside the date range of from-to, if they are specified, will be ignored. TODO test this. Actually. Get rid of this. It's meant to be a weekday filter and there are better ways to handle it",
             "type": "array",
             "items": {
               "type": "string",

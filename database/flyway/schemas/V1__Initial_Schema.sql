@@ -74,7 +74,7 @@ CREATE TABLE seller_location (
     longitude DOUBLE,
     latitude DOUBLE,
     address VARCHAR(500) COMMENT "The kind of address you'd put in Google Maps",
-    created_at DATETIME NOT NULL DEFAULT(NOW(3)), #TODO occupancy_slot and sort_key, limit 10
+    created_at DATETIME NOT NULL DEFAULT(NOW(3)), #TODO occupancy_slot and sort_key, limit 10 also, make occupancy_slot 1 byte and sort_key 2
     CONSTRAINT fk_seller_location_seller FOREIGN KEY (seller_id) REFERENCES seller (id),
     UNIQUE KEY seller_location_seller_ordinal (seller_id, `ordinal`),
     CONSTRAINT chk_seller_location_name_valid CHECK (NOT `name` REGEXP '[\\p{Cc}\\p{Zl}\\p{Zp}]' AND NOT `name` REGEXP '^[\\p{Zs}\\p{M}\\p{Cf}]+$' AND char_length(`name`) > 0),
@@ -94,7 +94,7 @@ CREATE TABLE `transaction` (
     sort_key INT NOT NULL COMMENT "To allow for reordering of transactions",
     `mode` VARCHAR(30) NOT NULL DEFAULT "other",
     note VARCHAR(500),
-    seller_id BIGINT,
+    seller_id BIGINT, #--TODO And I realised this is another diamond dependency problem: transaction -> account -> profile; seller -> profile; now I have to denormalise. At this rate, sort_key is basically compulsory. More importantly, now I'm tempted to ensure I detect these things through a tool
     seller_location_ordinal INT,
     created_at DATETIME NOT NULL DEFAULT(NOW(3)),
     CONSTRAINT fk_transaction_account FOREIGN KEY (account_id) REFERENCES account (id),

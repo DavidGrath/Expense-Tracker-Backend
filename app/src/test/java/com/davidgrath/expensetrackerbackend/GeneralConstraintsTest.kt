@@ -136,6 +136,9 @@ class GeneralConstraintsTest {
     val alrightHash = "456968c5c0fdd5ed64acc508315ed439ce9f4b7ab0c7ae7c124582d2c3d9c1fc"
     val alrightHashBytes = HexFormat.of().parseHex(alrightHash)
 
+    /**
+     * Please refer to Unicode TR44 for the full list of general categories
+     */
     val controlChar = "\u0001"
     val mark = "\u0300"
     val separators = " \u2028\u2029"

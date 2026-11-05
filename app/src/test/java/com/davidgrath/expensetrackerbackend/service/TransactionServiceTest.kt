@@ -107,13 +107,6 @@ class TransactionServiceTest {
             .atDate(secondTransactionDate)
             .commit()
 
-        //Just 1 transaction
-//        transactionSumByDates = transactionService.getTotalAmountByDate(profileId, true, LocalDate.parse("2025-01-02"), null, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
-//        val daysBetweenJan2AndJun30Inclusive = 180
-//        assertEquals(daysBetweenJan2AndJun30Inclusive, transactionSumByDates.size)
-        //This behavior is no longer consistent with my recent changes. Specifically, a null `fromDate` does NOT imply that the current date should be used instead
-        //TODO Clean after next commit
-
         dataBuilder.createTransaction()
             .withItem("Description", "miscellaneous", BigDecimal(450.00))
             .atDate(thirdTransactionDate)

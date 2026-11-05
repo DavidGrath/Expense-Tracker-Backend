@@ -1,6 +1,7 @@
 package com.davidgrath.expensetrackerbackend.service
 
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
+import com.davidgrath.expensetrackerbackend.entities.StatisticsFilterDb
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import com.davidgrath.expensetrackerbackend.entities.views.*
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionItemPojo
@@ -261,10 +262,8 @@ class TransactionService {
         return list
     }
 
-    fun getTransactionAndItemCount(profileId: Long, fromDate: LocalDate?, toDate: LocalDate?,
-                                accountIds: List<Long>,
-                                dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>): TransactionAndItemCount {
-        return transactionRepository.getTransactionAndItemCount(profileId, fromDate, toDate, accountIds, dates, categories, modes, sellers)
+    fun getTransactionAndItemCount(profileId: Long, statisticsFilter: StatisticsFilterDb): TransactionAndItemCount {
+        return transactionRepository.getTransactionAndItemCount(profileId, statisticsFilter)
     }
 
     fun getEarliestDate(profileId: Long, accountIds: List<Long>): LocalDate? {

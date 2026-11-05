@@ -1,8 +1,6 @@
 package com.davidgrath.expensetrackerbackend.testutils
 
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.Account
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.Seller
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.AccountPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.SellerPojo
 import java.math.BigDecimal
@@ -20,6 +18,8 @@ interface TransactionBuilder: Commit {
     fun debitOrCredit(debitOrCredit: Boolean): TransactionBuilder
     fun withDetailedItem(): TransactionItemBuilder
     fun withNewSeller(name: String): TransactionBuilder
+    fun withSeller(sellerId: Long): TransactionBuilder
+    fun withNewSellerLocation(name: String): TransactionBuilder
     fun getSeller(): SellerPojo?
     fun repeatIntoDates(dates: List<LocalDate>): TransactionBuilder
 
