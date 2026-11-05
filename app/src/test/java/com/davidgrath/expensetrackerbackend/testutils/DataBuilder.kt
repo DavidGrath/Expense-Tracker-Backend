@@ -63,7 +63,7 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
 
         init {
             val user = userRepository.findByUuid(uuidToBytes(UUID.fromString(userUuid)))!!
-            profile = profileRepository.findByUuid(user.id!!, uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID)))!!
+            profile = profileRepository.findByUuid(user.id!!, uuidToBytes(UUID.fromString(profileUuid)))!!
             account = accountRepository.getAllByProfileId(profile.id!!).first()
         }
 

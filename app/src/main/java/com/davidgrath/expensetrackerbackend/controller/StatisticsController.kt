@@ -49,11 +49,9 @@ class StatisticsController: StatisticsApi {
         val principal = authentication.principal as Jwt
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
-        val userUuid = user!!.uuid!!
+
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
-        val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
-        val total = transactionService.getTransactionDebitSumByCategory(profile.id!!, statisticsFilter.from,
-            statisticsFilter.to, statisticsFilter.accounts, statisticsFilter.includeDates, statisticsFilter.categories, modes, statisticsFilter.sellers)
+        val total = transactionService.getTransactionDebitSumByCategory(profile.id!!, statisticsFilter!!)
         val mapped = total.map { TotalAmountByCategory(Category(it.categoryId, it.name, it.isCustom, it.stringId, it.categoryIcon), it.sum) }
         return ResponseEntity.ok(mapped)
     }
@@ -83,11 +81,10 @@ class StatisticsController: StatisticsApi {
         val principal = authentication.principal as Jwt
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
-        val userUuid = user!!.uuid!!
+        val userUuid = user!!.uuid!! //TODO OTel Logs and traces
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
-        val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
-        val total = transactionService.getTransactionDebitSum(profile.id!!, statisticsFilter.from,
-            statisticsFilter.to, statisticsFilter.accounts, statisticsFilter.includeDates, statisticsFilter.categories, modes, statisticsFilter.sellers)
+
+        val total = transactionService.getTransactionDebitSum(profile.id!!, statisticsFilter!!)
         return ResponseEntity.ok(total)
     }
 
@@ -101,9 +98,8 @@ class StatisticsController: StatisticsApi {
         val user = userService.getByUsername(principal.subject!!)
         val userUuid = user!!.uuid!!
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
-        val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
-        val total = transactionService.getTransactionCreditSumByCategory(profile.id!!, statisticsFilter.from,
-            statisticsFilter.to, statisticsFilter.accounts, statisticsFilter.includeDates, statisticsFilter.categories, modes, statisticsFilter.sellers)
+
+        val total = transactionService.getTransactionCreditSumByCategory(profile.id!!, statisticsFilter!!)
         val mapped = total.map { TotalAmountByCategory(Category(it.categoryId, it.name, it.isCustom, it.stringId, it.categoryIcon), it.sum) }
         return ResponseEntity.ok(mapped)
     }
@@ -136,8 +132,7 @@ class StatisticsController: StatisticsApi {
         val userUuid = user!!.uuid!!
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
         val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
-        val total = transactionService.getTransactionCreditSum(profile.id!!, statisticsFilter.from,
-            statisticsFilter.to, statisticsFilter.accounts, statisticsFilter.includeDates, statisticsFilter.categories, modes, statisticsFilter.sellers)
+        val total = transactionService.getTransactionCreditSum(profile.id!!, statisticsFilter)
         return ResponseEntity.ok(total)
     }
 

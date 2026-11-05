@@ -119,7 +119,7 @@ CREATE TABLE transaction_item (
     transaction_id BIGINT NOT NULL,
     description VARCHAR(50) NOT NULL,
     amount DECIMAL(19, 2) NOT NULL,
-    primary_category_id BIGINT NOT NULL,
+    primary_category_id BIGINT NOT NULL, #--TODO YET ANOTHER Diamond dependency problem: it's getting slightly silly how I keep finding these. I have my recursive CTE ready don't worry. Soon
     sort_key INT NOT NULL COMMENT 'To allow for reordering of items within transactions',
     occupancy_slot INT NOT NULL COMMENT 'To ensure a maximum number of items can exist per transaction',
     quantity INT NOT NULL,

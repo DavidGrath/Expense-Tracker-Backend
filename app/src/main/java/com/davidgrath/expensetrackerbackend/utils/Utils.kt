@@ -1,6 +1,14 @@
 package com.davidgrath.expensetrackerbackend.utils
 
+import com.davidgrath.expensetrackerbackend.entities.StatisticsFilterDb
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.ACCOUNT
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.SELLER_LOCATION
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION_ITEM
 import com.google.gson.Gson
+import org.jooq.Record
+import org.jooq.SelectConditionStep
+import org.jooq.impl.DSL
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.InputStream
@@ -263,4 +271,42 @@ fun findEarliestOccupancySlot(slots: IntArray, max: Int): Int? {
 //        listIndex++
 //    }
 //    return null
+}
+
+
+fun <T: Record> applyFilters(sStep: SelectConditionStep<T>, statisticsFilter: StatisticsFilterDb): SelectConditionStep<T> {
+    var selectStep = sStep
+    if(statisticsFilter.fromDate != null) {
+        selectStep = selectStep.and(TRANSACTION.DATED_AT.greaterOrEqual(statisticsFilter.fromDate))
+    }
+    if(statisticsFilter.toDate != null) {
+        selectStep = selectStep.and(TRANSACTION.DATED_AT.lessOrEqual(statisticsFilter.toDate))
+    }
+    if(statisticsFilter.accountIds.isNotEmpty() && statisticsFilter.currencyCode == null) {
+        selectStep = selectStep.and(TRANSACTION.ACCOUNT_ID.`in`(statisticsFilter.accountIds))
+    }
+    if(statisticsFilter.currencyCode != null) {
+        selectStep = selectStep.and(ACCOUNT.CURRENCY_CODE.`eq`(statisticsFilter.currencyCode.toString()))
+    }
+    if(statisticsFilter.includeDates.isNotEmpty()) {
+        selectStep = selectStep.and(TRANSACTION.DATED_AT.`in`(statisticsFilter.includeDates))
+    }
+    if(statisticsFilter.weekDays.isNotEmpty()) {
+        val weekdaysInts = statisticsFilter.weekDays.map { it.value }
+        selectStep = selectStep.and(DSL.isoDayOfWeek(TRANSACTION.DATED_AT).`in`(weekdaysInts))
+    }
+    if(statisticsFilter.categoryIds.isNotEmpty()) {
+        selectStep = selectStep.and(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.`in`(statisticsFilter.categoryIds))
+    }
+    if(statisticsFilter.transactionModes.isNotEmpty()) {
+        selectStep = selectStep.and(TRANSACTION.MODE.`in`(statisticsFilter.transactionModes))
+    }
+    if(statisticsFilter.sellerIds.isNotEmpty() || statisticsFilter.sellerLocationIds.isNotEmpty()) {
+        var condition = TRANSACTION.SELLER_ID.`in`(statisticsFilter.sellerIds)
+        if(statisticsFilter.sellerLocationIds.isNotEmpty()) {
+            condition = condition.or(SELLER_LOCATION.ID.`in`(statisticsFilter.sellerLocationIds))
+        }
+        selectStep = selectStep.and(condition)
+    }
+    return selectStep
 }

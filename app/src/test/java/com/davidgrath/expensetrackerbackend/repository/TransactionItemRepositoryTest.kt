@@ -2,6 +2,7 @@ package com.davidgrath.expensetrackerbackend.repository
 
 import com.davidgrath.expensetrackerbackend.configuration.TestRunConfiguration
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
+import com.davidgrath.expensetrackerbackend.entities.StatisticsFilterDb
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import com.davidgrath.expensetrackerbackend.testutils.DataBuilder
 import com.davidgrath.expensetrackerbackend.testutils.TestConstants
@@ -110,18 +111,31 @@ class TransactionItemRepositoryTest {
             .withItem("Basic Item", "utilities", BigDecimal(1000.00))
             .commit()
 
-        val sumNoFilter = transactionItemRepository.getTransactionItemDebitSum(profile.id!!, null, null, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+        var statisticsFilter = StatisticsFilterDb()
+        val sumNoFilter = transactionItemRepository.getTransactionItemDebitSum(profile.id!!, statisticsFilter)
+
         val accounts = listOf(newAccountId)
-        val sumFilteredByAccount = transactionItemRepository.getTransactionItemDebitSum(profile.id!!, null, null,  accounts, emptyList(), emptyList(), emptyList(), emptyList())
+        statisticsFilter = StatisticsFilterDb(accountIds = accounts)
+        val sumFilteredByAccount = transactionItemRepository.getTransactionItemDebitSum(profile.id!!, statisticsFilter)
+
         val dates = listOf(firstTransactionDate, thirdTransactionDate, fifthTransactionDate)
-        val sumFilteredByDateList = transactionItemRepository.getTransactionItemDebitSum(profile.id!!, null, null, emptyList(), dates, emptyList(), emptyList(), emptyList())
+        statisticsFilter = StatisticsFilterDb(includeDates = dates) //TODO Replace with weekdays once I rework the API from the frontend
+        val sumFilteredByDateList = transactionItemRepository.getTransactionItemDebitSum(profile.id!!, statisticsFilter)
+
         val categories = listOf(fitness!!.id!!, utilities!!.id!!, clothing!!.id!!)
-        val sumFilteredByCategory = transactionItemRepository.getTransactionItemDebitSum(profile.id!!, null, null, emptyList(), emptyList(), categories, emptyList(), emptyList())
+        statisticsFilter = StatisticsFilterDb(categoryIds = categories)
+        val sumFilteredByCategory = transactionItemRepository.getTransactionItemDebitSum(profile.id!!, statisticsFilter)
+
         val modes = listOf(TransactionMode.Transfer)
-        val sumFilteredByMode = transactionItemRepository.getTransactionItemDebitSum(profile.id!!, null, null, emptyList(), emptyList(), emptyList(), modes, emptyList())
+        statisticsFilter = StatisticsFilterDb(transactionModes = modes)
+        val sumFilteredByMode = transactionItemRepository.getTransactionItemDebitSum(profile.id!!, statisticsFilter)
+
         val sellers = listOf(sellerId)
-        val sumFilteredBySeller = transactionItemRepository.getTransactionItemDebitSum(profile.id!!, null, null, emptyList(), emptyList(), emptyList(), emptyList(), sellers)
-        val sumFilteredByDateRange = transactionItemRepository.getTransactionItemDebitSum(profile.id!!, secondTransactionDate, fifthTransactionDate, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+        statisticsFilter = StatisticsFilterDb(sellerIds = sellers)
+        val sumFilteredBySeller = transactionItemRepository.getTransactionItemDebitSum(profile.id!!, statisticsFilter)
+
+        statisticsFilter = StatisticsFilterDb(fromDate = secondTransactionDate, toDate = fifthTransactionDate)
+        val sumFilteredByDateRange = transactionItemRepository.getTransactionItemDebitSum(profile.id!!, statisticsFilter)
 
         assertEqualsBD(BigDecimal(3310.00), sumNoFilter)
         assertEqualsBD(BigDecimal(600.00), sumFilteredByAccount)
@@ -190,18 +204,31 @@ class TransactionItemRepositoryTest {
             .withItem("Basic Item", "utilities", BigDecimal(1000.00))
             .commit()
 
-        val sumNoFilter = transactionItemRepository.getTransactionItemCreditSum(profile.id!!, null, null, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+        var statisticsFilter = StatisticsFilterDb()
+        val sumNoFilter = transactionItemRepository.getTransactionItemCreditSum(profile.id!!, statisticsFilter)
+
         val accounts = listOf(newAccountId)
-        val sumFilteredByAccount = transactionItemRepository.getTransactionItemCreditSum(profile.id!!, null, null, accounts, emptyList(), emptyList(), emptyList(), emptyList())
+        statisticsFilter = StatisticsFilterDb(accountIds = accounts)
+        val sumFilteredByAccount = transactionItemRepository.getTransactionItemCreditSum(profile.id!!, statisticsFilter)
+
         val dates = listOf(firstTransactionDate, thirdTransactionDate, fifthTransactionDate)
-        val sumFilteredByDateList = transactionItemRepository.getTransactionItemCreditSum(profile.id!!, null, null, emptyList(), dates, emptyList(), emptyList(), emptyList())
+        statisticsFilter = StatisticsFilterDb(includeDates = dates) //TODO Replace with weekdays once I rework the API from the frontend
+        val sumFilteredByDateList = transactionItemRepository.getTransactionItemCreditSum(profile.id!!, statisticsFilter)
+
         val categories = listOf(fitness!!.id!!, utilities!!.id!!, clothing!!.id!!)
-        val sumFilteredByCategory = transactionItemRepository.getTransactionItemCreditSum(profile.id!!, null, null, emptyList(), emptyList(), categories, emptyList(), emptyList())
+        statisticsFilter = StatisticsFilterDb(categoryIds = categories)
+        val sumFilteredByCategory = transactionItemRepository.getTransactionItemCreditSum(profile.id!!, statisticsFilter)
+
         val modes = listOf(TransactionMode.Transfer)
-        val sumFilteredByMode = transactionItemRepository.getTransactionItemCreditSum(profile.id!!, null, null, emptyList(), emptyList(), emptyList(), modes, emptyList())
+        statisticsFilter = StatisticsFilterDb(transactionModes = modes)
+        val sumFilteredByMode = transactionItemRepository.getTransactionItemCreditSum(profile.id!!, statisticsFilter)
+
         val sellers = listOf(sellerId)
-        val sumFilteredBySeller = transactionItemRepository.getTransactionItemCreditSum(profile.id!!, null, null, emptyList(), emptyList(), emptyList(), emptyList(), sellers)
-        val sumFilteredByDateRange = transactionItemRepository.getTransactionItemCreditSum(profile.id!!, secondTransactionDate, fifthTransactionDate, emptyList(), emptyList(), emptyList(),  emptyList(),  emptyList())
+        statisticsFilter = StatisticsFilterDb(sellerIds = sellers)
+        val sumFilteredBySeller = transactionItemRepository.getTransactionItemCreditSum(profile.id!!, statisticsFilter)
+
+        statisticsFilter = StatisticsFilterDb(fromDate = secondTransactionDate, toDate = fifthTransactionDate)
+        val sumFilteredByDateRange = transactionItemRepository.getTransactionItemCreditSum(profile.id!!, statisticsFilter)
 
         assertEqualsBD(BigDecimal(3310.00), sumNoFilter)
         assertEqualsBD(BigDecimal(600.00), sumFilteredByAccount)

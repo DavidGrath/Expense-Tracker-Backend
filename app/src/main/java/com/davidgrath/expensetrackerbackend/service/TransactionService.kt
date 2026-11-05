@@ -6,10 +6,12 @@ import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import com.davidgrath.expensetrackerbackend.entities.views.*
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionItemPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionPojo
+import com.davidgrath.expensetrackerbackend.generatedapi.model.StatisticsFilter
 import com.davidgrath.expensetrackerbackend.generatedapi.model.SuggestionsFieldType
 import com.davidgrath.expensetrackerbackend.repository.AccountRepository
 import com.davidgrath.expensetrackerbackend.repository.TransactionItemRepository
 import com.davidgrath.expensetrackerbackend.repository.TransactionRepository
+import com.davidgrath.expensetrackerbackend.utils.statisticsFilterToStatisticsFilterDb
 import com.davidgrath.expensetrackerbackend.utils.toByte
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -63,7 +65,7 @@ class TransactionService {
         return transactionIdRet
     }
 
-    fun getTotalAmountByDateOld(
+    /*fun getTotalAmountByDateOld(
         profileId: Long, debitOrCredit: Boolean, fromDate: LocalDate?, toDate: LocalDate? = null,
         accountIds: List<Long>, dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>
     ): List<DateAmountSummary> {
@@ -118,7 +120,7 @@ class TransactionService {
         val filledSummary = newList.toList()
 
         return filledSummary
-    }
+    }*/
 
     fun getTotalAmountByDate(
         profileId: Long, debitOrCredit: Boolean, fromDate: LocalDate?, toDate: LocalDate? = null,
@@ -185,17 +187,6 @@ class TransactionService {
         return transactionRepository.getByUserIdAndId(userId, id)
     }*/
 
-    fun getTransactions(
-        profileId: Long,
-        fromDate: LocalDate? = null, toDate: LocalDate? = null,
-        accountIds: List<Long>,
-        dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>
-    ): List<TransactionPojo> {
-        val list = transactionRepository.getTransactions(profileId, fromDate, toDate, accountIds, dates, categories, modes, sellers)
-        LOGGER.info("getTransactions: Fetched {} items", list.size)
-        return list
-    }
-
 
     fun getTransactionsWithItems(
         profileId: Long,
@@ -218,30 +209,26 @@ class TransactionService {
         return list
     }
 
-    fun getTransactionDebitSum(profileId: Long, fromDate: LocalDate?, toDate: LocalDate?,
-                               accountIds: List<Long>,
-                               dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>): BigDecimal {
-        return transactionItemRepository.getTransactionItemDebitSum(profileId, fromDate, toDate, accountIds, dates, categories, modes, sellers)
+    fun getTransactionDebitSum(profileId: Long, statisticsFilter: StatisticsFilter): BigDecimal {
+        val statisticsFilterDb = statisticsFilterToStatisticsFilterDb(statisticsFilter)
+        return transactionItemRepository.getTransactionItemDebitSum(profileId, statisticsFilterDb)
     }
 
-    fun getTransactionCreditSum(profileId: Long, fromDate: LocalDate?, toDate: LocalDate?,
-                                accountIds: List<Long>,
-                                dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>): BigDecimal {
-        return transactionItemRepository.getTransactionItemCreditSum(profileId, fromDate, toDate, accountIds, dates, categories, modes, sellers)
+    fun getTransactionCreditSum(profileId: Long, statisticsFilter: StatisticsFilter): BigDecimal {
+        val statisticsFilterDb = statisticsFilterToStatisticsFilterDb(statisticsFilter)
+        return transactionItemRepository.getTransactionItemCreditSum(profileId, statisticsFilterDb)
     }
 
-    fun getTransactionDebitSumByCategory(profileId: Long, fromDate: LocalDate?, toDate: LocalDate?,
-                                accountIds: List<Long>,
-                                dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>): List<ItemSumByCategory> {
-        val list = transactionRepository.getSumByCategory(profileId, true, fromDate, toDate, accountIds, dates, categories, modes, sellers)
+    fun getTransactionDebitSumByCategory(profileId: Long, statisticsFilter: StatisticsFilter): List<ItemSumByCategory> {
+        val statisticsFilterDb = statisticsFilterToStatisticsFilterDb(statisticsFilter)
+        val list = transactionRepository.getSumByCategory(profileId, true, statisticsFilterDb)
         LOGGER.info("List size: {}", list.size)
         return list
     }
 
-    fun getTransactionCreditSumByCategory(profileId: Long, fromDate: LocalDate?, toDate: LocalDate?,
-                                accountIds: List<Long>,
-                                dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>): List<ItemSumByCategory> {
-        val list = transactionRepository.getSumByCategory(profileId, false, fromDate, toDate, accountIds, dates, categories, modes, sellers)
+    fun getTransactionCreditSumByCategory(profileId: Long, statisticsFilter: StatisticsFilter): List<ItemSumByCategory> {
+        val statisticsFilterDb = statisticsFilterToStatisticsFilterDb(statisticsFilter)
+        val list = transactionRepository.getSumByCategory(profileId, false, statisticsFilterDb)
         LOGGER.info("List size: {}", list.size)
         return list
     }

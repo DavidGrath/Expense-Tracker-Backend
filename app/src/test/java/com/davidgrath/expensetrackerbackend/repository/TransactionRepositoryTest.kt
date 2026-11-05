@@ -6,8 +6,14 @@ import com.davidgrath.expensetrackerbackend.entities.StatisticsFilterDb
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import com.davidgrath.expensetrackerbackend.entities.views.TransactionAndItemCount
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.AccountPojo
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.CategoryPojo
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ProfilePojo
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.SellerPojo
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.UserPojo
 import com.davidgrath.expensetrackerbackend.testutils.*
 import com.davidgrath.expensetrackerbackend.utils.Constants
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.FALSE_BYTE
+import com.davidgrath.expensetrackerbackend.utils.uuidToBytes
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -24,7 +30,11 @@ import java.nio.file.Files
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.util.Currency
+import java.util.Locale
+import java.util.UUID
 
 @SpringBootTest
 @RunWith(SpringRunner::class)
@@ -123,6 +133,7 @@ class TransactionRepositoryTest {
     }
 
 
+    //TODO Test for all filters
     @Test
     fun sumByCategoryTest() {
 
@@ -160,14 +171,16 @@ class TransactionRepositoryTest {
             .commit()
 
 
-        val sumList = transactionRepository.getSumByCategory(profile!!.id!!, true, fromDate, null, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+        var statisticsFilter = StatisticsFilterDb(fromDate = fromDate)
+        val sumList = transactionRepository.getSumByCategory(profile!!.id!!, true, statisticsFilter)
         var foodSum = sumList.find { it.categoryId == food.id }!!.sum
         var fitnessSum = sumList.find { it.categoryId == fitness.id }!!.sum
 
         assertEqualsBD(BigDecimal(5_500), foodSum)
         assertEqualsBD(BigDecimal(12_500), fitnessSum)
 
-        val sumListTo = transactionRepository.getSumByCategory(profile.id!!, true, fromDate, toDate, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+        statisticsFilter = StatisticsFilterDb(fromDate = fromDate, toDate = toDate)
+        val sumListTo = transactionRepository.getSumByCategory(profile.id!!, true, statisticsFilter)
         foodSum = sumListTo.find { it.categoryId == food.id }!!.sum
         fitnessSum = sumListTo.find { it.categoryId == fitness.id }!!.sum
 
@@ -464,6 +477,51 @@ class TransactionRepositoryTest {
         assertEqualsBD(BigDecimal(1_190), thirdSum.sum)
         assertEqualsBD(BigDecimal(750), thirdSum.itemAmount)
 
+    }
+
+    /**
+     * I accidentally thought I had accidentally created an IDOR path through the seller ID,
+     * but I've confirmed this doesn't happen through this test. Keep it here to mark my paranoia
+     */
+    @Test
+    fun idorTest() {
+        val clock = timeHandler.getClock()
+        val date = ZonedDateTime.now(clock)
+        val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
+        val user2Uuid = UUID.randomUUID()
+        val user2UuidBytes = uuidToBytes(user2Uuid)
+        val user2Id = userRepository.insertUser(UserPojo(null, user2UuidBytes,"user2", "password", "", utcDate))
+        val defaultUserProfileUuid = uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID))
+        val user2ProfileUuid = uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID))
+        val user2Profile = ProfilePojo(null, user2Id, "Default Profile", user2ProfileUuid, utcDate)
+        val user2ProfileId = profileRepository.insertProfile(user2Profile)
+
+        val folder = Files.createTempDirectory("temp").toFile()
+        folder.deleteOnExit()
+
+        val user1DataBuilder = DataBuilder(folder, timeHandler, null, Constants.DEFAULT_PROFILE_ID, testUtilComponent)
+        user1DataBuilder.createTransaction()
+            .withItem("Description", "miscellaneous", BigDecimal(100))
+            .withNewSeller("Restaurant")
+            .commit()
+
+        val user2DataBuilder = DataBuilder(folder, timeHandler, user2Uuid.toString(), Constants.DEFAULT_PROFILE_ID, testUtilComponent)
+        val account = AccountPojo(null, user2ProfileId, "USD", null, null, "Default Account", utcDate)
+        accountRepository.insertAccount(account)
+        categoryRepository.insertCategory(CategoryPojo(null, user2ProfileId, "miscellaneous", FALSE_BYTE, null, utcDate, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category"))
+        user2DataBuilder.createTransaction()
+            .withItem("Description", "miscellaneous", BigDecimal(100))
+            .withNewSeller("Hardware store")
+            .commit()
+
+        val user1Id = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!.id!!
+        val user1ProfileId = profileRepository.findByUuid(user1Id, defaultUserProfileUuid)!!.id!!
+        val user1Seller = sellerRepository.getAll(user1ProfileId).first()!!.id!!
+        val user2Seller = sellerRepository.getAll(user2ProfileId).first()!!.id!!
+
+        val statisticsFilter = StatisticsFilterDb(sellerIds = listOf(user1Seller, user2Seller))
+        val count = transactionRepository.getTransactionAndItemCount(user1ProfileId, statisticsFilter)
+        assertEquals(TransactionAndItemCount(1, 1), count)
     }
 
     companion object {

@@ -12,7 +12,7 @@ import java.net.URI
 import java.time.DayOfWeek
 import java.util.*
 
-fun Boolean.toByte(): Byte { //TODO replace this: it's just 2 constants
+fun Boolean.toByte(): Byte {
     return if(this) {
         1
     } else {
