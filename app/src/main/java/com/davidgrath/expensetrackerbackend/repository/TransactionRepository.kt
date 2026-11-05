@@ -222,58 +222,11 @@ class TransactionRepository {
     }
 
 
-    //TODO add filter test. Consider moving all statistics methods to new class
-    fun getSumByCategory(
-        profileId: Long, debitOrCredit: Boolean,
-        statisticsFilter: StatisticsFilterDb): List<ItemSumByCategory> {
 
-        var selectStep = mainContext.select(
-            CATEGORY.ID.`as`("categoryId"),
-            CATEGORY.STRING_ID, CATEGORY.IS_CUSTOM, CATEGORY.NAME, DSL.sum(TRANSACTION_ITEM.AMOUNT).`as`("sum"), CATEGORY.ICON.`as`("categoryIcon")
-        )
-            .from(TRANSACTION_ITEM)
-            .innerJoin(CATEGORY).on(CATEGORY.ID.eq(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID))
-            .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(TRANSACTION_ITEM.TRANSACTION_ID))
-            .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
-            .where(ACCOUNT.PROFILE_ID.eq(profileId))
-            .and(TRANSACTION.DEBIT_OR_CREDIT.eq(debitOrCredit.toByte()))
-        selectStep = applyFilters(selectStep, statisticsFilter)
-
-        val seekStep = selectStep.groupBy(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID).orderBy(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID)
-            .limit(DEFAULT_FETCH_LIMIT)
-
-        val result = seekStep.fetch().into(ItemSumByCategory::class.java)
-        LOGGER.info("Result size: {}", result.size)
-        return result
-    }
-
-
-    //TODO Consider moving all statistics methods to new class
-    fun getTransactionAndItemCount(
-        profileId: Long,
-        statisticsFilter: StatisticsFilterDb,
-
-        ): TransactionAndItemCount {
-        var selectStep = mainContext.select(
-            DSL.countDistinct(TRANSACTION.ID).`as`("transactionCount"),
-            DSL.count(TRANSACTION_ITEM.ID).`as`("itemCount")
-        )
-            .from(TRANSACTION)
-            .innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.TRANSACTION_ID.eq(TRANSACTION.ID))
-            .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
-            .leftJoin(SELLER_LOCATION).on(SELLER_LOCATION.SELLER_ID.eq(TRANSACTION.SELLER_ID).and(SELLER_LOCATION.ORDINAL.eq(TRANSACTION.SELLER_LOCATION_ORDINAL)))
-            .where(ACCOUNT.PROFILE_ID.eq(profileId))
-        selectStep = applyFilters(selectStep, statisticsFilter)
-
-        return selectStep.fetchOne()?.into(TransactionAndItemCount::class.java)!!
-    }
-
-
-
-    //TODO Consider moving all statistics methods to new class
     fun getEarliestTransactionDate(
         profileId: Long,
-        accountIds: List<Long>): LocalDate? {
+        accountIds: List<Long>
+    ): LocalDate? {
         var selectStep = mainContext.select(
             DSL.min(TRANSACTION.DATED_AT)
         )
@@ -281,7 +234,7 @@ class TransactionRepository {
             .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
             .where(ACCOUNT.PROFILE_ID.eq(profileId))
 
-        if(accountIds.isNotEmpty()) {
+        if (accountIds.isNotEmpty()) {
             selectStep = selectStep.and(TRANSACTION.ACCOUNT_ID.`in`(accountIds))
         }
         return selectStep.fetchOne()?.value1()

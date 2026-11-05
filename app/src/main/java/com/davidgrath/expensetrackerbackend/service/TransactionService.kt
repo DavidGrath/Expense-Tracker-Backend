@@ -9,6 +9,7 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.Transact
 import com.davidgrath.expensetrackerbackend.generatedapi.model.StatisticsFilter
 import com.davidgrath.expensetrackerbackend.generatedapi.model.SuggestionsFieldType
 import com.davidgrath.expensetrackerbackend.repository.AccountRepository
+import com.davidgrath.expensetrackerbackend.repository.StatisticsRepository
 import com.davidgrath.expensetrackerbackend.repository.TransactionItemRepository
 import com.davidgrath.expensetrackerbackend.repository.TransactionRepository
 import com.davidgrath.expensetrackerbackend.utils.statisticsFilterToStatisticsFilterDb
@@ -28,6 +29,8 @@ class TransactionService {
     lateinit var accountRepository: AccountRepository
     @Autowired
     lateinit var transactionItemRepository: TransactionItemRepository
+    @Autowired
+    lateinit var statisticsRepository: StatisticsRepository
     @Autowired
     lateinit var timeHandler: TimeHandler
     
@@ -211,24 +214,24 @@ class TransactionService {
 
     fun getTransactionDebitSum(profileId: Long, statisticsFilter: StatisticsFilter): BigDecimal {
         val statisticsFilterDb = statisticsFilterToStatisticsFilterDb(statisticsFilter)
-        return transactionItemRepository.getTransactionItemDebitSum(profileId, statisticsFilterDb)
+        return statisticsRepository.getTransactionItemDebitSum(profileId, statisticsFilterDb)
     }
 
     fun getTransactionCreditSum(profileId: Long, statisticsFilter: StatisticsFilter): BigDecimal {
         val statisticsFilterDb = statisticsFilterToStatisticsFilterDb(statisticsFilter)
-        return transactionItemRepository.getTransactionItemCreditSum(profileId, statisticsFilterDb)
+        return statisticsRepository.getTransactionItemCreditSum(profileId, statisticsFilterDb)
     }
 
     fun getTransactionDebitSumByCategory(profileId: Long, statisticsFilter: StatisticsFilter): List<ItemSumByCategory> {
         val statisticsFilterDb = statisticsFilterToStatisticsFilterDb(statisticsFilter)
-        val list = transactionRepository.getSumByCategory(profileId, true, statisticsFilterDb)
+        val list = statisticsRepository.getSumByCategory(profileId, true, statisticsFilterDb)
         LOGGER.info("List size: {}", list.size)
         return list
     }
 
     fun getTransactionCreditSumByCategory(profileId: Long, statisticsFilter: StatisticsFilter): List<ItemSumByCategory> {
         val statisticsFilterDb = statisticsFilterToStatisticsFilterDb(statisticsFilter)
-        val list = transactionRepository.getSumByCategory(profileId, false, statisticsFilterDb)
+        val list = statisticsRepository.getSumByCategory(profileId, false, statisticsFilterDb)
         LOGGER.info("List size: {}", list.size)
         return list
     }
@@ -250,7 +253,7 @@ class TransactionService {
     }
 
     fun getTransactionAndItemCount(profileId: Long, statisticsFilter: StatisticsFilterDb): TransactionAndItemCount {
-        return transactionRepository.getTransactionAndItemCount(profileId, statisticsFilter)
+        return statisticsRepository.getTransactionAndItemCount(profileId, statisticsFilter)
     }
 
     fun getEarliestDate(profileId: Long, accountIds: List<Long>): LocalDate? {

@@ -241,36 +241,6 @@ open class TransactionItemRepository {
         return selectStep.fetchOne()?.value1()
     }
 
-    fun getTransactionItemDebitSum(
-        profileId: Long,
-        statisticsFilter: StatisticsFilterDb
-    ): BigDecimal {
-        var selectStep = mainContext.select(DSL.sum(TRANSACTION_ITEM.AMOUNT)).from(TRANSACTION_ITEM)
-            .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(TRANSACTION_ITEM.TRANSACTION_ID))
-            .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
-            .where(ACCOUNT.PROFILE_ID.eq(profileId))
-            .and( TRANSACTION.DEBIT_OR_CREDIT.eq(TRUE_BYTE))
-            .and( TRANSACTION_ITEM.IS_REDUCTION.eq(FALSE_BYTE))
-
-        selectStep = applyFilters(selectStep, statisticsFilter)
-
-        return selectStep.fetchOne()?.value1()?: BigDecimal.ZERO
-    }
-
-    fun getTransactionItemCreditSum(
-        profileId: Long,
-        statisticsFilter: StatisticsFilterDb
-    ): BigDecimal {
-        var selectStep = mainContext.select(DSL.sum(TRANSACTION_ITEM.AMOUNT)).from(TRANSACTION_ITEM)
-            .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(TRANSACTION_ITEM.TRANSACTION_ID))
-            .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
-            .where(ACCOUNT.PROFILE_ID.eq(profileId))
-            .and( TRANSACTION.DEBIT_OR_CREDIT.eq(FALSE_BYTE))
-            .and( TRANSACTION_ITEM.IS_REDUCTION.eq(FALSE_BYTE))
-
-        selectStep = applyFilters(selectStep, statisticsFilter)
-        return selectStep.fetchOne()?.value1()?: BigDecimal.ZERO
-    }
 
 
     companion object {
