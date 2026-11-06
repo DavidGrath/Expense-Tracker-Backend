@@ -4,6 +4,9 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.util.Currency
 
+/**
+ * TODO I'll need to add sort criteria eventually
+ */
 data class StatisticsFilterDb(
     val fromDate: LocalDate? = null,
     val toDate: LocalDate? = null,
@@ -12,6 +15,12 @@ data class StatisticsFilterDb(
      * TODO Test this
      */
     val currencyCode: Currency? = null,
+    /**
+     * It is assumed that at least 1 account ID has been sent from the frontend. Otherwise, nondistinct currency codes could be permitted by this logic.
+     * I could potentially throw an exception, but at the repository level it feels wrong
+     * TODO Hmmm. Or maybe throwing exceptions isn't so bad. Also, that means [accountIds] would become a compulsory parameter for this data class
+     *
+     */
     val accountIds: List<Long> = emptyList(),
     val categoryIds: List<Long> = emptyList(),
     val transactionModes: List<TransactionMode> = emptyList(),

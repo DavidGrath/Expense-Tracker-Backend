@@ -68,7 +68,7 @@ class StatisticsController: StatisticsApi {
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
         val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
         val total = transactionService.getTotalAmountByDate(profile.id!!, true, statisticsFilter.from,
-            statisticsFilter.to, statisticsFilter.accounts, statisticsFilter.includeDates, statisticsFilter.categories, modes, statisticsFilter.sellers)
+            statisticsFilter.to, statisticsFilter.accounts, emptyList(), statisticsFilter.categories, modes, statisticsFilter.sellers)
         val mapped = total.map { TotalAmountByDate(it.aggregateDate, it.sum) }
         return ResponseEntity.ok(mapped)
     }
@@ -116,7 +116,7 @@ class StatisticsController: StatisticsApi {
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
         val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
         val total = transactionService.getTotalAmountByDate(profile.id!!, false, statisticsFilter.from,
-            statisticsFilter.to, statisticsFilter.accounts, statisticsFilter.includeDates, statisticsFilter.categories, modes, statisticsFilter.sellers)
+            statisticsFilter.to, statisticsFilter.accounts, emptyList(), statisticsFilter.categories, modes, statisticsFilter.sellers)
         val mapped = total.map { TotalAmountByDate(it.aggregateDate, it.sum) }
         return ResponseEntity.ok(mapped)
     }
@@ -147,15 +147,15 @@ class StatisticsController: StatisticsApi {
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
         val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
         val transactions = transactionService.getTransactionsWithItems(profile.id!!, statisticsFilter.from,
-            statisticsFilter.to, statisticsFilter.accounts, statisticsFilter.includeDates, statisticsFilter.categories, modes, statisticsFilter.sellers)
+            statisticsFilter.to, statisticsFilter.accounts, emptyList(), statisticsFilter.categories, modes, statisticsFilter.sellers)
 
         val documentPojos = documentService.getDocumentsFiltered(profile.id!!, statisticsFilter.from,
-            statisticsFilter.to, statisticsFilter.accounts, statisticsFilter.includeDates, statisticsFilter.categories, modes, statisticsFilter.sellers)
+            statisticsFilter.to, statisticsFilter.accounts, emptyList(), statisticsFilter.categories, modes, statisticsFilter.sellers)
 
         val documentsMap = documentPojos.groupBy { it.transactionId }
 
         val imagePojos = imageService.getImagesFiltered(profile.id!!, statisticsFilter.from,
-            statisticsFilter.to, statisticsFilter.accounts, statisticsFilter.includeDates, statisticsFilter.categories, modes, statisticsFilter.sellers)
+            statisticsFilter.to, statisticsFilter.accounts, emptyList(), statisticsFilter.categories, modes, statisticsFilter.sellers)
         val imagesMap = imagePojos.groupBy { it.itemId }
 
         val scheme = httpServletRequest.scheme
@@ -235,7 +235,7 @@ class StatisticsController: StatisticsApi {
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
         val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
         val total = transactionService.getCumSumByDate(profile.id!!, true, statisticsFilter.from,
-            statisticsFilter.to, statisticsFilter.accounts, statisticsFilter.includeDates, statisticsFilter.categories, modes, statisticsFilter.sellers)
+            statisticsFilter.to, statisticsFilter.accounts, emptyList(), statisticsFilter.categories, modes, statisticsFilter.sellers)
         val mapped = total.map { TotalAmountByDate(it.aggregateDate, it.sum) }
         return ResponseEntity.ok(mapped)
     }
@@ -252,7 +252,7 @@ class StatisticsController: StatisticsApi {
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
         val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
         val total = transactionService.getCumSumByDate(profile.id!!, false, statisticsFilter.from,
-            statisticsFilter.to, statisticsFilter.accounts, statisticsFilter.includeDates, statisticsFilter.categories, modes, statisticsFilter.sellers)
+            statisticsFilter.to, statisticsFilter.accounts, emptyList(), statisticsFilter.categories, modes, statisticsFilter.sellers)
         val mapped = total.map { TotalAmountByDate(it.aggregateDate, it.sum) }
         return ResponseEntity.ok(mapped)
     }
@@ -272,7 +272,7 @@ class StatisticsController: StatisticsApi {
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
         val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
         val total = transactionService.getTopNDebitPerCategory(profile.id!!, n,statisticsFilter.from,
-            statisticsFilter.to, statisticsFilter.accounts, statisticsFilter.includeDates, statisticsFilter.categories, modes, statisticsFilter.sellers)
+            statisticsFilter.to, statisticsFilter.accounts, emptyList(), statisticsFilter.categories, modes, statisticsFilter.sellers)
         val mapped = total.groupBy {it.categoryId}.map { (id, t) ->
             val c = t[0]
             TotalAmountPerCategory(Category(id, c.name, c.isCustom, c.stringId, c.categoryIcon), c.sum, t.map {
@@ -295,7 +295,7 @@ class StatisticsController: StatisticsApi {
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
         val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
         val total = transactionService.getTopNCreditPerCategory(profile.id!!, n,statisticsFilter.from,
-            statisticsFilter.to, statisticsFilter.accounts, statisticsFilter.includeDates, statisticsFilter.categories, modes, statisticsFilter.sellers)
+            statisticsFilter.to, statisticsFilter.accounts, emptyList(), statisticsFilter.categories, modes, statisticsFilter.sellers)
         val mapped = total.groupBy {it.categoryId}.map { (id, t) ->
             val c = t[0]
             TotalAmountPerCategory(Category(id, c.name, c.isCustom, c.stringId, c.categoryIcon), c.sum, t.map {

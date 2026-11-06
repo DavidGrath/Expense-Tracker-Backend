@@ -671,6 +671,14 @@ open class TransactionsController: TransactionsApi {
         return ResponseEntity.ok().build()
     }
 
+    override fun transactionsSearchPost(
+        profileId: @NotNull String,
+        query: @NotNull @Valid String,
+        transactionSearchFilter: @Valid TransactionSearchFilter?
+    ): ResponseEntity<List<TransactionDetails?>?>? {
+        return ResponseEntity.ok(emptyList())
+    }
+
     companion object {
         private val LOGGER = LoggerFactory.getLogger(TransactionsController::class.java)
     }

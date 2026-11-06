@@ -4,11 +4,15 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.util.Currency
 
+/**
+ * TODO Contemplate using deny and allowlists where deny takes precedence over allow. May not actually do it
+ * TODO I'll need to add sort criteria eventually
+ */
 data class SearchFilterDb(
     val fromDate: LocalDate? = null,
     val toDate: LocalDate? = null,
     /**
-     * Any currency code present here will cause the corresponding accounts in [accountIds] to be ignored and include all accounts for this currency code
+     * Any currency code present here will cause the corresponding accounts in [accountIds] to be ignored and include all accounts for that currency code
      * TODO Test this
      */
     val currencyCodes: List<Currency> = emptyList(),

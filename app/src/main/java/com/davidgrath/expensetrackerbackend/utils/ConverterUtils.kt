@@ -152,9 +152,12 @@ fun transactionDraftToApiDraft(draft: TransactionDraft, baseUrl: Triple<String, 
 fun statisticsFilterToStatisticsFilterDb(statisticsFilter: StatisticsFilter): StatisticsFilterDb {
     val sf = statisticsFilter
 
-    val currency: Currency? = null //TODO add
+    val currency: Currency? = if(statisticsFilter.currencyCode != null) {
+        Currency.getInstance(statisticsFilter.currencyCode) //TODO Throw bad request if this fails with an IllegalArgumentException
+    } else {
+        null
+    }
     val modes = sf.transactionModes.map { it.toDbMode()!! }
-    val locations = emptyList<Long>() //TODO add
-    val weekdays = emptyList<DayOfWeek>()
-    return StatisticsFilterDb(sf.from, sf.to, currency, sf.accounts, sf.categories, modes, sf.includeDates, weekdays, sf.sellers, locations)
+    val weekdays = statisticsFilter.weekdays.map { DayOfWeek.of(it) }
+    return StatisticsFilterDb(sf.from, sf.to, currency, sf.accounts, sf.categories, modes, emptyList(), weekdays, sf.sellers, sf.sellerLocations)
 }

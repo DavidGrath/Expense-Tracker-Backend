@@ -718,6 +718,48 @@
         }
       }
     },
+    "/transactions/search": {
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/profileId"
+          },
+          {
+            "name": "query",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "description": "Any strings that are empty or filled exclusively with blank nonsense will throw a bad request. TODO test this"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "./schemas.json#/components/schemas/TransactionSearchFilter"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "./schemas.json#/components/schemas/TransactionDetails"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/categories": {
       "get": {
         "parameters": [

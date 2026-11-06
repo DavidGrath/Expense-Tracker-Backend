@@ -317,7 +317,7 @@
         }
       },
       "StatisticsFilter": {
-        "description": "For lists, emptiness is the same as selecting everything. TODO Create search filter; the main difference is that statistics enforces exactly 1 currency code, while search doesn't",
+        "description": "For lists, emptiness is the same as selecting everything. The main difference from TransactionSearchFilter is that statistics enforces exactly 1 currency code, while search doesn't",
         "type": "object",
         "properties": {
           "from": {
@@ -330,8 +330,14 @@
             "format": "date",
             "nullable": true
           },
+          "currencyCode": {
+            "description": "If present, will be used instead of the accounts list, which will be ignored. TODO test this",
+            "type": "string",
+            "pattern": "[A-Z]{3}",
+            "nullable": true
+          },
           "accounts": {
-            "description": "Accounts with multiple distinct currency codes will cause a bad request. TODO Create currency code",
+            "description": "There must be at least 1 account. Accounts with multiple distinct currency codes will cause a bad request. TODO test these",
             "type": "array",
             "items": {
               "type": "integer",
@@ -352,19 +358,32 @@
             }
           },
           "sellers": {
+            "description": "Any seller present here will cause the corresponding locations in sellerLocations to be ignored and include all locations",
             "type": "array",
             "items": {
               "type": "integer",
               "format": "int64"
             }
           },
-          "includeDates": {
-            "description": "Any dates that fall outside the date range of from-to, if they are specified, will be ignored. TODO test this. Actually. Get rid of this. It's meant to be a weekday filter and there are better ways to handle it",
+          "sellerLocations": {
             "type": "array",
             "items": {
-              "type": "string",
-              "format": "date"
+              "type": "integer",
+              "format": "int64"
             }
+          },
+          "weekdays": {
+            "description": "ISO 8601 weekdays: Monday-Sunday, 1-7",
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 7
+            }
+          },
+          "subtractReductions": {
+            "description": "If any of the filters that affect line items are present e.g. categories, then this parameter will be ignored. TODO Contemplate behaviour in greater detail",
+            "type": "boolean"
           }
         }
       },
@@ -1001,6 +1020,75 @@
           },
           "refresh_token": {
             "type": "string"
+          }
+        }
+      },
+      "TransactionSearchFilter": {
+        "description": "For lists, emptiness is the same as selecting everything. The main difference from StatisticsFilter is that statistics enforces exactly 1 currency code, while search doesn't",
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "to": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "currencyCodes": {
+            "description": "Any currency code present here will cause the corresponding accounts in the accounts list to be ignored and include all accounts for that currency code. Currency codes the user does not have will be ignored. TODO test this",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Z]{3}$"
+            }
+          },
+          "accounts": {
+            "description": "Unlike statistics, there is no restriction on distinct currency codes",
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "transactionModes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransactionMode"
+            }
+          },
+          "sellers": {
+            "description": "Any seller present here will cause the corresponding locations in sellerLocations to be ignored and include all locations. TODO test this",
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "sellerLocations": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "weekdays": {
+            "description": "ISO 8601 weekdays: Monday-Sunday, 1-7",
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 7
+            }
           }
         }
       }
