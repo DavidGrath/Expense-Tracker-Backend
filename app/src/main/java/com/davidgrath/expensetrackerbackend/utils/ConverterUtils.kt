@@ -159,5 +159,5 @@ fun statisticsFilterToStatisticsFilterDb(statisticsFilter: StatisticsFilter): St
     }
     val modes = sf.transactionModes.map { it.toDbMode()!! }
     val weekdays = statisticsFilter.weekdays.map { DayOfWeek.of(it) }
-    return StatisticsFilterDb(sf.from, sf.to, currency, sf.accounts, sf.categories, modes, emptyList(), weekdays, sf.sellers, sf.sellerLocations)
+    return StatisticsFilterDb(sf.from, sf.to, currency, sf.accounts, sf.categories, modes, weekdays, sf.sellers, sf.sellerLocations)
 }

@@ -288,9 +288,6 @@ fun <T: Record> applyFilters(sStep: SelectConditionStep<T>, statisticsFilter: St
     if(statisticsFilter.currencyCode != null) {
         selectStep = selectStep.and(ACCOUNT.CURRENCY_CODE.`eq`(statisticsFilter.currencyCode.toString()))
     }
-    if(statisticsFilter.includeDates.isNotEmpty()) {
-        selectStep = selectStep.and(TRANSACTION.DATED_AT.`in`(statisticsFilter.includeDates))
-    }
     if(statisticsFilter.weekDays.isNotEmpty()) {
         val weekdaysInts = statisticsFilter.weekDays.map { it.value }
         selectStep = selectStep.and(DSL.isoDayOfWeek(TRANSACTION.DATED_AT).`in`(weekdaysInts))
@@ -314,13 +311,18 @@ fun <T: Record> applyFilters(sStep: SelectConditionStep<T>, statisticsFilter: St
 val invalidRegex = Regex("^[\\p{Z}\\p{M}\\p{Cf}]+$")
 val invalidRegexControl = Regex("[\\p{Cc}&&[^\\r\\n\\t]]")
 fun validateSearchString(queryString: String): Boolean {
-    if(queryString.isBlank()) {
+    return validateGenericSingleLineString(queryString)
+}
+
+fun validateGenericSingleLineString(string: String): Boolean {
+    val trimmed = string.trim()
+    if(trimmed.isBlank()) {
         return false
     }
-    if(queryString.matches(invalidRegex)) {
+    if(trimmed.matches(invalidRegex)) {
         return false
     }
-    if(queryString.contains(invalidRegexControl)) {
+    if(trimmed.contains(invalidRegexControl)) {
         return false
     }
     return true

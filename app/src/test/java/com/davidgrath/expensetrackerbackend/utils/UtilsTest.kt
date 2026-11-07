@@ -31,7 +31,7 @@ class UtilsTest {
      * Unicode TR44
      */
     @Test
-    fun validateSearchQueryTest() {
+    fun validateGenericSingleLineStringTest() {
         //TODO Emoji are a complicated case, but they're allowed for now. Normalisation, hehe
         val controlChar = "\u0001"
         val mark = "\u0300"
@@ -44,14 +44,14 @@ class UtilsTest {
         val queryWithControlCharsAndSeparators = "query$controlChar$separators"
         val queryWithControlCharsWhitespace = "query$controlCharsWhitespace"
         val emoji = "🙂"
-        assertTrue(validateSearchString("search"))
-        assertTrue(validateSearchString(emoji))
-        assertTrue(validateSearchString(queryWithMark))
-        assertTrue(validateSearchString(queryWithControlCharsWhitespace))
+        assertTrue(validateGenericSingleLineString("search"))
+        assertTrue(validateGenericSingleLineString(emoji))
+        assertTrue(validateGenericSingleLineString(queryWithMark))
+        assertTrue(validateGenericSingleLineString(queryWithControlCharsWhitespace))
 
-        assertFalse(validateSearchString(""))
-        assertFalse(validateSearchString(completeNonsenseString))
-        assertFalse(validateSearchString(queryWithControlCharsAndSeparators))
-        assertFalse(validateSearchString(controlCharsWhitespace))
+        assertFalse(validateGenericSingleLineString(""))
+        assertFalse(validateGenericSingleLineString(completeNonsenseString))
+        assertFalse(validateGenericSingleLineString(queryWithControlCharsAndSeparators))
+        assertFalse(validateGenericSingleLineString(controlCharsWhitespace))
     }
 }

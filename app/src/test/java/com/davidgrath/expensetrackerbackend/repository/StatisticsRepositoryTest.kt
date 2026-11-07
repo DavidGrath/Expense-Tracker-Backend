@@ -50,8 +50,6 @@ import java.util.UUID
 class StatisticsRepositoryTest {
 
     @Autowired
-    lateinit var transactionRepository: TransactionRepository
-    @Autowired
     lateinit var userRepository: UserRepository
     @Autowired
     lateinit var profileRepository: ProfileRepository
@@ -242,8 +240,16 @@ class StatisticsRepositoryTest {
         val categories = listOf(food, clothing, transport).map { it.id!! }
         statisticsFilter = StatisticsFilterDb(categoryIds = categories)
         val countsFilteredByCategory = statisticsRepository.getTransactionAndItemCount(profile.id!!, statisticsFilter)
-        statisticsFilter = StatisticsFilterDb(currencyCode = Currency.getInstance("USD"), accountIds = listOf(newAccountId))
+
+        statisticsFilter = StatisticsFilterDb(currencyCode = Currency.getInstance("USD"))
         val countsFilteredByCurrency = statisticsRepository.getTransactionAndItemCount(profile.id!!, statisticsFilter)
+
+        statisticsFilter = StatisticsFilterDb(currencyCode = Currency.getInstance("EUR"))
+        val countsFilteredByCurrencyNotOwnedByOwner = statisticsRepository.getTransactionAndItemCount(profile.id!!, statisticsFilter)
+
+        statisticsFilter = StatisticsFilterDb(currencyCode = Currency.getInstance("USD"), accountIds = listOf(newAccountId))
+        val countsFilteredByCurrencyWithOverlappingAccounts = statisticsRepository.getTransactionAndItemCount(profile.id!!, statisticsFilter)
+
         statisticsFilter = StatisticsFilterDb(accountIds = listOf(accountId))
         val countsFilteredByAccount = statisticsRepository.getTransactionAndItemCount(profile.id!!, statisticsFilter)
 
@@ -255,8 +261,12 @@ class StatisticsRepositoryTest {
         val firstSellerSecondLocationId = sellerLocationRepository.getByProfileIdAndSellerId(profile.id!!, firstSellerId)[1].id!!
 
         val secondSellerLocationId =  sellerLocationRepository.getByProfileIdAndSellerId(profile.id!!, secondSellerId).first().id!!
-        statisticsFilter = StatisticsFilterDb(sellerIds = listOf(firstSellerId), sellerLocationIds = listOf(secondSellerLocationId))
+        statisticsFilter = StatisticsFilterDb(sellerIds = listOf(firstSellerId))
         val countsFilteredBySeller = statisticsRepository.getTransactionAndItemCount(profile.id!!, statisticsFilter)
+
+        statisticsFilter = StatisticsFilterDb(sellerIds = listOf(firstSellerId), sellerLocationIds = listOf(secondSellerLocationId))
+        val countsFilteredBySellerWithOverlappingLocations = statisticsRepository.getTransactionAndItemCount(profile.id!!, statisticsFilter)
+
         statisticsFilter = StatisticsFilterDb(sellerLocationIds = listOf(firstSellerFirstLocationId, secondSellerLocationId))
         val countsFilteredByLocation = statisticsRepository.getTransactionAndItemCount(profile.id!!, statisticsFilter)
 
@@ -266,8 +276,12 @@ class StatisticsRepositoryTest {
         assertEquals(TransactionAndItemCount(8, 13), countsFilteredByCurrency)
         assertEquals(TransactionAndItemCount(2, 5), countsFilteredByAccount)
         assertEquals(TransactionAndItemCount(2, 3), countsFilteredByMode)
-        assertEquals(TransactionAndItemCount(4, 5), countsFilteredBySeller)
+        assertEquals(TransactionAndItemCount(3, 3), countsFilteredBySeller)
         assertEquals(TransactionAndItemCount(2, 3), countsFilteredByLocation)
+
+        assertEquals(TransactionAndItemCount(8, 13), countsFilteredByCurrencyWithOverlappingAccounts)
+        assertEquals(TransactionAndItemCount(4, 5), countsFilteredBySellerWithOverlappingLocations)
+        assertEquals(TransactionAndItemCount(0, 0), countsFilteredByCurrencyNotOwnedByOwner)
     }
 
 
@@ -278,9 +292,9 @@ class StatisticsRepositoryTest {
         folder.deleteOnExit()
         val dataBuilder = DataBuilder(folder, timeHandler, null, Constants.DEFAULT_PROFILE_ID, testUtilComponent)
 
-        val firstTransactionDate = LocalDate.parse("2025-01-01")
+        val firstTransactionDate = LocalDate.parse("2025-01-01") //Wednesday
         val secondTransactionDate = LocalDate.parse("2025-01-02")
-        val thirdTransactionDate = LocalDate.parse("2025-01-04")
+        val thirdTransactionDate = LocalDate.parse("2025-01-04") //Saturday
         val fourthTransactionDate = LocalDate.parse("2025-01-05")
         val fifthTransactionDate = LocalDate.parse("2025-01-06")
 
@@ -323,9 +337,9 @@ class StatisticsRepositoryTest {
         statisticsFilter = StatisticsFilterDb(accountIds = accounts)
         val sumFilteredByAccount = statisticsRepository.getTransactionItemDebitSum(profile.id!!, statisticsFilter)
 
-        val dates = listOf(firstTransactionDate, thirdTransactionDate, fifthTransactionDate)
-        statisticsFilter = StatisticsFilterDb(includeDates = dates) //TODO Replace with weekdays once I rework the API from the frontend
-        val sumFilteredByDateList = statisticsRepository.getTransactionItemDebitSum(profile.id!!, statisticsFilter)
+        val weekdays = listOf(DayOfWeek.WEDNESDAY, DayOfWeek.SATURDAY)
+        statisticsFilter = StatisticsFilterDb(weekDays = weekdays)
+        val sumFilteredByWeekdays = statisticsRepository.getTransactionItemDebitSum(profile.id!!, statisticsFilter)
 
         val categories = listOf(fitness!!.id!!, utilities!!.id!!, clothing!!.id!!)
         statisticsFilter = StatisticsFilterDb(categoryIds = categories)
@@ -344,7 +358,7 @@ class StatisticsRepositoryTest {
 
         assertEqualsBD(BigDecimal(3310.00), sumNoFilter)
         assertEqualsBD(BigDecimal(600.00), sumFilteredByAccount)
-        assertEqualsBD(BigDecimal(1960.00), sumFilteredByDateList)
+        assertEqualsBD(BigDecimal(960.00), sumFilteredByWeekdays)
         assertEqualsBD(BigDecimal(2150.00), sumFilteredByCategory)
         assertEqualsBD(BigDecimal(450.00), sumFilteredByMode)
         assertEqualsBD(BigDecimal(750.00), sumFilteredBySeller)
@@ -416,8 +430,8 @@ class StatisticsRepositoryTest {
         statisticsFilter = StatisticsFilterDb(accountIds = accounts)
         val sumFilteredByAccount = statisticsRepository.getTransactionItemCreditSum(profile.id!!, statisticsFilter)
 
-        val dates = listOf(firstTransactionDate, thirdTransactionDate, fifthTransactionDate)
-        statisticsFilter = StatisticsFilterDb(includeDates = dates) //TODO Replace with weekdays once I rework the API from the frontend
+        val weekdays = listOf(DayOfWeek.WEDNESDAY, DayOfWeek.SATURDAY)
+        statisticsFilter = StatisticsFilterDb(weekDays = weekdays)
         val sumFilteredByDateList = statisticsRepository.getTransactionItemCreditSum(profile.id!!, statisticsFilter)
 
         val categories = listOf(fitness!!.id!!, utilities!!.id!!, clothing!!.id!!)
@@ -437,7 +451,7 @@ class StatisticsRepositoryTest {
 
         assertEqualsBD(BigDecimal(3310.00), sumNoFilter)
         assertEqualsBD(BigDecimal(600.00), sumFilteredByAccount)
-        assertEqualsBD(BigDecimal(1960.00), sumFilteredByDateList)
+        assertEqualsBD(BigDecimal(960.00), sumFilteredByDateList)
         assertEqualsBD(BigDecimal(2150.00), sumFilteredByCategory)
         assertEqualsBD(BigDecimal(450.00), sumFilteredByMode)
         assertEqualsBD(BigDecimal(750.00), sumFilteredBySeller)

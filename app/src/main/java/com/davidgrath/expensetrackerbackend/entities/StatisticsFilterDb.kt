@@ -12,28 +12,23 @@ data class StatisticsFilterDb(
     val toDate: LocalDate? = null,
     /**
      * If present, will override [accountIds]
-     * TODO Test this
+     * TODO Test this across all statistics methods
      */
     val currencyCode: Currency? = null,
     /**
      * It is assumed that at least 1 account ID has been sent from the frontend. Otherwise, nondistinct currency codes could be permitted by this logic.
      * I could potentially throw an exception, but at the repository level it feels wrong
      * TODO Hmmm. Or maybe throwing exceptions isn't so bad. Also, that means [accountIds] would become a compulsory parameter for this data class
+     * TODO strengthen the assumption by moving the at least 1 check from the controller layer to the service layer and update this KDoc after
      *
      */
     val accountIds: List<Long> = emptyList(),
     val categoryIds: List<Long> = emptyList(),
     val transactionModes: List<TransactionMode> = emptyList(),
-    /**
-     * Any dates that fall outside the date range of [fromDate]-[toDate], if they are specified, will be ignored.
-     * TODO test this.
-     * TODO Actually. Get rid of this. It's meant to be a weekday filter and there are better ways to handle it
-     */
-    val includeDates: List<LocalDate> = emptyList(),
     val weekDays: List<DayOfWeek> = emptyList(),
     /**
      * Any seller present here will cause the corresponding locations in [sellerLocationIds] to be ignored and include all locations
-     * TODO Test this
+     * TODO Test this across all statistics methods
      */
     val sellerIds: List<Long> = emptyList(),
     val sellerLocationIds: List<Long> = emptyList(),

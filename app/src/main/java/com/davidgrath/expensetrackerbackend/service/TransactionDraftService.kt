@@ -135,14 +135,14 @@ class TransactionDraftService {
     }
 
     fun modifyDraftItem(profileId: Long, uuid: UUID, item: TransactionDraftItem) {
-        val userDraft = userDraftRepository.getDraftByProfile(profileId)
+        val userDraft = userDraftRepository.getDraftByProfile(profileId) //TODO acquire an SFU lock
         if (userDraft == null) {
-            //TODO
+            //TODO create new service exception class, throw 404
         }
         var transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
         val itPos = transactionDraft.items.indexOfFirst { it.uuid == uuid }
         if (itPos == -1) {
-            //TODO
+            //TODO throw 404
         }
         val mutable = transactionDraft.items.toMutableList()
         mutable[itPos] = item
@@ -491,9 +491,9 @@ class TransactionDraftService {
     }
 
     fun setDate(profileId: Long, localDate: LocalDate?) {
-        val userDraft = userDraftRepository.getDraftByProfile(profileId)
+        val userDraft = userDraftRepository.getDraftByProfile(profileId) //TODO acquire an SFU lock
         if (userDraft == null) {
-            //TODO
+            //TODO throw 404
         }
 
         var transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
@@ -505,9 +505,9 @@ class TransactionDraftService {
     }
 
     fun modifyDraft(profileId: Long, accountId: Long, note: String?, mode: TransactionMode, debitOrCredit: Boolean) {
-        val userDraft = userDraftRepository.getDraftByProfile(profileId)
+        val userDraft = userDraftRepository.getDraftByProfile(profileId) //TODO acquire an SFU lock
         if (userDraft == null) {
-            //TODO
+            //TODO throw 404
         }
 
         var transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
@@ -523,9 +523,9 @@ class TransactionDraftService {
     }
 
     fun setTime(profileId: Long, localTime: LocalTime?) {
-        val userDraft = userDraftRepository.getDraftByProfile(profileId)
+        val userDraft = userDraftRepository.getDraftByProfile(profileId) //TODO acquire an SFU lock
         if (userDraft == null) {
-            //TODO
+            //TODO throw 404
         }
 
         var transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
@@ -539,9 +539,9 @@ class TransactionDraftService {
 
     fun setSeller(profileId: Long, sellerId: Long?) {
 
-        val userDraft = userDraftRepository.getDraftByProfile(profileId)
+        val userDraft = userDraftRepository.getDraftByProfile(profileId) //TODO acquire an SFU lock
         if (userDraft == null) {
-            //TODO
+            //TODO throw 404
         }
 
         var transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
@@ -564,9 +564,9 @@ class TransactionDraftService {
 
     fun setSellerLocation(profileId: Long, sellerLocationId: Long?) {
 
-        val userDraft = userDraftRepository.getDraftByProfile(profileId)
+        val userDraft = userDraftRepository.getDraftByProfile(profileId) //TODO acquire an SFU lock
         if (userDraft == null) {
-            //TODO
+            //TODO throw 404
         }
 
         var transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
@@ -598,16 +598,16 @@ class TransactionDraftService {
         userUuid: ByteArray,
         profileUuid: ByteArray
     ): Boolean {
-        val userDraft = userDraftRepository.getDraftByProfile(profileId)
+        val userDraft = userDraftRepository.getDraftByProfile(profileId) //TODO acquire an SFU lock
         if (userDraft == null) {
-            //TODO
+            //TODO throw 404
             return false
         }
         var transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
         val items = transactionDraft.items
         val itemIndex = items.indexOfFirst { it.uuid == uuid }
         if (itemIndex == -1) {
-            // TODO
+            // TODO throw 404
             return false
         }
         val item = items[itemIndex]
@@ -687,9 +687,9 @@ class TransactionDraftService {
         profileStringId: String
     ): String? {
 
-        val userDraft = userDraftRepository.getDraftByProfile(profileId)
+        val userDraft = userDraftRepository.getDraftByProfile(profileId) //TODO acquire an SFU lock
         if (userDraft == null) {
-            //TODO
+            //TODO throw 404
             return null
         }
         val transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
@@ -741,9 +741,9 @@ class TransactionDraftService {
 
     fun deleteItem(profileId: Long, uuid: UUID): Boolean {
 
-        val userDraft = userDraftRepository.getDraftByProfile(profileId)
+        val userDraft = userDraftRepository.getDraftByProfile(profileId) //TODO acquire an SFU lock
         if (userDraft == null) {
-            //TODO
+            //TODO throw 404
             return false
         }
         val transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
@@ -771,9 +771,9 @@ class TransactionDraftService {
     }
 
     fun deleteItemImage(profileId: Long, uuid: UUID, imagePosition: Int): Boolean {
-        val userDraft = userDraftRepository.getDraftByProfile(profileId)
+        val userDraft = userDraftRepository.getDraftByProfile(profileId) //TODO acquire an SFU lock
         if (userDraft == null) {
-            //TODO
+            //TODO throw 404
             return false
         }
         val transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
@@ -806,7 +806,7 @@ class TransactionDraftService {
     fun deleteDocument(profileId: Long, documentPosition: Int): Boolean { //TODO Place an SFU lock
         val userDraft = userDraftRepository.getDraftByProfile(profileId)
         if (userDraft == null) {
-            //TODO
+            //TODO throw 404
             return false
         }
         val transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)

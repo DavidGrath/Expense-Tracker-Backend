@@ -8,6 +8,7 @@ import com.davidgrath.expensetrackerbackend.service.ProfileService
 import com.davidgrath.expensetrackerbackend.service.SellerService
 import com.davidgrath.expensetrackerbackend.service.UserService
 import com.davidgrath.expensetrackerbackend.utils.Constants
+import com.davidgrath.expensetrackerbackend.utils.validateGenericSingleLineString
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotNull
 import org.slf4j.LoggerFactory
@@ -218,7 +219,7 @@ class SellersController: SellersApi {
         }
 
         val nameTrimmed = sellerLocationUpdateRequest!!.name!!.trim()
-        if(nameTrimmed.isBlank()) {
+        if(!validateGenericSingleLineString(nameTrimmed)) {
             val exception = CustomHttpException(ErrorCode.INVALID_INPUT, HttpStatus.BAD_REQUEST)
             LOGGER.error("Name blank", exception)
             throw exception
@@ -265,8 +266,8 @@ class SellersController: SellersApi {
         }
 
 
-        val nameTrimmed = sellerLocationCreateRequest!!.name.trim() //TODO General category Control characters, Mark, Separator
-        if(nameTrimmed.isBlank()) {
+        val nameTrimmed = sellerLocationCreateRequest!!.name!!.trim()
+        if(!validateGenericSingleLineString(nameTrimmed)) {
             val exception = CustomHttpException(ErrorCode.INVALID_INPUT, HttpStatus.BAD_REQUEST)
             LOGGER.error("Name blank", exception)
             throw exception
@@ -306,7 +307,7 @@ class SellersController: SellersApi {
             throw exception
         }
         val nameTrimmed = sellerUpdateRequest!!.name!!.trim()
-        if(nameTrimmed.isBlank()) {
+        if(!validateGenericSingleLineString(nameTrimmed)) {
             val exception = CustomHttpException(ErrorCode.INVALID_INPUT, HttpStatus.BAD_REQUEST)
             LOGGER.error("Name blank", exception)
             throw exception
@@ -325,8 +326,8 @@ class SellersController: SellersApi {
         val user = userService.getByUsername(principal.subject!!)
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
 
-        val nameTrimmed = sellerCreateRequest!!.name.trim()
-        if(nameTrimmed.isBlank()) {
+        val nameTrimmed = sellerCreateRequest!!.name!!.trim()
+        if(!validateGenericSingleLineString(nameTrimmed)) {
             val exception = CustomHttpException(ErrorCode.INVALID_INPUT, HttpStatus.BAD_REQUEST)
             LOGGER.error("Name blank", exception)
             throw exception

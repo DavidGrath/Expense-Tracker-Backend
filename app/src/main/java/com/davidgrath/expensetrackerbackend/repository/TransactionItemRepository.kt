@@ -1,5 +1,6 @@
 package com.davidgrath.expensetrackerbackend.repository
 
+import com.davidgrath.expensetrackerbackend.entities.SearchFilterDb
 import com.davidgrath.expensetrackerbackend.entities.StatisticsFilterDb
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import com.davidgrath.expensetrackerbackend.entities.views.DateAmountSummary
@@ -7,7 +8,9 @@ import com.davidgrath.expensetrackerbackend.entities.views.StringFieldWithTimest
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.TransactionItem
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionItemPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.ACCOUNT
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.SELLER_LOCATION
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION_ITEM
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.DEFAULT_FETCH_LIMIT
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.FALSE_BYTE
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.TRUE_BYTE
@@ -15,6 +18,8 @@ import com.davidgrath.expensetrackerbackend.utils.applyFilters
 import com.davidgrath.expensetrackerbackend.utils.toByte
 import org.jooq.DSLContext
 import org.jooq.DatePart
+import org.jooq.Record
+import org.jooq.SelectConditionStep
 import org.jooq.impl.DSL
 import org.jooq.impl.SQLDataType
 import org.slf4j.LoggerFactory
@@ -28,7 +33,6 @@ open class TransactionItemRepository {
 
     @Autowired
     open lateinit var mainContext: DSLContext
-    open var TRANSACTION_ITEM: TransactionItem = TransactionItem.TRANSACTION_ITEM
 
     fun insertTransactionItem(item: TransactionItemPojo): Long {
         val itemDb = mainContext.newRecord(TRANSACTION_ITEM, item)
@@ -240,6 +244,66 @@ open class TransactionItemRepository {
         }
         return selectStep.fetchOne()?.value1()
     }
+
+
+    fun getAllItemsLimit(profileId: Long, filter: SearchFilterDb): List<TransactionItemPojo> {
+        val fetchLimit = 5_000
+        var selectStep = mainContext
+            .select(TRANSACTION_ITEM.asterisk(),)
+            .from(TRANSACTION_ITEM)
+            .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(TRANSACTION_ITEM.TRANSACTION_ID))
+            .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
+            .leftJoin(SELLER_LOCATION).on(
+                SELLER_LOCATION.SELLER_ID.eq(TRANSACTION.SELLER_ID)
+                    .and(SELLER_LOCATION.ORDINAL.eq(TRANSACTION.SELLER_LOCATION_ORDINAL))
+            )
+            .where(ACCOUNT.PROFILE_ID.eq(profileId))
+
+        selectStep = applySearchFilters(selectStep, filter)
+
+
+        val result = selectStep.limit(fetchLimit)
+            .fetch().into(TransactionItemPojo::class.java)
+        LOGGER.info("Result size: {}", result.size)
+        return result
+    }
+
+    private fun <T: Record> applySearchFilters(sStep: SelectConditionStep<T>, searchFilter: SearchFilterDb): SelectConditionStep<T> {
+        var selectStep = sStep
+        if(searchFilter.fromDate != null) {
+            selectStep = selectStep.and(TRANSACTION.DATED_AT.greaterOrEqual(searchFilter.fromDate))
+        }
+        if(searchFilter.toDate != null) {
+            selectStep = selectStep.and(TRANSACTION.DATED_AT.lessOrEqual(searchFilter.toDate))
+        }
+
+        if(searchFilter.currencyCodes.isNotEmpty() || searchFilter.accountIds.isNotEmpty()) {
+            var condition = ACCOUNT.CURRENCY_CODE.`in`(searchFilter.currencyCodes)
+            if(searchFilter.accountIds.isNotEmpty()) {
+                condition = condition.or(ACCOUNT.ID.`in`(searchFilter.accountIds))
+            }
+            selectStep = selectStep.and(condition)
+        }
+        if(searchFilter.weekDays.isNotEmpty()) {
+            val weekdaysInts = searchFilter.weekDays.map { it.value }
+            selectStep = selectStep.and(DSL.isoDayOfWeek(TRANSACTION.DATED_AT).`in`(weekdaysInts))
+        }
+        if(searchFilter.categoryIds.isNotEmpty()) {
+            selectStep = selectStep.and(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.`in`(searchFilter.categoryIds))
+        }
+        if(searchFilter.transactionModes.isNotEmpty()) {
+            selectStep = selectStep.and(TRANSACTION.MODE.`in`(searchFilter.transactionModes))
+        }
+        if(searchFilter.sellerIds.isNotEmpty() || searchFilter.sellerLocationIds.isNotEmpty()) {
+            var condition = TRANSACTION.SELLER_ID.`in`(searchFilter.sellerIds)
+            if(searchFilter.sellerLocationIds.isNotEmpty()) {
+                condition = condition.or(SELLER_LOCATION.ID.`in`(searchFilter.sellerLocationIds))
+            }
+            selectStep = selectStep.and(condition)
+        }
+        return selectStep
+    }
+
 
 
 

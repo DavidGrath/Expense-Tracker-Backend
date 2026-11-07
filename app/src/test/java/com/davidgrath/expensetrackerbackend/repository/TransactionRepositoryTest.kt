@@ -2,17 +2,9 @@ package com.davidgrath.expensetrackerbackend.repository
 
 import com.davidgrath.expensetrackerbackend.configuration.TestRunConfiguration
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
-import com.davidgrath.expensetrackerbackend.entities.StatisticsFilterDb
-import com.davidgrath.expensetrackerbackend.entities.TransactionMode
-import com.davidgrath.expensetrackerbackend.entities.views.TransactionAndItemCount
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.AccountPojo
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.CategoryPojo
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ProfilePojo
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.UserPojo
 import com.davidgrath.expensetrackerbackend.testutils.*
 import com.davidgrath.expensetrackerbackend.utils.Constants
-import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.FALSE_BYTE
-import com.davidgrath.expensetrackerbackend.utils.uuidToBytes
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -26,13 +18,8 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringRunner
 import java.math.BigDecimal
 import java.nio.file.Files
-import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.ZonedDateTime
-import java.util.Currency
-import java.util.UUID
 
 @SpringBootTest
 @RunWith(SpringRunner::class)

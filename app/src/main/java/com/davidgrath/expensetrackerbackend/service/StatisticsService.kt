@@ -18,6 +18,11 @@ class StatisticsService {
      * TODO maybe IDOR checks should happen here
      */
     fun validateFilter(profileId: Long, statisticsFilter: StatisticsFilter): Boolean {
+        //TODO IDOR Checks on next commit
+        statisticsFilter.accounts
+        statisticsFilter.sellers
+        statisticsFilter.sellerLocations
+        statisticsFilter.categories
         val ret = if(statisticsFilter.currencyCode != null) {
             val exception: IllegalArgumentException? = try {
                 Currency.getInstance(statisticsFilter.currencyCode!!)

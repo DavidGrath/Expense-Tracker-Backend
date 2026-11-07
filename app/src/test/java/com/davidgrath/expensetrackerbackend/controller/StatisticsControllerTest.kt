@@ -28,6 +28,7 @@ import com.fasterxml.jackson.databind.ObjectWriter
 import org.hamcrest.Matchers
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
@@ -128,5 +129,12 @@ class StatisticsControllerTest {
                     )
                 ).andReturn()
         }
+    }
+
+    @Test
+    @Ignore("Not ready yet")
+    fun givenCurrencyCodeIsInvalidWhenStatisticsEndpointThenBadRequest() {
+        //TODO new code: invalid_currency_code
+        //TODO Hibernate validations
     }
 }

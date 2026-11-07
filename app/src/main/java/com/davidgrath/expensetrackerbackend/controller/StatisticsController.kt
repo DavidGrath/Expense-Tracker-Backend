@@ -22,7 +22,6 @@ import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.bind.annotation.RestController
 import java.math.BigDecimal
 
-//TODO General ownership check for all IDs in Statistics filter
 @RestController
 class StatisticsController: StatisticsApi {
 

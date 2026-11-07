@@ -331,7 +331,7 @@
             "nullable": true
           },
           "currencyCode": {
-            "description": "If present, will be used instead of the accounts list, which will be ignored.",
+            "description": "If present, will be used instead of the accounts list, which will be ignored. A currency code the user does not have will return empty results",
             "type": "string",
             "pattern": "[A-Z]{3}",
             "nullable": true
@@ -1038,7 +1038,7 @@
             "nullable": true
           },
           "currencyCodes": {
-            "description": "Any currency code present here will cause the corresponding accounts in the accounts list to be ignored and include all accounts for that currency code. Currency codes the user does not have will be ignored. TODO test this",
+            "description": "Any currency code present here will cause the corresponding accounts in the accounts list to be ignored and include all accounts for that currency code. Currency codes the user does not have will be ignored",
             "type": "array",
             "items": {
               "type": "string",
@@ -1067,7 +1067,7 @@
             }
           },
           "sellers": {
-            "description": "Any seller present here will cause the corresponding locations in sellerLocations to be ignored and include all locations. TODO test this",
+            "description": "Any seller present here will cause the corresponding locations in sellerLocations to be ignored and include all locations",
             "type": "array",
             "items": {
               "type": "integer",
