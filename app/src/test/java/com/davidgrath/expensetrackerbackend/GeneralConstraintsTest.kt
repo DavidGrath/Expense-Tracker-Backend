@@ -142,8 +142,9 @@ class GeneralConstraintsTest {
     val controlChar = "\u0001"
     val mark = "\u0300"
     val separators = " \u2028\u2029"
-    val format = "\u00ad"
-    val nonsenseEmptyString = "$mark$separators$format"
+    val softHyphen = '\u00ad'
+    val format = "$softHyphen"
+    val completeNonsenseString = "$mark$separators$format"
     val controlCharsWhitespace = "\r\n\t"
     val nameWithMark = "Valid Name$mark"
     val nameWithControlCharsAndSeparators = "Control Name$controlChar$separators"
@@ -312,7 +313,7 @@ class GeneralConstraintsTest {
             nameWithControlCharsAndSeparators,
             "",
             nameWithControlCharsWhitespace,
-            nonsenseEmptyString
+            completeNonsenseString
         )
 
         for(invalidProfileName in invalidNames) {
@@ -376,7 +377,7 @@ class GeneralConstraintsTest {
                 .contains(CONSTRAINT_NAME_TRANSACTION_NOTE_VALID)
         )
 
-        invalidNote = nonsenseEmptyString
+        invalidNote = completeNonsenseString
         transaction = TransactionPojo(null, accountId, BigDecimal(100), TRUE_BYTE, dateTime.toLocalDate(), null, 1_000, TransactionMode.Other, invalidNote)
 
         exception = try {
@@ -847,7 +848,7 @@ class GeneralConstraintsTest {
         assertSQLCheckConstraint(exception, CONSTRAINT_NAME_CATEGORY_NAME_VALID)
 
 
-        invalidName = nonsenseEmptyString
+        invalidName = completeNonsenseString
         category = CategoryPojo(null, profileId, stringId, isCustom, invalidName, dateTime, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category")
 
         exception = try {
@@ -1325,7 +1326,7 @@ class GeneralConstraintsTest {
             nameWithControlCharsAndSeparators,
             "",
             nameWithControlCharsWhitespace,
-            nonsenseEmptyString
+            completeNonsenseString
         )
 
         for(invalidAccountName in invalidNames) {
@@ -1369,7 +1370,7 @@ class GeneralConstraintsTest {
             nameWithControlCharsAndSeparators,
             "",
             nameWithControlCharsWhitespace,
-            nonsenseEmptyString
+            completeNonsenseString
         )
 
         for(invalidSellerName in invalidNames) {
@@ -1415,7 +1416,7 @@ class GeneralConstraintsTest {
             nameWithControlCharsAndSeparators,
             "",
             nameWithControlCharsWhitespace,
-            nonsenseEmptyString
+            completeNonsenseString
         )
 
         for(invalidSellerLocationName in invalidNames) {
@@ -1464,7 +1465,7 @@ class GeneralConstraintsTest {
             nameWithControlCharsAndSeparators,
             "",
             nameWithControlCharsWhitespace,
-            nonsenseEmptyString
+            completeNonsenseString
         )
 
         for(invalidSellerLocationAddress in invalidAddresses) {
@@ -1519,7 +1520,7 @@ class GeneralConstraintsTest {
             nameWithControlCharsAndSeparators,
             "",
             nameWithControlCharsWhitespace,
-            nonsenseEmptyString
+            completeNonsenseString
         )
 
         for (invalidDescription in invalidDescriptions) {
@@ -1584,7 +1585,7 @@ class GeneralConstraintsTest {
             nameWithControlCharsAndSeparators,
             "",
             nameWithControlCharsWhitespace,
-            nonsenseEmptyString
+            completeNonsenseString
         )
 
         for (invalidBrand in invalidBrands) {
@@ -1649,7 +1650,7 @@ class GeneralConstraintsTest {
             nameWithControlCharsAndSeparators,
             "",
             nameWithControlCharsWhitespace,
-            nonsenseEmptyString
+            completeNonsenseString
         )
 
         for (invalidVariation in invalidVariations) {

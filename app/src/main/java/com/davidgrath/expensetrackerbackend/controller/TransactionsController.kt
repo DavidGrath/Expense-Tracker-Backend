@@ -664,7 +664,7 @@ open class TransactionsController: TransactionsApi {
         }
         if(draft.items.size == 1) {
             val exception = CustomHttpException(ErrorCode.DRAFT_MUST_HAVE_AT_LEAST_ONE_ITEM, HttpStatus.BAD_REQUEST)
-            LOGGER.error("Only one item in draft ", exception)
+            LOGGER.error("Only one item in draft", exception)
             throw exception
         }
         val ret = transactionDraftService.deleteItem(profile.id, uuid)
@@ -676,6 +676,12 @@ open class TransactionsController: TransactionsApi {
         query: @NotNull @Valid String,
         transactionSearchFilter: @Valid TransactionSearchFilter?
     ): ResponseEntity<List<TransactionDetails?>?>? {
+
+        if(!validateSearchString(query)) {
+            val exception = CustomHttpException(ErrorCode.INVALID_SEARCH_QUERY, HttpStatus.BAD_REQUEST)
+            LOGGER.error("Search query is invalid", exception)
+            throw exception
+        }
         return ResponseEntity.ok(emptyList())
     }
 

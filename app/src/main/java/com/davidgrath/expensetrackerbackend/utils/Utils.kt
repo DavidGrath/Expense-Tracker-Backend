@@ -310,3 +310,18 @@ fun <T: Record> applyFilters(sStep: SelectConditionStep<T>, statisticsFilter: St
     }
     return selectStep
 }
+
+val invalidRegex = Regex("^[\\p{Z}\\p{M}\\p{Cf}]+$")
+val invalidRegexControl = Regex("[\\p{Cc}&&[^\\r\\n\\t]]")
+fun validateSearchString(queryString: String): Boolean {
+    if(queryString.isBlank()) {
+        return false
+    }
+    if(queryString.matches(invalidRegex)) {
+        return false
+    }
+    if(queryString.contains(invalidRegexControl)) {
+        return false
+    }
+    return true
+}

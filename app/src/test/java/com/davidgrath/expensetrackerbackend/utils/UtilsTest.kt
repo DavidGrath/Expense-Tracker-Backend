@@ -1,6 +1,8 @@
 package com.davidgrath.expensetrackerbackend.utils
 
 import junit.framework.Assert.assertEquals
+import junit.framework.Assert.assertFalse
+import junit.framework.Assert.assertTrue
 import org.junit.Test
 import java.util.UUID
 
@@ -22,5 +24,34 @@ class UtilsTest {
         assertEquals("fae075e1-d54a-4857-a76b-b3eadf88d602", expectedUuid.toString())
         val uuid = bytesToUUID(bytes)
         assertEquals(expectedUuid, uuid)
+    }
+
+
+    /**
+     * Unicode TR44
+     */
+    @Test
+    fun validateSearchQueryTest() {
+        //TODO Emoji are a complicated case, but they're allowed for now. Normalisation, hehe
+        val controlChar = "\u0001"
+        val mark = "\u0300"
+        val separators = " \u2028\u2029"
+        val softHyphen = '\u00ad'
+        val format = "$softHyphen"
+        val completeNonsenseString = "$mark$separators$format"
+        val controlCharsWhitespace = "\r\n\t"
+        val queryWithMark = "query$mark"
+        val queryWithControlCharsAndSeparators = "query$controlChar$separators"
+        val queryWithControlCharsWhitespace = "query$controlCharsWhitespace"
+        val emoji = "🙂"
+        assertTrue(validateSearchString("search"))
+        assertTrue(validateSearchString(emoji))
+        assertTrue(validateSearchString(queryWithMark))
+        assertTrue(validateSearchString(queryWithControlCharsWhitespace))
+
+        assertFalse(validateSearchString(""))
+        assertFalse(validateSearchString(completeNonsenseString))
+        assertFalse(validateSearchString(queryWithControlCharsAndSeparators))
+        assertFalse(validateSearchString(controlCharsWhitespace))
     }
 }

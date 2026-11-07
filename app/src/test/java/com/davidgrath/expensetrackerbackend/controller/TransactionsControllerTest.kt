@@ -8,6 +8,7 @@ import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.controller.exception.ExceptionResponseHandler
 import com.davidgrath.expensetrackerbackend.generatedapi.api.TransactionsApi
 import com.davidgrath.expensetrackerbackend.generatedapi.model.BasicTransactionCreateRequest
+import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionSearchFilter
 import com.davidgrath.expensetrackerbackend.repository.AccountRepository
 import com.davidgrath.expensetrackerbackend.repository.CategoryRepository
 import com.davidgrath.expensetrackerbackend.repository.ProfileRepository
@@ -74,6 +75,8 @@ class TransactionsControllerTest {
     @Value("\${jwt.signingkey}")
     private val jwtSigningKey: String? = null
 
+    val objectWriter: ObjectWriter = ObjectMapper().writer()
+
     @Before
     fun setUp() {
         tempInit(testUtilComponent, timeHandler)
@@ -92,7 +95,7 @@ class TransactionsControllerTest {
         val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
         val misc = categoryRepository.findByProfileIdAndStringId(profile.id!!, "miscellaneous")
-        val objectWriter: ObjectWriter = ObjectMapper().writer()
+
 
         val nullDescriptionRequest = BasicTransactionCreateRequest(accountId, true, BigDecimal.TEN, null, misc!!.id, "Etc/UTC")
         var json: String = objectWriter.writeValueAsString(nullDescriptionRequest)
@@ -143,7 +146,6 @@ class TransactionsControllerTest {
         var basicTransactionRequest = BasicTransactionCreateRequest(accounts[0].id!!, true, BigDecimal.TEN, "Description", misc!!.id, "Etc/UTC")
 
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
-        val objectWriter: ObjectWriter = ObjectMapper().writer()
         val json: String = objectWriter.writeValueAsString(basicTransactionRequest)
         mockMvc
             .perform(
@@ -174,7 +176,6 @@ class TransactionsControllerTest {
         var basicTransactionRequest = BasicTransactionCreateRequest(accounts[0].id!!, true, BigDecimal.TEN, "Description", misc!!.id, "Etc/UTC")
 
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
-        val objectWriter: ObjectWriter = ObjectMapper().writer()
         val json: String = objectWriter.writeValueAsString(basicTransactionRequest)
         mockMvc
             .perform(
@@ -237,7 +238,6 @@ class TransactionsControllerTest {
         val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
         val misc = categoryRepository.findByProfileIdAndStringId(profile.id!!, "miscellaneous")
-        val objectWriter: ObjectWriter = ObjectMapper().writer()
 
         var badTimeZoneRequest = BasicTransactionCreateRequest(accountId, true, BigDecimal.TEN, "Description", misc!!.id, "Etc/Wrong")
         var json: String = objectWriter.writeValueAsString(badTimeZoneRequest)
@@ -253,6 +253,34 @@ class TransactionsControllerTest {
                 MockMvcResultMatchers.status().isBadRequest,
                 MockMvcResultMatchers.jsonPath(
                     "$.$CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE", Matchers.equalToIgnoringCase(ErrorCode.TIME_ZONE_NOT_VALID.code)
+                )
+            ).andReturn()
+    }
+
+    @Test
+    fun givenSearchQueryIsInvalidWhenSearchThenBadRequest() {
+        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
+
+        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+
+        val searchFilter = TransactionSearchFilter()
+        var json: String = objectWriter.writeValueAsString(searchFilter)
+
+        val invalidQuery = " " //More test cases are covered extensively in the utils test
+        var response = mockMvc
+            .perform(
+                MockMvcRequestBuilders.post("/transactions/search")
+                    .queryParam("query", invalidQuery)
+                    .header("Authorization", "Bearer ${jws}")
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!).toString())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(json)
+            )
+            .andExpectAll(
+                MockMvcResultMatchers.status().isBadRequest,
+                MockMvcResultMatchers.jsonPath(
+                    "$.$CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE", Matchers.equalToIgnoringCase(ErrorCode.INVALID_SEARCH_QUERY.code)
                 )
             ).andReturn()
     }

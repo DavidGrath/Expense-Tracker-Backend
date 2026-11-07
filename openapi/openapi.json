@@ -730,7 +730,8 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "description": "Any strings that are empty or filled exclusively with blank nonsense will throw a bad request. TODO test this"
+              "description": "Any strings that are empty or filled exclusively with blank nonsense will throw a bad request",
+              "maxLength": 250
             }
           }
         ],
