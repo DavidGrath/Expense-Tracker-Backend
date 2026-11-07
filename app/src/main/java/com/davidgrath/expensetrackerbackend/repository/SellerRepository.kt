@@ -45,7 +45,7 @@ class SellerRepository @Autowired constructor(open var mainContext: DSLContext) 
         return selectStep.fetchOne()?.into(SellerPojo::class.java)
     }
 
-    fun getAll(profileId: Long): List<SellerPojo> {
+    fun getAllByProfileId(profileId: Long): List<SellerPojo> {
         val selectStep = mainContext.select(SELLER.asterisk())
             .from(SELLER)
             .where(SELLER.PROFILE_ID.eq(profileId))

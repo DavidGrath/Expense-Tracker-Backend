@@ -192,7 +192,7 @@ class StatisticsRepositoryTest {
             .withNewAccount("USD", "Test Account 2")
             .commit()
 
-        val firstSellerId = sellerRepository.getAll(profile.id!!).first()!!.id!!
+        val firstSellerId = sellerRepository.getAllByProfileId(profile.id!!).first()!!.id!!
 
         dataBuilder.createTransaction()
             .atDate(fifthDate)
@@ -219,7 +219,7 @@ class StatisticsRepositoryTest {
             .commit()
 
 
-        val secondSellerId = sellerRepository.getAll(profile.id!!)[1].id!!
+        val secondSellerId = sellerRepository.getAllByProfileId(profile.id!!)[1].id!!
 
         dataBuilder.createTransaction()
             .atDate(eighthDate)
@@ -497,8 +497,8 @@ class StatisticsRepositoryTest {
 
         val user1Id = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!.id!!
         val user1ProfileId = profileRepository.findByUuid(user1Id, defaultUserProfileUuid)!!.id!!
-        val user1Seller = sellerRepository.getAll(user1ProfileId).first()!!.id!!
-        val user2Seller = sellerRepository.getAll(user2ProfileId).first()!!.id!!
+        val user1Seller = sellerRepository.getAllByProfileId(user1ProfileId).first()!!.id!!
+        val user2Seller = sellerRepository.getAllByProfileId(user2ProfileId).first()!!.id!!
 
         val statisticsFilter = StatisticsFilterDb(sellerIds = listOf(user1Seller, user2Seller))
         val count = statisticsRepository.getTransactionAndItemCount(user1ProfileId, statisticsFilter)

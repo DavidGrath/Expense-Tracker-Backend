@@ -1,6 +1,7 @@
 package com.davidgrath.expensetrackerbackend.repository
 
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.SellerLocationPojo
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.SellerPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.ACCOUNT
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.PROFILE
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.SELLER
@@ -80,6 +81,18 @@ class SellerLocationRepository @Autowired constructor(open var dslContext: DSLCo
             .where(SELLER.ID.eq(sellerId))
             .and(SELLER.PROFILE_ID.eq(profileId))
         return selectStep.fetchOne()?.value1()
+    }
+
+    fun getAllByProfileId(profileId: Long): List<SellerLocationPojo> {
+        val selectStep = dslContext.select(SELLER_LOCATION.asterisk())
+            .from(SELLER_LOCATION)
+            .innerJoin(SELLER).on(SELLER.ID.eq(SELLER_LOCATION.SELLER_ID))
+            .where(SELLER.PROFILE_ID.eq(profileId))
+            .limit(DEFAULT_FETCH_LIMIT)
+
+        val result = selectStep.fetch().into(SellerLocationPojo::class.java)
+        LOGGER.info("Result size: {}", result.size)
+        return result
     }
 
     // endregion

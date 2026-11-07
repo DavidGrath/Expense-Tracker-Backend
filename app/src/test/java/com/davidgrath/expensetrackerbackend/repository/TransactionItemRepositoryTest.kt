@@ -131,7 +131,7 @@ class TransactionItemRepositoryTest {
             .withNewAccount("USD", "Test Account 2")
             .commit()
 
-        val firstSellerId = sellerRepository.getAll(profile.id!!).first()!!.id!!
+        val firstSellerId = sellerRepository.getAllByProfileId(profile.id!!).first()!!.id!!
 
         dataBuilder.createTransaction()
             .atDate(fifthDate)
@@ -158,7 +158,7 @@ class TransactionItemRepositoryTest {
             .commit()
 
 
-        val secondSellerId = sellerRepository.getAll(profile.id!!)[1].id!!
+        val secondSellerId = sellerRepository.getAllByProfileId(profile.id!!)[1].id!!
 
         dataBuilder.createTransaction()
             .atDate(eighthDate)

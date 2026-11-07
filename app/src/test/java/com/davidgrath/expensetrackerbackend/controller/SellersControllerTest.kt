@@ -179,7 +179,7 @@ class SellersControllerTest {
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
         val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 
-        val existing = sellerRepository.getAll(profile.id!!)
+        val existing = sellerRepository.getAllByProfileId(profile.id!!)
         val remaining = Constants.Constraints.MAX_SELLERS_PER_PROFILE - existing.size
         if(remaining <= 0) {
             throw RuntimeException("Existing sellers too many")
