@@ -3,7 +3,6 @@ package com.davidgrath.expensetrackerbackend.controller
 import com.davidgrath.expensetrackerbackend.configuration.SecurityConfiguration
 import com.davidgrath.expensetrackerbackend.configuration.TestRunControllerConfiguration
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
-import com.davidgrath.expensetrackerbackend.configuration.filter.TokenTypeFilter
 import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.controller.exception.ExceptionResponseHandler
 import com.davidgrath.expensetrackerbackend.generatedapi.model.SignUpRequest
@@ -17,7 +16,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.ObjectWriter
 import org.hamcrest.Matchers
 import org.junit.After
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -197,7 +195,7 @@ class AuthControllerTest {
             .andExpectAll(
                 MockMvcResultMatchers.status().isUnauthorized(),
                 MockMvcResultMatchers.jsonPath(
-                    "$.$CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE", Matchers.equalTo(ErrorCode.INVALID_TOKEN_TYPE.code)
+                    "$.$CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE", Matchers.equalTo(ErrorCode.INVALID_AUTH_TOKEN_TYPE.code)
                 )
             )
             .andReturn()
@@ -213,7 +211,7 @@ class AuthControllerTest {
             .andExpectAll(
                 MockMvcResultMatchers.status().isUnauthorized(),
                 MockMvcResultMatchers.jsonPath(
-                    "$.$CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE", Matchers.equalTo(ErrorCode.INVALID_TOKEN_TYPE.code)
+                    "$.$CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE", Matchers.equalTo(ErrorCode.INVALID_AUTH_TOKEN_TYPE.code)
                 )
             )
             .andReturn()

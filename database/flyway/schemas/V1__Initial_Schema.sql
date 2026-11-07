@@ -46,7 +46,7 @@ CREATE TABLE financial_institution (
 CREATE TABLE `account` (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     profile_id BIGINT NOT NULL,
-    currency_code CHAR(3) NOT NULL COMMENT "An ISO 4217 currency code",  #TODO collation ascii case sensitive
+    currency_code CHAR(3) NOT NULL COMMENT "An ISO 4217 currency code",  #TODO collation ascii case sensitive, default_column, generated stored unique nullable column always as profile_id
     financial_institution_id BIGINT,
     reference_number VARCHAR(50),
     `name` VARCHAR(50) NOT NULL, # TODO occupancy_slot and sort_key

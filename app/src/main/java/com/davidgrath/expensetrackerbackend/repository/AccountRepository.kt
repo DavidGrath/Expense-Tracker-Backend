@@ -128,6 +128,15 @@ open class AccountRepository {
         return result
     }
 
+    fun countDistinctCurrencyCodes(profileId: Long, accountIds: List<Long>): Int {
+        val selectStep = mainContext.select(DSL.countDistinct(ACCOUNT.CURRENCY_CODE))
+            .from(ACCOUNT)
+            .where(ACCOUNT.ID.`in`(accountIds))
+            .and(ACCOUNT.PROFILE_ID.eq(profileId))
+
+        return selectStep.fetchOne()!!.value1()
+    }
+
     // endregion
 
     // region Update

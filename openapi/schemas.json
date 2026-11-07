@@ -331,13 +331,13 @@
             "nullable": true
           },
           "currencyCode": {
-            "description": "If present, will be used instead of the accounts list, which will be ignored. TODO test this",
+            "description": "If present, will be used instead of the accounts list, which will be ignored.",
             "type": "string",
             "pattern": "[A-Z]{3}",
             "nullable": true
           },
           "accounts": {
-            "description": "There must be at least 1 account. Accounts with multiple distinct currency codes will cause a bad request. TODO test these",
+            "description": "There must be at least 1 account. Accounts with multiple distinct currency codes will cause a bad request.",
             "type": "array",
             "items": {
               "type": "integer",

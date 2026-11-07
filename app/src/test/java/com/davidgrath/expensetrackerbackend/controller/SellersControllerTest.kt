@@ -69,6 +69,7 @@ class SellersControllerTest {
     @Autowired
     lateinit var timeHandler: TimeHandler
 
+    val objectWriter: ObjectWriter = ObjectMapper().writer()
 
     @Before
     fun setUp() {
@@ -177,7 +178,7 @@ class SellersControllerTest {
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
         val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
-        val objectWriter: ObjectWriter = ObjectMapper().writer()
+
         val existing = sellerRepository.getAll(profile.id!!)
         val remaining = Constants.Constraints.MAX_SELLERS_PER_PROFILE - existing.size
         if(remaining <= 0) {
@@ -211,7 +212,6 @@ class SellersControllerTest {
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
         val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
-        val objectWriter: ObjectWriter = ObjectMapper().writer()
         val (sellerId, locationId) = seedSellers(profile.id!!)
         val existing = sellerLocationRepository.getByProfileIdAndSellerId(profile.id!!, sellerId)
         val remaining = Constants.Constraints.MAX_LOCATIONS_PER_SELLER - existing.size
@@ -252,7 +252,6 @@ class SellersControllerTest {
 
 //        val (sellerId, locationId) = seedSellers(profile.id!!)
 
-        val objectWriter: ObjectWriter = ObjectMapper().writer()
 
         val createRequest = SellerCreateRequest(" \t\n")
         var json: String = objectWriter.writeValueAsString(createRequest)
@@ -281,7 +280,6 @@ class SellersControllerTest {
 
         val (sellerId, locationId) = seedSellers(profile.id!!)
 
-        val objectWriter: ObjectWriter = ObjectMapper().writer()
 
         val updateRequest = SellerUpdateRequest(" \t\n")
         var json: String = objectWriter.writeValueAsString(updateRequest)
@@ -310,7 +308,6 @@ class SellersControllerTest {
 
         val (sellerId, locationId) = seedSellers(profile.id!!)
 
-        val objectWriter: ObjectWriter = ObjectMapper().writer()
 
         val createRequest = SellerLocationCreateRequest(" \t\n")
         var json: String = objectWriter.writeValueAsString(createRequest)
@@ -339,7 +336,6 @@ class SellersControllerTest {
 
         val (sellerId, locationId) = seedSellers(profile.id!!)
 
-        val objectWriter: ObjectWriter = ObjectMapper().writer()
 
         val updateRequest = SellerLocationUpdateRequest(" \t\n")
         var json: String = objectWriter.writeValueAsString(updateRequest)

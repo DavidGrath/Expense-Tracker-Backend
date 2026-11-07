@@ -195,3 +195,11 @@ fun getHashCount(sha256: String, folder: File): Int {
     }
     return hashCount
 }
+
+
+fun getDefaultProfileId(userRepository: UserRepository, profileRepository: ProfileRepository): Long {
+
+    val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
+    val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+    return profile.id!!
+}

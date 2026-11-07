@@ -16,7 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.bind.annotation.RestController
 import java.util.*
 
@@ -56,7 +55,7 @@ open class AuthController: AuthApi {
         LOGGER.info("Username: {}", refreshSubject)
         val type = payload.get(Constants.CUSTOM_CLAIM_TYPE, String::class.java)
         if(type != Constants.TokenType.Refresh.value) {
-            val exception = CustomHttpException(ErrorCode.INVALID_TOKEN_TYPE, HttpStatus.UNAUTHORIZED)
+            val exception = CustomHttpException(ErrorCode.INVALID_AUTH_TOKEN_TYPE, HttpStatus.UNAUTHORIZED)
             LOGGER.error("Wrong token type", exception)
             throw exception
         }

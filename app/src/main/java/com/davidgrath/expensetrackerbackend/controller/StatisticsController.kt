@@ -1,5 +1,7 @@
 package com.davidgrath.expensetrackerbackend.controller
 
+import com.davidgrath.expensetrackerbackend.controller.exception.CustomHttpException
+import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ImagePojo
 import com.davidgrath.expensetrackerbackend.generatedapi.api.StatisticsApi
@@ -13,6 +15,7 @@ import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotNull
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.oauth2.jwt.Jwt
@@ -37,6 +40,8 @@ class StatisticsController: StatisticsApi {
     lateinit var imageService: ImageService
     @Autowired
     lateinit var documentService: DocumentService
+    @Autowired
+    lateinit var statisticsService: StatisticsService
 
     @Autowired
     lateinit var httpServletRequest: HttpServletRequest
@@ -51,6 +56,14 @@ class StatisticsController: StatisticsApi {
         val user = userService.getByUsername(principal.subject!!)
 
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+
+        val isFilterValid = statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
+        if(!isFilterValid) {
+            val exception = CustomHttpException(ErrorCode.INVALID_STATISTICS_FILTER, HttpStatus.BAD_REQUEST)
+            LOGGER.error("Statistics filter is invalid", exception)
+            throw exception
+        }
+
         val total = transactionService.getTransactionDebitSumByCategory(profile.id!!, statisticsFilter!!)
         val mapped = total.map { TotalAmountByCategory(Category(it.categoryId, it.name, it.isCustom, it.stringId, it.categoryIcon), it.sum) }
         return ResponseEntity.ok(mapped)
@@ -66,6 +79,14 @@ class StatisticsController: StatisticsApi {
         val user = userService.getByUsername(principal.subject!!)
         val userUuid = user!!.uuid!!
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+
+        val isFilterValid = statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
+        if(!isFilterValid) {
+            val exception = CustomHttpException(ErrorCode.INVALID_STATISTICS_FILTER, HttpStatus.BAD_REQUEST)
+            LOGGER.error("Statistics filter is invalid", exception)
+            throw exception
+        }
+
         val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
         val total = transactionService.getTotalAmountByDate(profile.id!!, true, statisticsFilter.from,
             statisticsFilter.to, statisticsFilter.accounts, emptyList(), statisticsFilter.categories, modes, statisticsFilter.sellers)
@@ -84,6 +105,13 @@ class StatisticsController: StatisticsApi {
         val userUuid = user!!.uuid!! //TODO OTel Logs and traces
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
 
+        val isFilterValid = statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
+        if(!isFilterValid) {
+            val exception = CustomHttpException(ErrorCode.INVALID_STATISTICS_FILTER, HttpStatus.BAD_REQUEST)
+            LOGGER.error("Statistics filter is invalid", exception)
+            throw exception
+        }
+
         val total = transactionService.getTransactionDebitSum(profile.id!!, statisticsFilter!!)
         return ResponseEntity.ok(total)
     }
@@ -98,6 +126,13 @@ class StatisticsController: StatisticsApi {
         val user = userService.getByUsername(principal.subject!!)
         val userUuid = user!!.uuid!!
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+
+        val isFilterValid = statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
+        if(!isFilterValid) {
+            val exception = CustomHttpException(ErrorCode.INVALID_STATISTICS_FILTER, HttpStatus.BAD_REQUEST)
+            LOGGER.error("Statistics filter is invalid", exception)
+            throw exception
+        }
 
         val total = transactionService.getTransactionCreditSumByCategory(profile.id!!, statisticsFilter!!)
         val mapped = total.map { TotalAmountByCategory(Category(it.categoryId, it.name, it.isCustom, it.stringId, it.categoryIcon), it.sum) }
@@ -114,6 +149,14 @@ class StatisticsController: StatisticsApi {
         val user = userService.getByUsername(principal.subject!!)
         val userUuid = user!!.uuid!!
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+
+        val isFilterValid = statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
+        if(!isFilterValid) {
+            val exception = CustomHttpException(ErrorCode.INVALID_STATISTICS_FILTER, HttpStatus.BAD_REQUEST)
+            LOGGER.error("Statistics filter is invalid", exception)
+            throw exception
+        }
+
         val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
         val total = transactionService.getTotalAmountByDate(profile.id!!, false, statisticsFilter.from,
             statisticsFilter.to, statisticsFilter.accounts, emptyList(), statisticsFilter.categories, modes, statisticsFilter.sellers)
@@ -131,6 +174,14 @@ class StatisticsController: StatisticsApi {
         val user = userService.getByUsername(principal.subject!!)
         val userUuid = user!!.uuid!!
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+
+        val isFilterValid = statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
+        if(!isFilterValid) {
+            val exception = CustomHttpException(ErrorCode.INVALID_STATISTICS_FILTER, HttpStatus.BAD_REQUEST)
+            LOGGER.error("Statistics filter is invalid", exception)
+            throw exception
+        }
+
         val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
         val total = transactionService.getTransactionCreditSum(profile.id!!, statisticsFilter)
         return ResponseEntity.ok(total)
@@ -145,6 +196,14 @@ class StatisticsController: StatisticsApi {
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+
+        val isFilterValid = statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
+        if(!isFilterValid) {
+            val exception = CustomHttpException(ErrorCode.INVALID_STATISTICS_FILTER, HttpStatus.BAD_REQUEST)
+            LOGGER.error("Statistics filter is invalid", exception)
+            throw exception
+        }
+
         val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
         val transactions = transactionService.getTransactionsWithItems(profile.id!!, statisticsFilter.from,
             statisticsFilter.to, statisticsFilter.accounts, emptyList(), statisticsFilter.categories, modes, statisticsFilter.sellers)
@@ -219,6 +278,14 @@ class StatisticsController: StatisticsApi {
         LOGGER.info("Username: {}", principal.subject)
         val user = userService.getByUsername(principal.subject!!)
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+
+        val isFilterValid = statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
+        if(!isFilterValid) {
+            val exception = CustomHttpException(ErrorCode.INVALID_STATISTICS_FILTER, HttpStatus.BAD_REQUEST)
+            LOGGER.error("Statistics filter is invalid", exception)
+            throw exception
+        }
+
         val counts = transactionService.getTransactionAndItemCount(profile.id!!, statisticsFilterToStatisticsFilterDb(statisticsFilter!!))
         return ResponseEntity.ok(StatsTransactionAndItemCount(counts.transactionCount, counts.itemCount))
     }
@@ -233,6 +300,14 @@ class StatisticsController: StatisticsApi {
         val user = userService.getByUsername(principal.subject!!)
         val userUuid = user!!.uuid!!
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+
+        val isFilterValid = statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
+        if(!isFilterValid) {
+            val exception = CustomHttpException(ErrorCode.INVALID_STATISTICS_FILTER, HttpStatus.BAD_REQUEST)
+            LOGGER.error("Statistics filter is invalid", exception)
+            throw exception
+        }
+
         val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
         val total = transactionService.getCumSumByDate(profile.id!!, true, statisticsFilter.from,
             statisticsFilter.to, statisticsFilter.accounts, emptyList(), statisticsFilter.categories, modes, statisticsFilter.sellers)
@@ -250,6 +325,14 @@ class StatisticsController: StatisticsApi {
         val user = userService.getByUsername(principal.subject!!)
         val userUuid = user!!.uuid!!
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+
+        val isFilterValid = statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
+        if(!isFilterValid) {
+            val exception = CustomHttpException(ErrorCode.INVALID_STATISTICS_FILTER, HttpStatus.BAD_REQUEST)
+            LOGGER.error("Statistics filter is invalid", exception)
+            throw exception
+        }
+
         val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
         val total = transactionService.getCumSumByDate(profile.id!!, false, statisticsFilter.from,
             statisticsFilter.to, statisticsFilter.accounts, emptyList(), statisticsFilter.categories, modes, statisticsFilter.sellers)
@@ -270,6 +353,14 @@ class StatisticsController: StatisticsApi {
         val user = userService.getByUsername(principal.subject!!)
         val userUuid = user!!.uuid!!
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+
+        val isFilterValid = statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
+        if(!isFilterValid) {
+            val exception = CustomHttpException(ErrorCode.INVALID_STATISTICS_FILTER, HttpStatus.BAD_REQUEST)
+            LOGGER.error("Statistics filter is invalid", exception)
+            throw exception
+        }
+
         val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
         val total = transactionService.getTopNDebitPerCategory(profile.id!!, n,statisticsFilter.from,
             statisticsFilter.to, statisticsFilter.accounts, emptyList(), statisticsFilter.categories, modes, statisticsFilter.sellers)
@@ -293,6 +384,14 @@ class StatisticsController: StatisticsApi {
         val user = userService.getByUsername(principal.subject!!)
         val userUuid = user!!.uuid!!
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+
+        val isFilterValid = statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
+        if(!isFilterValid) {
+            val exception = CustomHttpException(ErrorCode.INVALID_STATISTICS_FILTER, HttpStatus.BAD_REQUEST)
+            LOGGER.error("Statistics filter is invalid", exception)
+            throw exception
+        }
+
         val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
         val total = transactionService.getTopNCreditPerCategory(profile.id!!, n,statisticsFilter.from,
             statisticsFilter.to, statisticsFilter.accounts, emptyList(), statisticsFilter.categories, modes, statisticsFilter.sellers)
