@@ -4,6 +4,7 @@ import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.entities.*
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.*
 import com.davidgrath.expensetrackerbackend.repository.*
+import com.davidgrath.expensetrackerbackend.service.exceptions.EntityNotFoundException
 import com.davidgrath.expensetrackerbackend.utils.*
 import com.google.gson.GsonBuilder
 import org.jooq.JSON
@@ -98,9 +99,9 @@ class TransactionDraftService {
         genericRepository.transactionContext { trx ->
             val trxContext = trx.dsl()
             val userDraft = userDraftRepository.getDraftByProfileForUpdateTrx(trxContext, profileId)
-            LOGGER.info("Acquired lock for profile draft")
 
             if (userDraft != null) {
+                LOGGER.info("Acquired lock for profile draft")
                 var transactionDraft = gson.fromJson(userDraft.draft.toString(), TransactionDraft::class.java)
                 if (transactionDraft.items.size >= Constants.Constraints.MAX_ITEMS_PER_TRANSACTION) {
                     LOGGER.info("Too many items for draft")
@@ -115,6 +116,8 @@ class TransactionDraftService {
                     userDraftRepository.updateDraftTrx(trxContext, profileId, userDraft!!.id!!, json)
                     uuidRet = uuid
                 }
+            } else {
+                throw EntityNotFoundException()
             }
         }
         return uuidRet
@@ -135,22 +138,27 @@ class TransactionDraftService {
     }
 
     fun modifyDraftItem(profileId: Long, uuid: UUID, item: TransactionDraftItem) {
-        val userDraft = userDraftRepository.getDraftByProfile(profileId) //TODO acquire an SFU lock
-        if (userDraft == null) {
-            //TODO create new service exception class, throw 404
-        }
-        var transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
-        val itPos = transactionDraft.items.indexOfFirst { it.uuid == uuid }
-        if (itPos == -1) {
-            //TODO throw 404
-        }
-        val mutable = transactionDraft.items.toMutableList()
-        mutable[itPos] = item
-        transactionDraft = transactionDraft.copy(items = mutable)
 
-        val jsonString = gson.toJson(transactionDraft)
-        val json = JSON.json(jsonString)
-        userDraftRepository.updateDraft(profileId, userDraft!!.id!!, json)
+        genericRepository.transactionContext { trx ->
+            val trxContext = trx.dsl()
+            val userDraft = userDraftRepository.getDraftByProfileForUpdateTrx(trxContext, profileId)
+            if (userDraft == null) {
+                throw EntityNotFoundException()
+            }
+            LOGGER.info("Acquired lock for profile draft")
+            var transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
+            val itPos = transactionDraft.items.indexOfFirst { it.uuid == uuid }
+            if (itPos == -1) {
+                throw EntityNotFoundException()
+            }
+            val mutable = transactionDraft.items.toMutableList()
+            mutable[itPos] = item
+            transactionDraft = transactionDraft.copy(items = mutable)
+
+            val jsonString = gson.toJson(transactionDraft)
+            val json = JSON.json(jsonString)
+            userDraftRepository.updateDraftTrx(trxContext, profileId, userDraft!!.id!!, json)
+        }
     }
 
     fun finishDraft(profileId: Long, userUuid: ByteArray, profileUuid: ByteArray, zoneId: ZoneId): Long {
@@ -160,12 +168,12 @@ class TransactionDraftService {
             val trxContext = trx.dsl()
         val userDraft = userDraftRepository.getDraftByProfileForUpdateTrx(trxContext, profileId)
 
-
         val userUuidString = bytesToUUID(userUuid).toString()
-        val profileUuidString = bytesToUUID(profileUuid).toString()
-        if (userDraft == null) {
-            //TODO
-        }
+            val profileUuidString = bytesToUUID(profileUuid).toString()
+            if (userDraft == null) {
+                throw EntityNotFoundException()
+            }
+            LOGGER.info("Acquired lock for profile draft")
             validateDraft(userDraft!!)
         val draft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
         val total = draft.items.map {
@@ -485,346 +493,389 @@ class TransactionDraftService {
     fun validateDraft(profileId: Long): Boolean {
         val userDraft = userDraftRepository.getDraftByProfile(profileId)
         if (userDraft == null) {
-            //TODO
+            throw EntityNotFoundException()
         }
         return validateDraft(userDraft!!)
     }
 
     fun setDate(profileId: Long, localDate: LocalDate?) {
-        val userDraft = userDraftRepository.getDraftByProfile(profileId) //TODO acquire an SFU lock
-        if (userDraft == null) {
-            //TODO throw 404
+
+        genericRepository.transactionContext { trx ->
+            val trxContext = trx.dsl()
+            val userDraft = userDraftRepository.getDraftByProfileForUpdateTrx(trxContext, profileId)
+            if (userDraft == null) {
+                throw EntityNotFoundException()
+            }
+            LOGGER.info("Acquired lock for profile draft")
+
+            var transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
+            transactionDraft = transactionDraft.copy(customDate = localDate)
+
+            val jsonString = gson.toJson(transactionDraft)
+            val json = JSON.json(jsonString)
+            userDraftRepository.updateDraftTrx(trxContext, profileId, userDraft!!.id!!, json)
         }
-
-        var transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
-        transactionDraft = transactionDraft.copy(customDate = localDate)
-
-        val jsonString = gson.toJson(transactionDraft)
-        val json = JSON.json(jsonString)
-        userDraftRepository.updateDraft(profileId, userDraft!!.id!!, json)
     }
 
     fun modifyDraft(profileId: Long, accountId: Long, note: String?, mode: TransactionMode, debitOrCredit: Boolean) {
-        val userDraft = userDraftRepository.getDraftByProfile(profileId) //TODO acquire an SFU lock
-        if (userDraft == null) {
-            //TODO throw 404
+        genericRepository.transactionContext { trx ->
+            val trxContext = trx.dsl()
+            val userDraft = userDraftRepository.getDraftByProfileForUpdateTrx(trxContext, profileId)
+            if (userDraft == null) {
+                throw EntityNotFoundException()
+            }
+            LOGGER.info("Acquired lock for profile draft")
+
+            var transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
+            transactionDraft = transactionDraft.copy(
+                accountId = accountId, debitOrCredit = debitOrCredit!!,
+                note = note,
+                mode = mode
+            )
+
+            val jsonString = gson.toJson(transactionDraft)
+            val json = JSON.json(jsonString)
+            userDraftRepository.updateDraftTrx(trxContext, profileId, userDraft!!.id!!, json)
         }
-
-        var transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
-        transactionDraft = transactionDraft.copy(
-            accountId = accountId, debitOrCredit = debitOrCredit!!,
-            note = note,
-            mode = mode
-        )
-
-        val jsonString = gson.toJson(transactionDraft)
-        val json = JSON.json(jsonString)
-        userDraftRepository.updateDraft(profileId, userDraft!!.id!!, json)
     }
 
     fun setTime(profileId: Long, localTime: LocalTime?) {
-        val userDraft = userDraftRepository.getDraftByProfile(profileId) //TODO acquire an SFU lock
-        if (userDraft == null) {
-            //TODO throw 404
+
+        genericRepository.transactionContext { trx ->
+            val trxContext = trx.dsl()
+            val userDraft = userDraftRepository.getDraftByProfileForUpdateTrx(trxContext, profileId)
+            if (userDraft == null) {
+                throw EntityNotFoundException()
+            }
+            LOGGER.info("Acquired lock for profile draft")
+
+            var transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
+            transactionDraft = transactionDraft.copy(customTime = localTime)
+
+            val jsonString = gson.toJson(transactionDraft)
+            val json = JSON.json(jsonString)
+            userDraftRepository.updateDraftTrx(trxContext, profileId, userDraft!!.id!!, json)
         }
-
-        var transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
-        transactionDraft = transactionDraft.copy(customTime = localTime)
-
-        val jsonString = gson.toJson(transactionDraft)
-        val json = JSON.json(jsonString)
-        userDraftRepository.updateDraft(profileId, userDraft!!.id!!, json)
     }
 
 
     fun setSeller(profileId: Long, sellerId: Long?) {
 
-        val userDraft = userDraftRepository.getDraftByProfile(profileId) //TODO acquire an SFU lock
-        if (userDraft == null) {
-            //TODO throw 404
+        genericRepository.transactionContext { trx ->
+            val trxContext = trx.dsl()
+            val userDraft = userDraftRepository.getDraftByProfileForUpdateTrx(trxContext, profileId)
+            if (userDraft == null) {
+                throw EntityNotFoundException()
+            }
+            LOGGER.info("Acquired lock for profile draft")
+
+            var transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
+            transactionDraft = transactionDraft.copy(sellerId = sellerId)
+
+
+
+            if (sellerId == null) {
+                LOGGER.info("Removed seller")
+                transactionDraft = transactionDraft.copy(sellerLocationOrdinal = null)
+                LOGGER.info("Removed seller location")
+            } else {
+                LOGGER.info("Changed seller")
+            }
+
+            val jsonString = gson.toJson(transactionDraft)
+            val json = JSON.json(jsonString)
+            userDraftRepository.updateDraftTrx(trxContext, profileId, userDraft!!.id!!, json)
         }
-
-        var transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
-        transactionDraft = transactionDraft.copy(sellerId = sellerId)
-
-
-
-        if (sellerId == null) {
-            LOGGER.info("Removed seller")
-            transactionDraft = transactionDraft.copy(sellerLocationOrdinal = null)
-            LOGGER.info("Removed seller location")
-        } else {
-            LOGGER.info("Changed seller")
-        }
-
-        val jsonString = gson.toJson(transactionDraft)
-        val json = JSON.json(jsonString)
-        userDraftRepository.updateDraft(profileId, userDraft!!.id!!, json)
     }
 
     fun setSellerLocation(profileId: Long, sellerLocationId: Long?) {
 
-        val userDraft = userDraftRepository.getDraftByProfile(profileId) //TODO acquire an SFU lock
-        if (userDraft == null) {
-            //TODO throw 404
-        }
-
-        var transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
-
-
-        if (sellerLocationId != null) {
-            val sellerLocation = sellerLocationRepository.getByProfileIdAndId(profileId, sellerLocationId)
-            if (transactionDraft.sellerId == sellerLocation!!.sellerId) {
-                LOGGER.info("Changed seller location")
-                transactionDraft = transactionDraft.copy(sellerLocationId = sellerLocation.id)
-            } else {
-                LOGGER.info("Seller location does not match seller")
+        genericRepository.transactionContext { trx ->
+            val trxContext = trx.dsl()
+            val userDraft = userDraftRepository.getDraftByProfileForUpdateTrx(trxContext, profileId)
+            if (userDraft == null) {
+                throw EntityNotFoundException()
             }
-        } else {
-            transactionDraft = transactionDraft.copy(sellerLocationId = sellerLocationId)
+            LOGGER.info("Acquired lock for profile draft")
+
+            var transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
+
+
+            if (sellerLocationId != null) {
+                val sellerLocation = sellerLocationRepository.getByProfileIdAndId(profileId, sellerLocationId)
+                if (transactionDraft.sellerId == sellerLocation!!.sellerId) {
+                    LOGGER.info("Changed seller location")
+                    transactionDraft = transactionDraft.copy(sellerLocationId = sellerLocation.id)
+                } else {
+                    LOGGER.info("Seller location does not match seller")
+                }
+            } else {
+                transactionDraft = transactionDraft.copy(sellerLocationId = sellerLocationId)
+            }
+
+
+            val jsonString = gson.toJson(transactionDraft)
+            val json = JSON.json(jsonString)
+            userDraftRepository.updateDraftTrx(trxContext, profileId, userDraft!!.id!!, json)
         }
-
-
-        val jsonString = gson.toJson(transactionDraft)
-        val json = JSON.json(jsonString)
-        userDraftRepository.updateDraft(profileId, userDraft!!.id!!, json)
     }
 
-    fun addImageToItem(
-        profileId: Long,
-        uuid: UUID,
-        tempFile: File,
-        mimeType: String,
-        userUuid: ByteArray,
-        profileUuid: ByteArray
+    fun addImageToItem(profileId: Long, uuid: UUID, tempFile: File,
+        mimeType: String, userUuid: ByteArray, profileUuid: ByteArray
     ): Boolean {
-        val userDraft = userDraftRepository.getDraftByProfile(profileId) //TODO acquire an SFU lock
-        if (userDraft == null) {
-            //TODO throw 404
-            return false
-        }
-        var transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
-        val items = transactionDraft.items
-        val itemIndex = items.indexOfFirst { it.uuid == uuid }
-        if (itemIndex == -1) {
-            // TODO throw 404
-            return false
-        }
-        val item = items[itemIndex]
-        val inputStream = tempFile.inputStream()
-        val hashBytes = getSha256AsBytes(inputStream)
-        val hash = sha256ToString(hashBytes)
-        inputStream.close()
-        val image = item!!.images.find { it.sha256 == hash }
-        if (image != null) {
-            LOGGER.info("Image already exists for item {}", uuid)
-            return false
-        }
-        if (item.images.size >= Constants.Constraints.MAX_IMAGES_PER_ITEM) {
-            LOGGER.info("Max image count reached for item {}", uuid)
-            return false
-        }
-        val im = imageRepository.findBySha256(profileId!!, hashBytes)
-        val draftPath = transactionDraft.imageHashes[hash]
-        val draftFile: TransactionDraftFile
-        if (im == null) {
-            LOGGER.info("File does not exist for image")
-            if (draftPath == null) {
-                val userUuidString = bytesToUUID(userUuid).toString()
-                val profileUuidString = bytesToUUID(profileUuid).toString()
-                val filename = copyFileToDraft(
-                    tempFile,
-                    mimeType,
-                    Constants.SUBFOLDER_NAME_IMAGES,
-                    userUuidString,
-                    profileUuidString
-                )
-                val path =
-                    "/profiles/${profileUuidString}/${Constants.FOLDER_NAME_DRAFT}/${Constants.SUBFOLDER_NAME_IMAGES}/${filename}"
-                draftFile = TransactionDraftFile(null, path, mimeType, hash, tempFile.length(), null, false)
-            } else {
-                LOGGER.info("Image already exists in draft. Adding to item {}", uuid)
-                draftFile = TransactionDraftFile(null, draftPath, mimeType, hash, tempFile.length(), null, false)
+        var ret = false
+        genericRepository.transactionContext { trx ->
+            val trxContext = trx.dsl()
+            val userDraft = userDraftRepository.getDraftByProfileForUpdateTrx(trxContext, profileId)
+            if (userDraft == null) {
+                throw EntityNotFoundException()
             }
-        } else {
-            LOGGER.info("File already exists in DB for image")
+            LOGGER.info("Acquired lock for profile draft")
+            var transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
+            val items = transactionDraft.items
+            val itemIndex = items.indexOfFirst { it.uuid == uuid }
+            if (itemIndex == -1) {
+                throw EntityNotFoundException()
+            }
+            val item = items[itemIndex]
+            val inputStream = tempFile.inputStream()
+            val hashBytes = getSha256AsBytes(inputStream)
+            val hash = sha256ToString(hashBytes)
+            inputStream.close()
+            val image = item!!.images.find { it.sha256 == hash }
+            if (image != null) {
+                LOGGER.info("Image already exists for item {}", uuid)
+                ret = false
+                return@transactionContext
+            }
+            if (item.images.size >= Constants.Constraints.MAX_IMAGES_PER_ITEM) {
+                LOGGER.info("Max image count reached for item {}", uuid)
+                ret = false
+                return@transactionContext
+            }
+            val im = imageRepository.findBySha256Trx(trxContext, profileId!!, hashBytes)
+            val draftPath = transactionDraft.imageHashes[hash]
+            val draftFile: TransactionDraftFile
+            if (im == null) {
+                LOGGER.info("File does not exist for image")
+                if (draftPath == null) {
+                    val userUuidString = bytesToUUID(userUuid).toString()
+                    val profileUuidString = bytesToUUID(profileUuid).toString()
+                    val filename = copyFileToDraft(
+                        tempFile,
+                        mimeType,
+                        Constants.SUBFOLDER_NAME_IMAGES,
+                        userUuidString,
+                        profileUuidString
+                    )
+                    val path =
+                        "/profiles/${profileUuidString}/${Constants.FOLDER_NAME_DRAFT}/${Constants.SUBFOLDER_NAME_IMAGES}/${filename}"
+                    draftFile = TransactionDraftFile(null, path, mimeType, hash, tempFile.length(), null, false)
+                } else {
+                    LOGGER.info("Image already exists in draft. Adding to item {}", uuid)
+                    draftFile = TransactionDraftFile(null, draftPath, mimeType, hash, tempFile.length(), null, false)
+                }
+            } else {
+                LOGGER.info("File already exists in DB for image")
 //            val uri = URI.create(im.uri!!)
-            draftFile = TransactionDraftFile(
-                im.id!!,
-                im.path!!,
-                im.mimeType!!,
-                sha256ToString(im.sha_256!!),
-                im.sizeBytes!!,
-                null,
-                false
-            )
-        }
-        val newImages = item.images + draftFile
-        val newItem = item.copy(images = newImages)
-        val newItems = items.toMutableList()
-        newItems[itemIndex] = newItem
-        val existingPath = transactionDraft.imageHashes[hash]
-        val newHashes = if (existingPath == null) {
-            LOGGER.info("Image path added to HashMap")
-            transactionDraft.imageHashes + (hash to draftFile.path)
-        } else {
-            transactionDraft.imageHashes
-        }
-        transactionDraft = transactionDraft.copy(items = newItems, imageHashes = newHashes)
+                draftFile = TransactionDraftFile(
+                    im.id!!,
+                    im.path!!,
+                    im.mimeType!!,
+                    sha256ToString(im.sha_256!!),
+                    im.sizeBytes!!,
+                    null,
+                    false
+                )
+            }
+            val newImages = item.images + draftFile
+            val newItem = item.copy(images = newImages)
+            val newItems = items.toMutableList()
+            newItems[itemIndex] = newItem
+            val existingPath = transactionDraft.imageHashes[hash]
+            val newHashes = if (existingPath == null) {
+                LOGGER.info("Image path added to HashMap")
+                transactionDraft.imageHashes + (hash to draftFile.path)
+            } else {
+                transactionDraft.imageHashes
+            }
+            transactionDraft = transactionDraft.copy(items = newItems, imageHashes = newHashes)
 
-        val jsonString = gson.toJson(transactionDraft)
-        val json = JSON.json(jsonString)
-        userDraftRepository.updateDraft(profileId, userDraft!!.id!!, json)
-        return true
+            val jsonString = gson.toJson(transactionDraft)
+            val json = JSON.json(jsonString)
+            userDraftRepository.updateDraftTrx(trxContext, profileId, userDraft!!.id!!, json)
+            ret = true
+        }
+        return ret
     }
 
-    fun addDocumentToDraft(
-        profileId: Long,
-        type: DocumentType,
-        tempFile: File,
-        mimeType: String,
-        userUuid: String,
-        profileStringId: String
+    fun addDocumentToDraft(profileId: Long, type: DocumentType, tempFile: File, mimeType: String,
+        userUuid: String, profileStringId: String
     ): String? {
 
-        val userDraft = userDraftRepository.getDraftByProfile(profileId) //TODO acquire an SFU lock
-        if (userDraft == null) {
-            //TODO throw 404
-            return null
+        var ret: String? = null
+        genericRepository.transactionContext { trx ->
+            val trxContext = trx.dsl()
+            val userDraft = userDraftRepository.getDraftByProfileForUpdateTrx(trxContext, profileId)
+            if (userDraft == null) {
+                throw EntityNotFoundException()
+            }
+            LOGGER.info("Acquired lock for profile draft")
+            val transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
+
+            val newHashes = transactionDraft.documentHashes.toMutableMap()
+            val documents = transactionDraft.documents
+            val newDocuments = documents.toMutableList()
+
+            val inputStream = tempFile.inputStream()
+            val hash = getSha256(inputStream)
+            inputStream.close()
+            val image = documents.find { it.sha256 == hash }
+            if (image != null) {
+                LOGGER.info("Document already exists for draft")
+                ret = null
+                return@transactionContext
+            }
+            if (documents.size >= Constants.Constraints.MAX_DOCUMENTS_PER_TRANSACTION) {
+                LOGGER.info("Max document count reached for draft")
+                ret = null
+                return@transactionContext
+            }
+
+            val draftFile: TransactionDraftFile
+            val path: String
+            var draftPath = newHashes[hash]
+
+            if (draftPath == null) {
+                LOGGER.info("File does not exist in draft for document")
+                val filename =
+                    copyFileToDraft(tempFile, mimeType, Constants.SUBFOLDER_NAME_DOCUMENTS, userUuid, profileStringId)
+                path =
+                    "/profiles/${profileStringId}/${Constants.FOLDER_NAME_DRAFT}/${Constants.SUBFOLDER_NAME_DOCUMENTS}/${filename}"
+                draftFile = TransactionDraftFile(null, path, mimeType, hash, tempFile.length(), type, false)
+
+                newHashes[hash] = path
+            } else {
+                LOGGER.info("File already exists in draft for document")
+                path = draftPath
+                draftFile = TransactionDraftFile(null, draftPath, mimeType, hash, tempFile.length(), type, false)
+            }
+
+            newDocuments.add(draftFile)
+            val updatedDraft = transactionDraft.copy(documents = newDocuments, documentHashes = newHashes)
+
+            val jsonString = gson.toJson(updatedDraft)
+            val json = JSON.json(jsonString)
+            userDraftRepository.updateDraftTrx(trxContext, profileId, userDraft!!.id!!, json)
+            ret = path
         }
-        val transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
-
-        val newHashes = transactionDraft.documentHashes.toMutableMap()
-        val documents = transactionDraft.documents
-        val newDocuments = documents.toMutableList()
-
-        val inputStream = tempFile.inputStream()
-        val hash = getSha256(inputStream)
-        inputStream.close()
-        val image = documents.find { it.sha256 == hash }
-        if (image != null) {
-            LOGGER.info("Document already exists for draft")
-            return null
-        }
-        if (documents.size >= Constants.Constraints.MAX_DOCUMENTS_PER_TRANSACTION) {
-            LOGGER.info("Max document count reached for draft")
-            return null
-        }
-
-        val draftFile: TransactionDraftFile
-        val path: String
-        var draftPath = newHashes[hash]
-
-        if (draftPath == null) {
-            LOGGER.info("File does not exist in draft for document")
-            val filename =
-                copyFileToDraft(tempFile, mimeType, Constants.SUBFOLDER_NAME_DOCUMENTS, userUuid, profileStringId)
-            path =
-                "/profiles/${profileStringId}/${Constants.FOLDER_NAME_DRAFT}/${Constants.SUBFOLDER_NAME_DOCUMENTS}/${filename}"
-            draftFile = TransactionDraftFile(null, path, mimeType, hash, tempFile.length(), type, false)
-
-            newHashes[hash] = path
-        } else {
-            LOGGER.info("File already exists in draft for document")
-            path = draftPath
-            draftFile = TransactionDraftFile(null, draftPath, mimeType, hash, tempFile.length(), type, false)
-        }
-
-        newDocuments.add(draftFile)
-        val updatedDraft = transactionDraft.copy(documents = newDocuments, documentHashes = newHashes)
-
-        val jsonString = gson.toJson(updatedDraft)
-        val json = JSON.json(jsonString)
-        userDraftRepository.updateDraft(profileId, userDraft!!.id!!, json)
-        return path
+        return ret
     }
 
     fun deleteItem(profileId: Long, uuid: UUID): Boolean {
+        var ret = false
+        genericRepository.transactionContext { trx ->
+            val trxContext = trx.dsl()
+            val userDraft = userDraftRepository.getDraftByProfileForUpdateTrx(trxContext, profileId)
+            if (userDraft == null) {
+                throw EntityNotFoundException()
+            }
+            LOGGER.info("Acquired lock for profile draft")
+            val transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
 
-        val userDraft = userDraftRepository.getDraftByProfile(profileId) //TODO acquire an SFU lock
-        if (userDraft == null) {
-            //TODO throw 404
-            return false
+            val currentList = transactionDraft.items
+
+            val itemPos = currentList.indexOfFirst { it.uuid == uuid }
+            if (itemPos == -1) {
+                ret = false
+                return@transactionContext
+            }
+            if (currentList.size == 1) {
+                LOGGER.info("Too few items")
+                ret = false
+                return@transactionContext
+            }
+
+            val newItems = currentList.toMutableList().apply {
+                removeAt(itemPos)
+            }
+            val updatedDraft = transactionDraft.copy(items = newItems)
+            val jsonString = gson.toJson(updatedDraft)
+            val json = JSON.json(jsonString)
+            userDraftRepository.updateDraftTrx(trxContext, profileId, userDraft!!.id!!, json)
+            ret = true
         }
-        val transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
-
-        val currentList = transactionDraft.items
-
-        val itemPos = currentList.indexOfFirst { it.uuid == uuid }
-        if (itemPos == -1) {
-            return false
-        }
-        if (currentList.size == 1) {
-            LOGGER.info("Too few items")
-            return false
-        }
-
-        val newItems = currentList.toMutableList().apply {
-            removeAt(itemPos)
-        }
-        val updatedDraft = transactionDraft.copy(items = newItems)
-        val jsonString = gson.toJson(updatedDraft)
-        val json = JSON.json(jsonString)
-        userDraftRepository.updateDraft(profileId, userDraft!!.id!!, json)
-        return true
-
+        return ret
     }
 
     fun deleteItemImage(profileId: Long, uuid: UUID, imagePosition: Int): Boolean {
-        val userDraft = userDraftRepository.getDraftByProfile(profileId) //TODO acquire an SFU lock
-        if (userDraft == null) {
-            //TODO throw 404
-            return false
+        var ret = false
+        genericRepository.transactionContext { trx ->
+            val trxContext = trx.dsl()
+            val userDraft = userDraftRepository.getDraftByProfileForUpdateTrx(trxContext, profileId)
+            if (userDraft == null) {
+                throw EntityNotFoundException()
+            }
+            LOGGER.info("Acquired lock for profile draft")
+            val transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
+
+            val newItems = transactionDraft.items.toMutableList()
+
+            val itemPos = newItems.indexOfFirst { it.uuid == uuid }
+            if (itemPos == -1) {
+                ret = false
+                return@transactionContext
+            }
+
+            val item = newItems[itemPos]
+
+            val newImages = item.images.toMutableList()
+            if (imagePosition >= newImages.size) {
+                LOGGER.info("Image position out of bounds")
+                ret = false
+                return@transactionContext
+            }
+            newImages.removeAt(imagePosition)
+            LOGGER.info("Removed image at position {} for item {}", imagePosition, uuid)
+            val newItem = item.copy(images = newImages)
+            newItems[itemPos] = newItem
+            val updatedDraft = transactionDraft.copy(items = newItems)
+            val jsonString = gson.toJson(updatedDraft)
+            val json = JSON.json(jsonString)
+            userDraftRepository.updateDraftTrx(trxContext, profileId, userDraft!!.id!!, json)
+            ret = true
         }
-        val transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
-
-        val newItems = transactionDraft.items.toMutableList()
-
-        val itemPos = newItems.indexOfFirst { it.uuid == uuid }
-        if (itemPos == -1) {
-            return false
-        }
-
-        val item = newItems[itemPos]
-
-        val newImages = item.images.toMutableList()
-        if (imagePosition >= newImages.size) {
-            LOGGER.info("Image position out of bounds")
-            return false
-        }
-        newImages.removeAt(imagePosition)
-        LOGGER.info("Removed image at position {} for item {}", imagePosition, uuid)
-        val newItem = item.copy(images = newImages)
-        newItems[itemPos] = newItem
-        val updatedDraft = transactionDraft.copy(items = newItems)
-        val jsonString = gson.toJson(updatedDraft)
-        val json = JSON.json(jsonString)
-        userDraftRepository.updateDraft(profileId, userDraft!!.id!!, json)
-        return true
+        return ret
     }
 
-    fun deleteDocument(profileId: Long, documentPosition: Int): Boolean { //TODO Place an SFU lock
-        val userDraft = userDraftRepository.getDraftByProfile(profileId)
-        if (userDraft == null) {
-            //TODO throw 404
-            return false
+    fun deleteDocument(profileId: Long, documentPosition: Int): Boolean {
+        var ret = false
+        genericRepository.transactionContext { trx ->
+            val trxContext = trx.dsl()
+            val userDraft = userDraftRepository.getDraftByProfileForUpdateTrx(trxContext, profileId)
+            if (userDraft == null) {
+                throw EntityNotFoundException()
+            }
+            LOGGER.info("Acquired lock for profile draft")
+            val transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
+
+            val newDocuments = transactionDraft.documents.toMutableList()
+
+            if (documentPosition >= newDocuments.size) {
+                LOGGER.info("Document position out of bounds")
+                ret = false
+                return@transactionContext
+            }
+            newDocuments.removeAt(documentPosition)
+            LOGGER.info("Removed document at position {}", documentPosition)
+
+            val updatedDraft = transactionDraft.copy(documents = newDocuments)
+            val jsonString = gson.toJson(updatedDraft)
+            val json = JSON.json(jsonString)
+            userDraftRepository.updateDraftTrx(trxContext, profileId, userDraft!!.id!!, json)
+            ret = true
         }
-        val transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
-
-        val newDocuments = transactionDraft.documents.toMutableList()
-
-        if (documentPosition >= newDocuments.size) {
-            LOGGER.info("Document position out of bounds")
-            return false
-        }
-        newDocuments.removeAt(documentPosition)
-        LOGGER.info("Removed document at position {}", documentPosition)
-
-        val updatedDraft = transactionDraft.copy(documents = newDocuments)
-        val jsonString = gson.toJson(updatedDraft)
-        val json = JSON.json(jsonString)
-        userDraftRepository.updateDraft(profileId, userDraft!!.id!!, json)
-        return true
+        return ret
     }
 
     private fun copyFileToDraft(

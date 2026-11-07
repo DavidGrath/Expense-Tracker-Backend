@@ -34,7 +34,11 @@ open class ImageRepository {
     }
 
     fun findBySha256(profileId: Long, sha256: ByteArray): ImagePojo? {
-        val selectStep = mainContext.select(IMAGE.fields().toList()) //TO work around the generated columns
+        return findBySha256Trx(mainContext, profileId, sha256)
+    }
+
+    fun findBySha256Trx(trxContext: DSLContext, profileId: Long, sha256: ByteArray): ImagePojo? {
+        val selectStep = trxContext.select(IMAGE.fields().toList()) //TO work around the generated columns
             .from(IMAGE)
             .where(IMAGE.PROFILE_ID.eq(profileId))
             .and(IMAGE.SHA_256.eq(sha256))
