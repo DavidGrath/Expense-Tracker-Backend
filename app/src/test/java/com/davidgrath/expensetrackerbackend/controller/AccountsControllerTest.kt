@@ -216,9 +216,9 @@ class AccountsControllerTest {
             throw RuntimeException("Existing accounts too many")
         }
         for(acc in 0 until remaining) {
-            val nextOrdinal = (acc+1)+existing.size
-            val nextSortKey = ((acc+1)+existing.size)*1_000
-            val nextOccupancy = (acc+1)+existing.size
+            val nextOrdinal = ((acc+1)+existing.size).toShort()
+            val nextSortKey = (((acc+1)+existing.size)*1_000).toShort()
+            val nextOccupancy = ((acc+1)+existing.size).toShort()
             accountRepository.insertAccount(AccountPojo(null, profile.id!!, "USD", null, null, "New Account $acc",
                 nextOrdinal, nextSortKey, nextOccupancy,LocalDateTime.now(timeHandler.getClock())))
         }

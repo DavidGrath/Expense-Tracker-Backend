@@ -77,7 +77,7 @@ class SellerLocationRepository @Autowired constructor(open var dslContext: DSLCo
         return selectStep.fetchOne()!!.value1()
     }
 
-    fun getMaxOrdinalForSeller(profileId: Long, sellerId: Long): Int? {
+    fun getMaxOrdinalForSeller(profileId: Long, sellerId: Long): Short? {
         val selectStep = dslContext.select(DSL.max(SELLER_LOCATION.ORDINAL))
             .from(SELLER_LOCATION)
             .innerJoin(SELLER).on(sellerLocationToSellerPath)
@@ -101,7 +101,7 @@ class SellerLocationRepository @Autowired constructor(open var dslContext: DSLCo
             .innerJoin(SELLER).on(sellerLocationToSellerPath)
             .innerJoin(PROFILE).on(PROFILE.ID.eq(SELLER.PROFILE_ID))
             .where(SELLER_LOCATION.PROFILE_ID.eq(profileId))
-            .and(SELLER.PROFILE_ID.eq(profileId))
+            .and(SELLER.PROFILE_ID.eq(profileId)) //TODO this is a bug
 
         return selectStep.fetchOne()?.into(OrdinalSortKeyOccupancySlot::class.java)!!
     }

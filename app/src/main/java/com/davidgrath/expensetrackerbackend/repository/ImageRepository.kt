@@ -139,11 +139,11 @@ open class ImageRepository {
     }
 
 
-    fun getMaxOrdinal(profileId: Long): Int? {
+    fun getMaxOrdinal(profileId: Long): Short? {
         return getMaxOrdinalTrx(mainContext, profileId)
     }
 
-    fun getMaxOrdinalTrx(trxContext: DSLContext, profileId: Long): Int? {
+    fun getMaxOrdinalTrx(trxContext: DSLContext, profileId: Long): Short? {
         val selectStep = trxContext.select(
             DSL.max(IMAGE.ORDINAL)
         ).from(IMAGE)

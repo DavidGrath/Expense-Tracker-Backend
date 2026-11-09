@@ -198,7 +198,7 @@ class TransactionDraftService {
         val actuallyUsedNewImages =
             draft.items.map { it.images }.fold(emptyList<TransactionDraftFile>()) { acc, list -> acc + list }
                 .filter { it.dbId == null }.toSet()
-        val imagesMap = mutableMapOf<String, Int>()
+        val imagesMap = mutableMapOf<String, Short>()
 
 
 
@@ -223,7 +223,7 @@ class TransactionDraftService {
                 val length = mainFile.length()
 
                 val maxImageOrdinal = imageRepository.getMaxOrdinalTrx(trxContext, profileId)
-                val nextImageOrdinal = (maxImageOrdinal?: 0) + 1
+                val nextImageOrdinal = ((maxImageOrdinal?: 0) + 1).toShort()
                 val imagePojo = ImagePojo(
                     null,
                     profileId,
@@ -255,9 +255,9 @@ class TransactionDraftService {
             }
 
             val ordinalSortKeyOccupancySlot = transactionRepository.getMaxOrdinalSortKeyAndOccupancySlotTrx(trxContext, profileId, account.id!!)
-            val nextTransactionOrdinal = (ordinalSortKeyOccupancySlot.ordinal?: 0) + 1
-            val nextSortKey = (ordinalSortKeyOccupancySlot.sortKey?: 0) + 1_000
-            val nextOccupancySlot = (ordinalSortKeyOccupancySlot.occupancySlot?: 0) + 1
+            val nextTransactionOrdinal = ((ordinalSortKeyOccupancySlot.ordinal?: 0) + 1).toShort()
+            val nextSortKey = ((ordinalSortKeyOccupancySlot.sortKey?: 0) + 1_000).toShort()
+            val nextOccupancySlot = ((ordinalSortKeyOccupancySlot.occupancySlot?: 0) + 1).toShort()
             //TODO This is an oversimplified way of getting the max values, handle the case of slots or sort keys being taken
 
             /* TODO Fix ordinals later
@@ -314,7 +314,7 @@ class TransactionDraftService {
             LOGGER.info("Created new transaction")
 
             draft.documents.mapIndexed { i, document ->
-                val occupancySlot = i + 1
+                val occupancySlot = (i + 1).toShort()
                 val draftFile =
                     File(timeHandler.getRoot(), Constants.FOLDER_NAME_USERS + "/${userUuidString}" + document.path)
                 val localDate = draft.customDate ?: LocalDate.now(timeHandler.getClock())
@@ -329,7 +329,7 @@ class TransactionDraftService {
                 val mainFile = File(timeHandler.getRoot(), Constants.FOLDER_NAME_USERS + "/${userUuidString}" + path)
 
                 val length = mainFile.length()
-                val sortKey = i * 1000
+                val sortKey = (i * 1000).toShort()
                 val document = DocumentPojo(
                     null,
                     transactionId,
@@ -352,9 +352,9 @@ class TransactionDraftService {
             }
 
             draft.items.forEachIndexed { i, draftItem ->
-                val occupancySlot = i + 1
-                val sortKey = i * 1_000
-                val itemOrdinal = i + 1
+                val occupancySlot = (i + 1).toShort()
+                val sortKey = (i * 1_000).toShort()
+                val itemOrdinal = (i + 1).toShort()
                 val category = categoryRepository.findByProfileIdAndIdTrx(trxContext, profileId, draftItem.category)!!
                 val item = if (draftItem.isReduction) {
                     TransactionItemPojo(
@@ -404,8 +404,8 @@ class TransactionDraftService {
                 val itemId = transactionItemRepository.insertTransactionItemTrx(trxContext, item)
 
                 draftItem.images.forEachIndexed { i, image ->
-                    val occupancySlot = i + 1
-                    val sortKey = i * 1_000
+                    val occupancySlot = (i + 1).toShort()
+                    val sortKey = (i * 1_000).toShort()
                     val imageOrdinal = imagesMap[image.sha256] ?: image.dbOrdinal!!
                     val itemImage = TransactionItemImagesPojo(
                         null,

@@ -59,8 +59,8 @@ class UserService {
             //Create profile
             val profileUuid = uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID))
 
-            val nextProfileSortKey = 1_000
-            val nextProfileOccupancySlot = 1
+            val nextProfileSortKey: Short = 1_000
+            val nextProfileOccupancySlot: Short = 1
             val profile = ProfilePojo(null, userId, "Default Profile", profileUuid, nextProfileSortKey, nextProfileOccupancySlot, utcDate)
             val profileId = profileRepository.insertProfileTrx(trxContext, profile)
             LOGGER.info("Created default profile for user {}", username)
@@ -68,9 +68,9 @@ class UserService {
 
             //Create Accounts
             val currency = Currency.getInstance(locale)?.currencyCode ?: "USD"
-            val nextAccountOrdinal = 1
-            val nextAccountSortKey = 1_000
-            val nextAccountOccupancySlot = 1
+            val nextAccountOrdinal: Short = 1
+            val nextAccountSortKey: Short = 1_000
+            val nextAccountOccupancySlot: Short = 1
             val account = AccountPojo(null, profileId, currency, null, null, "Default Account", nextAccountOrdinal, nextAccountSortKey, nextAccountOccupancySlot,utcDate)
 
             accountRepository.insertAccountTrx(trxContext, account) //TODO I made a mistake here where I didn't use the transaction context and it caused a lock wait timeout in 11 of my tests. I need to find a better way to make it more consistent
@@ -78,9 +78,9 @@ class UserService {
             //Create categories
 
             CORE_CATEGORIES.forEachIndexed { i, category ->
-                val nextOrdinal = i + 1
-                val nextSortKey = (i + 1) * 1_000
-                val nextOccupancySlot = i + 1
+                val nextOrdinal = (i + 1).toShort()
+                val nextSortKey = ((i + 1) * 1_000).toShort()
+                val nextOccupancySlot = (i + 1).toShort()
                 //TODO This is an oversimplified way of getting the max values, handle the case of slots or sort keys being taken
                     val defaultIcon = CATEGORY_IDS_ICONS_DEFAULT[category]!!
 

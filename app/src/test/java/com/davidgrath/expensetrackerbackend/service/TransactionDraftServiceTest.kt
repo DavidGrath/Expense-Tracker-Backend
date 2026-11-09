@@ -347,9 +347,9 @@ class TransactionDraftServiceTest {
         val date = ZonedDateTime.now(timeHandler.getClock())
         val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
 
-        val seller1Ordinal = 1
+        val seller1Ordinal: Short = 1
         val sellerId = sellerRepository.insertSeller(SellerPojo(null, profile.id!!, "Restaurant", seller1Ordinal, 1_000, 1, utcDate))
-        val seller2Ordinal = 2
+        val seller2Ordinal: Short = 2
         val sellerId2 = sellerRepository.insertSeller(SellerPojo(null, profile.id!!, "Coffee Shop", seller2Ordinal, 2_000, 2, utcDate))
         val sellerLocationId = sellerLocationRepository.insertSellerLocation(SellerLocationPojo(null, profileId, seller1Ordinal,"Downtown", null, null, null, 1, 1_000, 1, utcDate))
 

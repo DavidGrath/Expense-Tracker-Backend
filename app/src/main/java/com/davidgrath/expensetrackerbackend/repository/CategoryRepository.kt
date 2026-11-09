@@ -53,7 +53,7 @@ open class CategoryRepository {
         return selectStep.fetchOne()?.into(CategoryPojo::class.java)
     }
 
-    fun findByProfileIdAndOrdinal(profileId: Long, ordinal: Int): CategoryPojo? {
+    fun findByProfileIdAndOrdinal(profileId: Long, ordinal: Short): CategoryPojo? {
         val selectStep = mainContext.selectFrom(CATEGORY)
             .where(CATEGORY.PROFILE_ID.eq(profileId))
             .and(CATEGORY.ORDINAL.eq(ordinal))

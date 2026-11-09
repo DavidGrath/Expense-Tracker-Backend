@@ -87,11 +87,11 @@ class TransactionRepository {
         return result
     }
 
-    fun getMaxSortKeyInDayForAccount(profileId: Long, accountId: Long, date: LocalDate): Int? {
+    fun getMaxSortKeyInDayForAccount(profileId: Long, accountId: Long, date: LocalDate): Short? {
         return getMaxSortKeyInDayForAccountTrx(mainContext, profileId, accountId, date)
     }
 
-    fun getMaxSortKeyInDayForAccountTrx(trxContext: DSLContext, profileId: Long, accountId: Long, date: LocalDate): Int? {
+    fun getMaxSortKeyInDayForAccountTrx(trxContext: DSLContext, profileId: Long, accountId: Long, date: LocalDate): Short? {
         val selectStep = trxContext.select(DSL.max(TRANSACTION.SORT_KEY))
             .from(TRANSACTION)
             .innerJoin(ACCOUNT).on(accountToTransactionPath)

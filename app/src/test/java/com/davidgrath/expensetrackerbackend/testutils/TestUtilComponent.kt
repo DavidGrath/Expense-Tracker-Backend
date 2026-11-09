@@ -92,10 +92,9 @@ class TestUtilComponent {
         val account = accountRepository.findByProfileIdAndId(profileId, accountId)!!
 
         val ordinalSortKeyOccupancy = transactionRepository.getMaxOrdinalSortKeyAndOccupancySlot(profileId, accountId)
-        val nextOrdinal = (ordinalSortKeyOccupancy.ordinal?: 0) + 1
-        val nextSortKey = (ordinalSortKeyOccupancy.sortKey?: 0) + 1_000
-        val nextOccupancy = (ordinalSortKeyOccupancy.occupancySlot?: 0) + 1
-
+        val nextOrdinal = ((ordinalSortKeyOccupancy.ordinal?: 0) + 1).toShort()
+        val nextSortKey = ((ordinalSortKeyOccupancy.sortKey?: 0) + 1_000).toShort()
+        val nextOccupancy = ((ordinalSortKeyOccupancy.occupancySlot?: 0) + 1).toShort()
 
         val transaction = TransactionPojo(null, profileId, amount, TRUE_BYTE, MOCKED_DATE, MOCKED_TIME,
             TransactionMode.Other, null, account.ordinal, null, null, nextOrdinal, nextSortKey, nextOccupancy, MOCKED_DATE.atTime(MOCKED_TIME))
@@ -106,7 +105,7 @@ class TestUtilComponent {
         val userUuidString = bytesToUUID(userUuid).toString()
         val profileUuidString = bytesToUUID(profileUuid).toString()
 
-        val itemOrdinal = 1
+        val itemOrdinal: Short = 1
         val item = TransactionItemPojo(null, profileId, account.ordinal, nextOrdinal, "Basic", amount, misc.ordinal!!, itemOrdinal, 1_000, 1, 1, null,
             null, null, null, null, null,FALSE_BYTE,
             MOCKED_DATE.atTime(MOCKED_TIME))
@@ -136,7 +135,7 @@ class TestUtilComponent {
         val hash = getSha256AsBytes(hashStream)
         hashStream.close()
 
-        val imageOrdinal = 1
+        val imageOrdinal: Short = 1
         val image = ImagePojo(null, profileId, destination.length(), hash, "image/jpeg", "", newPath, imageOrdinal, MOCKED_DATE.atTime(MOCKED_TIME))
         val imageId = imageRepository.insertImage(image)
         val itemImage = TransactionItemImagesPojo(null, profileId, account.ordinal, nextOrdinal, itemOrdinal, imageOrdinal, 1_000, 1, MOCKED_DATE.atTime(MOCKED_TIME))

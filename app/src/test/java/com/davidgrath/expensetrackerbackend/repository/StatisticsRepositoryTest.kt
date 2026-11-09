@@ -488,7 +488,7 @@ class StatisticsRepositoryTest {
             .commit()
 
         val user2DataBuilder = DataBuilder(folder, timeHandler, user2Uuid.toString(), Constants.DEFAULT_PROFILE_ID, testUtilComponent)
-        val accountOrdinal = 1
+        val accountOrdinal: Short = 1
         val account = AccountPojo(null, user2ProfileId, "USD", null, null, "Default Account", accountOrdinal, 1_000, 1, utcDate)
         accountRepository.insertAccount(account)
         categoryRepository.insertCategory(CategoryPojo(null, user2ProfileId, "miscellaneous", FALSE_BYTE, null, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category", 1, 1_000, 1, utcDate))

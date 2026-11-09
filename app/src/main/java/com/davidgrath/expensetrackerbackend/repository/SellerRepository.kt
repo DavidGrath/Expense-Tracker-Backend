@@ -44,11 +44,11 @@ class SellerRepository @Autowired constructor(open var mainContext: DSLContext) 
         return selectStep.fetchOne()?.into(SellerPojo::class.java)
     }
 
-    fun getByProfileIdAndOrdinal(profileId: Long, ordinal: Int): SellerPojo? {
+    fun getByProfileIdAndOrdinal(profileId: Long, ordinal: Short): SellerPojo? {
         return getByProfileIdAndOrdinalTrx(mainContext, profileId, ordinal)
     }
 
-    fun getByProfileIdAndOrdinalTrx(trxContext: DSLContext, profileId: Long, ordinal: Int): SellerPojo? {
+    fun getByProfileIdAndOrdinalTrx(trxContext: DSLContext, profileId: Long, ordinal: Short): SellerPojo? {
         val selectStep = trxContext.selectFrom(SELLER)
             .where(SELLER.ORDINAL.eq(ordinal))
             .and(SELLER.PROFILE_ID.eq(profileId))

@@ -2,7 +2,7 @@ package com.davidgrath.expensetrackerbackend.entities
 
 data class TransactionDraftFile(
     val dbId: Long?,
-    val dbOrdinal: Int?,
+    val dbOrdinal: Short?,
     val path: String,
     val mimeType: String,
     val sha256: String,

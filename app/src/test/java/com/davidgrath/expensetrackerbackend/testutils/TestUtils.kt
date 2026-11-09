@@ -144,9 +144,9 @@ fun tempInitDefaultCategories(profileId: Long, categoryRepository: CategoryRepos
         var anyCategoryNotExist = false
         CORE_CATEGORIES.forEachIndexed { i, category ->
             val categoryDb = categoryRepository.findByProfileIdAndStringId(profileId, category)
-            val ordinal = i+1
-            val sortKey = (i+1) * 1_000
-            val occupancySlot = i+1
+            val ordinal = (i+1).toShort()
+            val sortKey = ((i+1) * 1_000).toShort()
+            val occupancySlot = (i+1).toShort()
             if (categoryDb == null) {
                 val defaultIcon = CATEGORY_IDS_ICONS_DEFAULT[category]!!
                 anyCategoryNotExist = true

@@ -108,9 +108,9 @@ class CategoriesControllerTest {
             throw RuntimeException("Existing categories too many")
         }
         for(cat in 0 until remaining) {
-            val nextOrdinal = (cat+1)+existing.size
-            val nextSortKey = ((cat+1)+existing.size)*1_000
-            val nextOccupancy = (cat+1)+existing.size
+            val nextOrdinal = ((cat+1)+existing.size).toShort()
+            val nextSortKey = (((cat+1)+existing.size)*1_000).toShort()
+            val nextOccupancy = ((cat+1)+existing.size).toShort()
             categoryRepository.insertCategory(CategoryPojo(null, profile.id!!, null, TRUE_BYTE, "Custom",
                 null, nextOrdinal, nextSortKey, nextOccupancy, LocalDateTime.now(timeHandler.getClock())))
         }
@@ -166,9 +166,9 @@ class CategoriesControllerTest {
         val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 
         val ordinalSortKeyOccupancy = categoryRepository.getMaxOrdinalSortKeyAndOccupancySlot(profile.id!!)
-        val nextOrdinal = (ordinalSortKeyOccupancy.ordinal?: 0) + 1
-        val nextSortKey = (ordinalSortKeyOccupancy.sortKey?: 0) + 1_000
-        val nextOccupancy = (ordinalSortKeyOccupancy.occupancySlot?: 0) + 1
+        val nextOrdinal = ((ordinalSortKeyOccupancy.ordinal?: 0) + 1).toShort()
+        val nextSortKey = ((ordinalSortKeyOccupancy.sortKey?: 0) + 1_000).toShort()
+        val nextOccupancy = ((ordinalSortKeyOccupancy.occupancySlot?: 0) + 1).toShort()
         val customCategoryId = categoryRepository.insertCategory(CategoryPojo(null, profile.id!!, null, TRUE_BYTE, "Shopping",
             null, nextOrdinal, nextSortKey, nextOccupancy, LocalDateTime.now(timeHandler.getClock())))
 
@@ -225,9 +225,9 @@ class CategoriesControllerTest {
         val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 
         val ordinalSortKeyOccupancy = categoryRepository.getMaxOrdinalSortKeyAndOccupancySlot(profile.id!!)
-        val nextOrdinal = (ordinalSortKeyOccupancy.ordinal?: 0) + 1
-        val nextSortKey = (ordinalSortKeyOccupancy.sortKey?: 0) + 1_000
-        val nextOccupancy = (ordinalSortKeyOccupancy.occupancySlot?: 0) + 1
+        val nextOrdinal = ((ordinalSortKeyOccupancy.ordinal?: 0) + 1).toShort()
+        val nextSortKey = ((ordinalSortKeyOccupancy.sortKey?: 0) + 1_000).toShort()
+        val nextOccupancy = ((ordinalSortKeyOccupancy.occupancySlot?: 0) + 1).toShort()
         val customCategoryId = categoryRepository.insertCategory(CategoryPojo(null, profile.id!!, null, true.toByte(), "Shopping",
             "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category", nextOrdinal, nextSortKey, nextOccupancy,LocalDateTime.now(timeHandler.getClock()), ))
 
@@ -323,9 +323,9 @@ class CategoriesControllerTest {
         val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 
         val ordinalSortKeyOccupancy = categoryRepository.getMaxOrdinalSortKeyAndOccupancySlot(profile.id!!)
-        val nextOrdinal = (ordinalSortKeyOccupancy.ordinal?: 0) + 1
-        val nextSortKey = (ordinalSortKeyOccupancy.sortKey?: 0) + 1_000
-        val nextOccupancy = (ordinalSortKeyOccupancy.occupancySlot?: 0) + 1
+        val nextOrdinal = ((ordinalSortKeyOccupancy.ordinal?: 0) + 1).toShort()
+        val nextSortKey = ((ordinalSortKeyOccupancy.sortKey?: 0) + 1_000).toShort()
+        val nextOccupancy = ((ordinalSortKeyOccupancy.occupancySlot?: 0) + 1).toShort()
         val customCategoryId = categoryRepository.insertCategory(CategoryPojo(null, profile.id!!, null, true.toByte(), "Shopping",
             null, nextOrdinal, nextSortKey, nextOccupancy,LocalDateTime.now(timeHandler.getClock())))
 

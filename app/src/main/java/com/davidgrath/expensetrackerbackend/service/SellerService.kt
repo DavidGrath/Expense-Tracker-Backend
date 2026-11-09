@@ -109,9 +109,9 @@ class SellerService {
                 throw exception
             }
             val ordinalSortKeyOccupancySlot = sellerRepository.getMaxOrdinalSortKeyAndOccupancySlotTrx(trxContext, profileId)
-            val nextOrdinal = (ordinalSortKeyOccupancySlot.ordinal?: 0) + 1
-            val nextSortKey = (ordinalSortKeyOccupancySlot.sortKey?: 0) + 1_000
-            val nextOccupancySlot = (ordinalSortKeyOccupancySlot.occupancySlot?: 0) + 1
+            val nextOrdinal = ((ordinalSortKeyOccupancySlot.ordinal?: 0) + 1).toShort()
+            val nextSortKey = ((ordinalSortKeyOccupancySlot.sortKey?: 0) + 1_000).toShort()
+            val nextOccupancySlot = ((ordinalSortKeyOccupancySlot.occupancySlot?: 0) + 1).toShort()
             //TODO This is an oversimplified way of getting the max values, handle the case of slots or sort keys being taken
             val date = ZonedDateTime.now(timeHandler.getClock())
             val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
@@ -141,9 +141,9 @@ class SellerService {
 
 
             val ordinalSortKeyOccupancySlot = sellerLocationRepository.getMaxOrdinalSortKeyAndOccupancySlotTrx(trxContext, profileId, sellerId)
-            val nextOrdinal = (ordinalSortKeyOccupancySlot.ordinal?: 0) + 1
-            val nextSortKey = (ordinalSortKeyOccupancySlot.sortKey?: 0) + 1_000 //TODO I should eventually rework all of my fetch queries to actually sort by sort key. Was sort key actually necessary for every table? Not really, but I decided I might as well go all out since I've started this massive rework
-            val nextOccupancySlot = (ordinalSortKeyOccupancySlot.occupancySlot?: 0) + 1
+            val nextOrdinal = ((ordinalSortKeyOccupancySlot.ordinal?: 0) + 1).toShort()
+            val nextSortKey = ((ordinalSortKeyOccupancySlot.sortKey?: 0) + 1_000).toShort() //TODO I should eventually rework all of my fetch queries to actually sort by sort key. Was sort key actually necessary for every table? Not really, but I decided I might as well go all out since I've started this massive rework
+            val nextOccupancySlot = ((ordinalSortKeyOccupancySlot.occupancySlot?: 0) + 1).toShort()
             //TODO This is an oversimplified way of getting the max values, handle the case of slots or sort keys being taken
 
             val sellerLocationPojo = SellerLocationPojo(null, sellerId, seller.ordinal!!, name, null, null, null, nextOrdinal, nextSortKey, nextOccupancySlot, utcDate)

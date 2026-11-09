@@ -68,7 +68,7 @@ open class AccountRepository {
         return getByProfileIdAndIdTrx(mainContext, profileId, id)
     }
 
-    fun getByProfileIdAndOrdinal(profileId: Long, ordinal: Int): AccountPojo? {
+    fun getByProfileIdAndOrdinal(profileId: Long, ordinal: Short): AccountPojo? {
         val selectStep = mainContext.selectFrom(ACCOUNT)
             .where(ACCOUNT.PROFILE_ID.eq(profileId))
             .and(ACCOUNT.ORDINAL.eq(ordinal))

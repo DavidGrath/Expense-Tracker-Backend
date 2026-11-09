@@ -39,7 +39,7 @@ class AccountService {
     fun getAccount(profileId: Long, accountId: Long): AccountPojo? {
         return accountRepository.getByProfileIdAndId(profileId, accountId)
     }
-    fun getAccountByOrdinal(profileId: Long, accountOrdinal: Int): AccountPojo? {
+    fun getAccountByOrdinal(profileId: Long, accountOrdinal: Short): AccountPojo? {
         return accountRepository.getByProfileIdAndOrdinal(profileId, accountOrdinal)
     }
 
@@ -74,9 +74,9 @@ class AccountService {
                 throw exception
             }
             val ordinalSortKeyOccupancySlot = accountRepository.getMaxOrdinalSortKeyAndOccupancySlotTrx(trxContext, profileId)
-            val nextOrdinal = (ordinalSortKeyOccupancySlot.ordinal?: 0) + 1
-            val nextSortKey = (ordinalSortKeyOccupancySlot.sortKey?: 0) + 1_000
-            val nextOccupancySlot = (ordinalSortKeyOccupancySlot.occupancySlot?: 0) + 1
+            val nextOrdinal = ((ordinalSortKeyOccupancySlot.ordinal?: 0) + 1).toShort()
+            val nextSortKey = ((ordinalSortKeyOccupancySlot.sortKey?: 0) + 1_000).toShort()
+            val nextOccupancySlot = ((ordinalSortKeyOccupancySlot.occupancySlot?: 0) + 1).toShort()
             //TODO This is an oversimplified way of getting the max values, handle the case of slots or sort keys being taken
             val date = ZonedDateTime.now(timeHandler.getClock())
             val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()

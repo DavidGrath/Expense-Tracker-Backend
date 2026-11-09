@@ -184,9 +184,9 @@ class DocumentsControllerTest {
 
 
         val ordinalSortKeyOccupancy = transactionRepository.getMaxOrdinalSortKeyAndOccupancySlot(profileId, accountId)
-        val nextOrdinal = (ordinalSortKeyOccupancy.ordinal?: 0) + 1
-        val nextSortKey = (ordinalSortKeyOccupancy.sortKey?: 0) + 1_000
-        val nextOccupancy = (ordinalSortKeyOccupancy.occupancySlot?: 0) + 1
+        val nextOrdinal = ((ordinalSortKeyOccupancy.ordinal?: 0) + 1).toShort()
+        val nextSortKey = ((ordinalSortKeyOccupancy.sortKey?: 0) + 1_000).toShort()
+        val nextOccupancy = ((ordinalSortKeyOccupancy.occupancySlot?: 0) + 1).toShort()
         val transaction = TransactionPojo(null, profileId, amount, true.toByte(), MOCKED_DATE, MOCKED_TIME,
             TransactionMode.Other, null, account.ordinal!!, null, null, nextOrdinal, nextSortKey, nextOccupancy, MOCKED_DATE.atTime(MOCKED_TIME),)
 
