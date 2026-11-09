@@ -216,8 +216,11 @@ class AccountsControllerTest {
             throw RuntimeException("Existing accounts too many")
         }
         for(acc in 0 until remaining) {
+            val nextOrdinal = (acc+1)+existing.size
+            val nextSortKey = ((acc+1)+existing.size)*1_000
+            val nextOccupancy = (acc+1)+existing.size
             accountRepository.insertAccount(AccountPojo(null, profile.id!!, "USD", null, null, "New Account $acc",
-                acc+1, (acc+1) * 1_000, acc+1,LocalDateTime.now(timeHandler.getClock())))
+                nextOrdinal, nextSortKey, nextOccupancy,LocalDateTime.now(timeHandler.getClock())))
         }
         val createRequest = AccountCreateRequest("New account", "GBP")
         var json: String = objectWriter.writeValueAsString(createRequest)

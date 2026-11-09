@@ -102,11 +102,11 @@ class TransactionRepository {
     }
 
 
-    fun getMaxOrdinalSortKeyAndOccupancySlot(profileId: Long, accountId: Long, date: LocalDate): OrdinalSortKeyOccupancySlot {
-        return getMaxOrdinalSortKeyAndOccupancySlotTrx(mainContext, profileId, accountId, date)
+    fun getMaxOrdinalSortKeyAndOccupancySlot(profileId: Long, accountId: Long): OrdinalSortKeyOccupancySlot {
+        return getMaxOrdinalSortKeyAndOccupancySlotTrx(mainContext, profileId, accountId)
     }
 
-    fun getMaxOrdinalSortKeyAndOccupancySlotTrx(trxContext: DSLContext, profileId: Long, accountId: Long, date: LocalDate): OrdinalSortKeyOccupancySlot {
+    fun getMaxOrdinalSortKeyAndOccupancySlotTrx(trxContext: DSLContext, profileId: Long, accountId: Long): OrdinalSortKeyOccupancySlot {
         val selectStep = trxContext.select(
             DSL.max(TRANSACTION.ORDINAL).`as`("ordinal"),
             DSL.max(TRANSACTION.SORT_KEY).`as`("sortKey"),
@@ -114,7 +114,6 @@ class TransactionRepository {
         ).from(TRANSACTION)
             .innerJoin(ACCOUNT).on(accountToTransactionPath)
             .where(ACCOUNT.ID.eq(accountId))
-            .and(TRANSACTION.DATED_AT.eq(date))
             .and(ACCOUNT.PROFILE_ID.eq(profileId))
 
         return selectStep.fetchOne()?.into(OrdinalSortKeyOccupancySlot::class.java)!!

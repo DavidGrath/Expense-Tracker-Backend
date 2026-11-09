@@ -104,7 +104,7 @@ open class AccountRepository {
 
     fun getAccountSummary(profileId: Long, id: Long): AccountWithStats? {
         val selectStep = mainContext
-            .select(ACCOUNT.asterisk(),
+            .select(ACCOUNT.ID,ACCOUNT.PROFILE_ID,ACCOUNT.CURRENCY_CODE,ACCOUNT.FINANCIAL_INSTITUTION_ID,ACCOUNT.REFERENCE_NUMBER,ACCOUNT.NAME,ACCOUNT.CREATED_AT,
                 mainContext.select(DSL.ifnull(DSL.sum(TRANSACTION.AMOUNT), BigDecimal.ZERO)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ORDINAL.eq(ACCOUNT.ORDINAL).and(TRANSACTION.PROFILE_ID.eq(ACCOUNT.PROFILE_ID)).and(TRANSACTION.DEBIT_OR_CREDIT.notEqual(0))).asField<BigDecimal>().`as`("expenses"),
                 mainContext.select(DSL.ifnull(DSL.sum(TRANSACTION.AMOUNT), BigDecimal.ZERO)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ORDINAL.eq(ACCOUNT.ORDINAL).and(TRANSACTION.PROFILE_ID.eq(ACCOUNT.PROFILE_ID)).and(TRANSACTION.DEBIT_OR_CREDIT.equal(0))).asField<BigDecimal>().`as`("income"),
                 mainContext.select(DSL.count(TRANSACTION.ID)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ORDINAL.eq(ACCOUNT.ORDINAL).and(TRANSACTION.PROFILE_ID.eq(ACCOUNT.PROFILE_ID))).asField<Long>().`as`("transactionCount"),
@@ -120,7 +120,7 @@ open class AccountRepository {
     }
     fun getAccountSummariesForProfile(profileId: Long): List<AccountWithStats> {
         val selectStep = mainContext
-            .select(ACCOUNT.asterisk(),
+            .select(ACCOUNT.ID,ACCOUNT.PROFILE_ID,ACCOUNT.CURRENCY_CODE,ACCOUNT.FINANCIAL_INSTITUTION_ID,ACCOUNT.REFERENCE_NUMBER,ACCOUNT.NAME,ACCOUNT.CREATED_AT,
                 mainContext.select(DSL.ifnull(DSL.sum(TRANSACTION.AMOUNT), BigDecimal.ZERO)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ORDINAL.eq(ACCOUNT.ORDINAL).and(TRANSACTION.PROFILE_ID.eq(ACCOUNT.PROFILE_ID)).and(TRANSACTION.DEBIT_OR_CREDIT.notEqual(0))).asField<BigDecimal>().`as`("expenses"),
                 mainContext.select(DSL.ifnull(DSL.sum(TRANSACTION.AMOUNT), BigDecimal.ZERO)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ORDINAL.eq(ACCOUNT.ORDINAL).and(TRANSACTION.PROFILE_ID.eq(ACCOUNT.PROFILE_ID)).and(TRANSACTION.DEBIT_OR_CREDIT.equal(0))).asField<BigDecimal>().`as`("income"),
                 mainContext.select(DSL.count(TRANSACTION.ID)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ORDINAL.eq(ACCOUNT.ORDINAL).and(TRANSACTION.PROFILE_ID.eq(ACCOUNT.PROFILE_ID))).asField<Long>().`as`("transactionCount"),

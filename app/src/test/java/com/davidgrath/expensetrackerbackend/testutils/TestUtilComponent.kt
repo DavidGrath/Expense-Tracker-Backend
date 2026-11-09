@@ -91,14 +91,14 @@ class TestUtilComponent {
         val amount = BigDecimal.TEN
         val account = accountRepository.findByProfileIdAndId(profileId, accountId)!!
 
-        val ordinalSortKeyOccupancy = transactionRepository.getMaxOrdinalSortKeyAndOccupancySlot(profileId, accountId, MOCKED_DATE)
+        val ordinalSortKeyOccupancy = transactionRepository.getMaxOrdinalSortKeyAndOccupancySlot(profileId, accountId)
         val nextOrdinal = (ordinalSortKeyOccupancy.ordinal?: 0) + 1
         val nextSortKey = (ordinalSortKeyOccupancy.sortKey?: 0) + 1_000
         val nextOccupancy = (ordinalSortKeyOccupancy.occupancySlot?: 0) + 1
 
 
         val transaction = TransactionPojo(null, profileId, amount, TRUE_BYTE, MOCKED_DATE, MOCKED_TIME,
-            TransactionMode.Other, null, account.ordinal, null, null, nextOrdinal, nextSortKey, nextSortKey, MOCKED_DATE.atTime(MOCKED_TIME))
+            TransactionMode.Other, null, account.ordinal, null, null, nextOrdinal, nextSortKey, nextOccupancy, MOCKED_DATE.atTime(MOCKED_TIME))
 
         val transactionId = transactionRepository.insertTransaction(transaction)
         val misc = categoryRepository.findByProfileIdAndStringId(profileId, "miscellaneous")!!

@@ -183,7 +183,7 @@ class DocumentsControllerTest {
         val account = accountRepository.findByProfileIdAndId(profileId, accountId)!!
 
 
-        val ordinalSortKeyOccupancy = transactionRepository.getMaxOrdinalSortKeyAndOccupancySlot(profileId, accountId, MOCKED_DATE)
+        val ordinalSortKeyOccupancy = transactionRepository.getMaxOrdinalSortKeyAndOccupancySlot(profileId, accountId)
         val nextOrdinal = (ordinalSortKeyOccupancy.ordinal?: 0) + 1
         val nextSortKey = (ordinalSortKeyOccupancy.sortKey?: 0) + 1_000
         val nextOccupancy = (ordinalSortKeyOccupancy.occupancySlot?: 0) + 1

@@ -1,6 +1,7 @@
 package com.davidgrath.expensetrackerbackend.entities.views
 
 import java.math.BigDecimal
+import java.time.LocalDateTime
 
 data class AccountWithStats(
     val id: Long,
@@ -9,7 +10,7 @@ data class AccountWithStats(
     val financialInstitutionId: Long?,
     val referenceNumber: String?,
     val name: String,
-    val createdAt: String,
+    val createdAt: LocalDateTime,
     val expenses: BigDecimal,
     val income: BigDecimal,
     val transactionCount: Long,

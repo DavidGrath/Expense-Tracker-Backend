@@ -87,7 +87,7 @@ class SellersControllerTest {
         val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val profileId = profile.id!!
 
-        val (sellerId, locationId) = seedSellers(profileId)
+        val (sellerId, sellerOrdinal, locationId) = seedSellers(profileId)
 
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
@@ -111,7 +111,7 @@ class SellersControllerTest {
         val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val profileId = profile.id!!
 
-        val (sellerId, locationId) = seedSellers(profileId)
+        val (sellerId, sellerOrdinal, locationId) = seedSellers(profileId)
 
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
@@ -132,7 +132,7 @@ class SellersControllerTest {
         val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
         val profileId = profile.id!!
 
-        val (sellerId, locationId) = seedSellers(profileId)
+        val (sellerId, sellerOrdinal, locationId) = seedSellers(profileId)
 
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
@@ -212,7 +212,7 @@ class SellersControllerTest {
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
         val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
-        val (sellerId, sellerOrdinal, locationOrdinal) = seedSellers(profile.id!!)
+        val (sellerId, sellerOrdinal, locationId) = seedSellers(profile.id!!)
         val existing = sellerLocationRepository.getByProfileIdAndSellerId(profile.id!!, sellerId)
         val remaining = Constants.Constraints.MAX_LOCATIONS_PER_SELLER - existing.size
         if(remaining <= 0) {
@@ -279,7 +279,7 @@ class SellersControllerTest {
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
         val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 
-        val (sellerId, locationId) = seedSellers(profile.id!!)
+        val (sellerId, sellerOrdinal, locationId) = seedSellers(profile.id!!)
 
 
         val updateRequest = SellerUpdateRequest(" \t\n")
@@ -307,7 +307,7 @@ class SellersControllerTest {
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
         val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 
-        val (sellerId, locationId) = seedSellers(profile.id!!)
+        val (sellerId, sellerOrdinal, locationId) = seedSellers(profile.id!!)
 
 
         val createRequest = SellerLocationCreateRequest(" \t\n")
@@ -335,7 +335,7 @@ class SellersControllerTest {
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
         val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 
-        val (sellerId, locationId) = seedSellers(profile.id!!)
+        val (sellerId, sellerOrdinal, locationId) = seedSellers(profile.id!!)
 
 
         val updateRequest = SellerLocationUpdateRequest(" \t\n")
@@ -357,16 +357,19 @@ class SellersControllerTest {
     }
 
     /**
-     * @return the seller ID, seller ordinal, and location ordinal
+     * @return the seller ID, seller ordinal, and location ID
      */
-    private fun seedSellers(profileId: Long): Triple<Long, Int, Int> {
+    private fun seedSellers(profileId: Long): Triple<Long, Int, Long> {
         val createdAt = LocalDateTime.now(timeHandler.getClock())
-        val sellerOrdinal = 1
-        val seller = SellerPojo(null, profileId, "Restaurant", sellerOrdinal, 1_000, 1, createdAt)
+        val ordinalSortKeyOccupancy = sellerRepository.getMaxOrdinalSortKeyAndOccupancySlot(profileId)
+        val nextOrdinal = (ordinalSortKeyOccupancy.ordinal?: 0) + 1
+        val nextSortKey = (ordinalSortKeyOccupancy.sortKey?: 0) + 1_000
+        val nextOccupancy = (ordinalSortKeyOccupancy.occupancySlot?: 0) + 1
+        val seller = SellerPojo(null, profileId, "Restaurant", nextOrdinal, nextSortKey, nextOccupancy, createdAt)
         val sellerId = sellerRepository.insertSeller(seller)
         val locationOrdinal = 1
-        val sellerLocation = SellerLocationPojo(null, profileId, sellerOrdinal, "Branch location", null, null, null, locationOrdinal, 1_000, 1, createdAt)
+        val sellerLocation = SellerLocationPojo(null, profileId, nextOrdinal, "Branch location", null, null, null, locationOrdinal, 1_000, 1, createdAt)
         val sellerLocationId = sellerLocationRepository.insertSellerLocation(sellerLocation)
-        return Triple(sellerId, sellerOrdinal, locationOrdinal)
+        return Triple(sellerId, nextOrdinal, sellerLocationId)
     }
 }

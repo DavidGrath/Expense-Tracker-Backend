@@ -137,7 +137,6 @@ CREATE TABLE `transaction` (
     CONSTRAINT fk_transaction_seller FOREIGN KEY (profile_id, seller_ordinal) REFERENCES seller (profile_id, ordinal),
     CONSTRAINT fk_transaction_seller_location FOREIGN KEY (profile_id, seller_ordinal, seller_location_ordinal) REFERENCES seller_location (profile_id, seller_ordinal, ordinal),
     UNIQUE KEY uq_transaction_account_ordinal (profile_id, account_ordinal, ordinal),
-    UNIQUE KEY uq_transaction_account_dated_at_ordinal (profile_id, account_ordinal, dated_at, ordinal),
     UNIQUE KEY uq_transaction_account_dated_at_sort_key (profile_id, account_ordinal, dated_at, sort_key),
     UNIQUE KEY uq_transaction_account_dated_at_occupancy_slot (profile_id, account_ordinal, dated_at, occupancy_slot),
     CONSTRAINT chk_transaction_mode_enum CHECK (

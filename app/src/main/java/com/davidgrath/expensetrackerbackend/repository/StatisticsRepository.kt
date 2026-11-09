@@ -3,6 +3,7 @@ package com.davidgrath.expensetrackerbackend.repository
 import com.davidgrath.expensetrackerbackend.entities.StatisticsFilterDb
 import com.davidgrath.expensetrackerbackend.entities.views.ItemSumByCategory
 import com.davidgrath.expensetrackerbackend.entities.views.TransactionAndItemCount
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionItemPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.ACCOUNT
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.CATEGORY
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.SELLER
@@ -46,7 +47,7 @@ class StatisticsRepository {
             .from(TRANSACTION_ITEM)
             .innerJoin(CATEGORY).on(categoryToItemPath)
             .innerJoin(TRANSACTION).on(itemToTransactionPath)
-            .innerJoin(SELLER).on(sellerToTransactionPath)
+            .leftJoin(SELLER).on(sellerToTransactionPath)
             .innerJoin(ACCOUNT).on(accountToTransactionPath)
             .where(ACCOUNT.PROFILE_ID.eq(profileId))
             .and(TRANSACTION.DEBIT_OR_CREDIT.eq(debitOrCredit.toByte()))
@@ -74,7 +75,7 @@ class StatisticsRepository {
             .innerJoin(TRANSACTION_ITEM).on(itemToTransactionPath)
             .innerJoin(ACCOUNT).on(accountToTransactionPath)
             .innerJoin(CATEGORY).on(categoryToItemPath)
-            .innerJoin(SELLER).on(sellerToTransactionPath)
+            .leftJoin(SELLER).on(sellerToTransactionPath)
             .leftJoin(SELLER_LOCATION).on(transactionToSellerLocationPath)
             .where(ACCOUNT.PROFILE_ID.eq(profileId))  //TODO candidate for replacement
         selectStep = applyFilters(selectStep, statisticsFilter)
@@ -92,6 +93,9 @@ class StatisticsRepository {
             .from(TRANSACTION_ITEM)
             .innerJoin(TRANSACTION).on(itemToTransactionPath)
             .innerJoin(ACCOUNT).on(accountToTransactionPath)
+            .innerJoin(CATEGORY).on(categoryToItemPath)
+            .leftJoin(SELLER).on(sellerToTransactionPath)
+            .leftJoin(SELLER_LOCATION).on(sellerLocationToSellerPath)
             .where(ACCOUNT.PROFILE_ID.eq(profileId)) //TODO candidate for replacement
             .and( TRANSACTION.DEBIT_OR_CREDIT.eq(TRUE_BYTE))
             .and( TRANSACTION_ITEM.IS_REDUCTION.eq(FALSE_BYTE))
@@ -110,6 +114,9 @@ class StatisticsRepository {
             .from(TRANSACTION_ITEM)
             .innerJoin(TRANSACTION).on(itemToTransactionPath)
             .innerJoin(ACCOUNT).on(accountToTransactionPath)
+            .innerJoin(CATEGORY).on(categoryToItemPath)
+            .leftJoin(SELLER).on(sellerToTransactionPath)
+            .leftJoin(SELLER_LOCATION).on(sellerLocationToSellerPath)
             .where(ACCOUNT.PROFILE_ID.eq(profileId)) //TODO candidate for removal
             .and( TRANSACTION.DEBIT_OR_CREDIT.eq(FALSE_BYTE))
             .and( TRANSACTION_ITEM.IS_REDUCTION.eq(FALSE_BYTE))

@@ -174,19 +174,21 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
                     dateTime = repeatDate.atTime(LocalTime.parse("08:00:00"))
                 }
 
-                val ordinalSortKeyOccupancy = transactionRepository.getMaxOrdinalSortKeyAndOccupancySlot(profile.id!!, account.id!!, repeatDate)
+                val ordinalSortKeyOccupancy = transactionRepository.getMaxOrdinalSortKeyAndOccupancySlot(profile.id!!, account.id!!)
                 val nextOrdinal = (ordinalSortKeyOccupancy.ordinal?: 0) + 1
                 val nextSortKey = (ordinalSortKeyOccupancy.sortKey?: 0) + 1_000
                 val nextOccupancy = (ordinalSortKeyOccupancy.occupancySlot?: 0) + 1
 
                 if(customSellerLocation != null) {
-                    val maxOrdinal = sellerLocationRepository.getMaxOrdinalForSeller(profile.id!!, customSeller!!.id!!)?: 0
-                    val newOrdinal = maxOrdinal + 1
-                    val fixedLocation = customSellerLocation!!.copy(ordinal = newOrdinal)
+                    val ordinalSortKeyOccupancy = sellerLocationRepository.getMaxOrdinalSortKeyAndOccupancySlot(profile.id!!, customSeller!!.id!!)
+                    val nextOrdinal = (ordinalSortKeyOccupancy.ordinal?: 0) + 1
+                    val nextSortKey = (ordinalSortKeyOccupancy.sortKey?: 0) + 1_000
+                    val nextOccupancy = (ordinalSortKeyOccupancy.occupancySlot?: 0) + 1
+                    val fixedLocation = customSellerLocation!!.copy(ordinal = nextOrdinal, sortKey = nextSortKey, occupancySlot = nextOccupancy)
                     val newLocationId = sellerLocationRepository.insertSellerLocation(fixedLocation)
                     customSellerLocation = sellerLocationRepository.getByProfileIdAndId(profile!!.id!!, newLocationId)
                 }
-                val transaction = TransactionPojo(null, profile.id!!,  sum,  debitOrCredit.toByte(), repeatDate, time, mode,null, nextOrdinal, customSeller?.ordinal, customSellerLocation?.ordinal,
+                val transaction = TransactionPojo(null, profile.id!!,  sum,  debitOrCredit.toByte(), repeatDate, time, mode,null, account.ordinal!!, customSeller?.ordinal, customSellerLocation?.ordinal,
                     nextOrdinal, nextSortKey, nextOccupancy, dateTime)
                 val transactionId = transactionRepository.insertTransaction(transaction)
 
@@ -300,7 +302,7 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
             if(customSeller == null) {
                 throw IllegalArgumentException("Custom seller not created yet")
             }
-            this.customSellerLocation = SellerLocationPojo(null, this.customSeller!!.id!!, -1 ,name)
+            this.customSellerLocation = SellerLocationPojo(null, profile.id!!, customSeller!!.ordinal!! ,name)
             return this
         }
 

@@ -262,6 +262,7 @@ open class TransactionItemRepository {
             .innerJoin(TRANSACTION).on(itemToTransactionPath)
             .innerJoin(ACCOUNT).on(accountToTransactionPath)
             .innerJoin(CATEGORY).on(categoryToItemPath)
+            .leftJoin(SELLER).on(sellerToTransactionPath)
             .leftJoin(SELLER_LOCATION).on(transactionToSellerLocationPath)
             .where(ACCOUNT.PROFILE_ID.eq(profileId))
 

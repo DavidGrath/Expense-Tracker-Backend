@@ -46,9 +46,7 @@ class TransactionService {
         transactionRepository.transactionContext { trx ->
             val trxContext = trx.dsl()
             val account = accountRepository.getByProfileIdAndIdTrx(trxContext, profileId, accountId)!!
-            val maxSortKey = transactionRepository.getMaxSortKeyInDayForAccountTrx(trxContext, profileId, accountId, utcDate.toLocalDate())?: 0
-            val sortKey = maxSortKey + 1_000
-            val ordinalSortKeyOccupancySlot = transactionRepository.getMaxOrdinalSortKeyAndOccupancySlotTrx(trxContext, profileId, accountId, utcDate.toLocalDate())
+            val ordinalSortKeyOccupancySlot = transactionRepository.getMaxOrdinalSortKeyAndOccupancySlotTrx(trxContext, profileId, accountId)
             val nextOrdinal = (ordinalSortKeyOccupancySlot.ordinal?: 0) + 1
             val nextSortKey = (ordinalSortKeyOccupancySlot.sortKey?: 0) + 1_000
             val nextOccupancySlot = (ordinalSortKeyOccupancySlot.occupancySlot?: 0) + 1
@@ -72,7 +70,7 @@ class TransactionService {
             )
             val transactionId = transactionRepository.insertTransactionTrx(trxContext, transaction)
             val category = categoryRepository.findByProfileIdAndIdTrx(trxContext, profileId, categoryId)
-            val item = TransactionItemPojo(null, transactionId, account.ordinal, nextOrdinal, description, amount, category!!.ordinal, 1, 1_000, 1, 1,  null,null, null, null, null, null,FALSE_BYTE, utcDate.toLocalDateTime())
+            val item = TransactionItemPojo(null, profileId, account.ordinal, nextOrdinal, description, amount, category!!.ordinal, 1, 1_000, 1, 1,  null,null, null, null, null, null,FALSE_BYTE, utcDate.toLocalDateTime())
             transactionItemRepository.insertTransactionItemTrx(trxContext, item)
             transactionIdRet = transactionId
         }

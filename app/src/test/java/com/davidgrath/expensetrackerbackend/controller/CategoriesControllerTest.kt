@@ -108,8 +108,11 @@ class CategoriesControllerTest {
             throw RuntimeException("Existing categories too many")
         }
         for(cat in 0 until remaining) {
+            val nextOrdinal = (cat+1)+existing.size
+            val nextSortKey = ((cat+1)+existing.size)*1_000
+            val nextOccupancy = (cat+1)+existing.size
             categoryRepository.insertCategory(CategoryPojo(null, profile.id!!, null, TRUE_BYTE, "Custom",
-                null, cat+1, (cat+1) * 1_000, cat+1, LocalDateTime.now(timeHandler.getClock())))
+                null, nextOrdinal, nextSortKey, nextOccupancy, LocalDateTime.now(timeHandler.getClock())))
         }
         val createRequest = CategoryCreateRequest("new category", "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category")
         var json: String = objectWriter.writeValueAsString(createRequest)
@@ -167,7 +170,7 @@ class CategoriesControllerTest {
         val nextSortKey = (ordinalSortKeyOccupancy.sortKey?: 0) + 1_000
         val nextOccupancy = (ordinalSortKeyOccupancy.occupancySlot?: 0) + 1
         val customCategoryId = categoryRepository.insertCategory(CategoryPojo(null, profile.id!!, null, TRUE_BYTE, "Shopping",
-            null, nextOrdinal, nextSortKey, nextOccupancy, LocalDateTime.now(timeHandler.getClock()))) //TODO this should fail because there's no icon
+            null, nextOrdinal, nextSortKey, nextOccupancy, LocalDateTime.now(timeHandler.getClock())))
 
         val objectWriter: ObjectWriter = ObjectMapper().writer()
 
@@ -324,7 +327,7 @@ class CategoriesControllerTest {
         val nextSortKey = (ordinalSortKeyOccupancy.sortKey?: 0) + 1_000
         val nextOccupancy = (ordinalSortKeyOccupancy.occupancySlot?: 0) + 1
         val customCategoryId = categoryRepository.insertCategory(CategoryPojo(null, profile.id!!, null, true.toByte(), "Shopping",
-            null, nextOrdinal, nextSortKey, nextOccupancy,LocalDateTime.now(timeHandler.getClock()))) //TODO should fail cause no icon
+            null, nextOrdinal, nextSortKey, nextOccupancy,LocalDateTime.now(timeHandler.getClock())))
 
         val objectWriter: ObjectWriter = ObjectMapper().writer()
 

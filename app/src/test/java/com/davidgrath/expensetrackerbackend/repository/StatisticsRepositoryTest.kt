@@ -463,6 +463,7 @@ class StatisticsRepositoryTest {
     /**
      * I accidentally thought I had accidentally created an IDOR path through the seller ID,
      * but I've confirmed this doesn't happen through this test. Keep it here to mark my paranoia
+     * 2026-11-09: UPDATE: and this test actually bailed me out with bug from a faulty JOIN clause I introduced. That's nice
      */
     @Test
     fun idorTest() {

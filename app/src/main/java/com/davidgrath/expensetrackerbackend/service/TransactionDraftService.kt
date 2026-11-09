@@ -254,7 +254,7 @@ class TransactionDraftService {
                 null
             }
 
-            val ordinalSortKeyOccupancySlot = transactionRepository.getMaxOrdinalSortKeyAndOccupancySlotTrx(trxContext, profileId, account.id!!, utcDate.toLocalDate())
+            val ordinalSortKeyOccupancySlot = transactionRepository.getMaxOrdinalSortKeyAndOccupancySlotTrx(trxContext, profileId, account.id!!)
             val nextTransactionOrdinal = (ordinalSortKeyOccupancySlot.ordinal?: 0) + 1
             val nextSortKey = (ordinalSortKeyOccupancySlot.sortKey?: 0) + 1_000
             val nextOccupancySlot = (ordinalSortKeyOccupancySlot.occupancySlot?: 0) + 1
@@ -303,7 +303,7 @@ class TransactionDraftService {
             }*/
 
             val transaction = TransactionPojo(
-                null, account.id!!, total,
+                null, profileId, total,
                 draft.debitOrCredit.toByte(), datedDate, datedTime,
                 draft.mode, note, account.ordinal!!, seller?.ordinal, draft.sellerLocationOrdinal, nextTransactionOrdinal, nextSortKey, nextOccupancySlot,utcDate.toLocalDateTime()
             )

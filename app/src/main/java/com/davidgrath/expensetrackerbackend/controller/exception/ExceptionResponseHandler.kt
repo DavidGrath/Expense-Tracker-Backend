@@ -22,14 +22,14 @@ class ExceptionResponseHandler {
     @ExceptionHandler(EntityNotFoundException::class)
     fun handleEntityNotFoundException(e: EntityNotFoundException): ProblemDetail {
         val problemDetail: ProblemDetail = ProblemDetail.forStatus(HttpStatus.NOT_FOUND)
-        problemDetail.setProperty(CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE, ErrorCode.ENTITY_NOT_FOUND)
+        problemDetail.setProperty(CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE, ErrorCode.ENTITY_NOT_FOUND.code)
         return problemDetail
     }
 
     @ExceptionHandler(CountLimitExceeded::class)
     fun handleCountLimitExceededException(e: CountLimitExceeded): ProblemDetail {
         val problemDetail: ProblemDetail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST)
-        problemDetail.setProperty(CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE, ErrorCode.LIMITS_EXCEEDED)
+        problemDetail.setProperty(CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE, ErrorCode.LIMITS_EXCEEDED.code)
         return problemDetail
     }
 }
