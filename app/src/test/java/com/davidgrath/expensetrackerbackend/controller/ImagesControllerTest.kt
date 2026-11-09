@@ -15,7 +15,9 @@ import com.davidgrath.expensetrackerbackend.service.TransactionDraftServiceTest.
 import com.davidgrath.expensetrackerbackend.service.TransactionDraftServiceTest.Companion.MOCKED_TIME
 import com.davidgrath.expensetrackerbackend.testutils.*
 import com.davidgrath.expensetrackerbackend.utils.Constants
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.FALSE_BYTE
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.JWT_ALG
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.TRUE_BYTE
 import com.davidgrath.expensetrackerbackend.utils.bytesToUUID
 import com.davidgrath.expensetrackerbackend.utils.file
 import com.davidgrath.expensetrackerbackend.utils.getSha256
@@ -99,7 +101,7 @@ class ImagesControllerTest {
 
         val profileUuidString = bytesToUUID(profile.uuid!!).toString()
 
-        createTransactionWithImage(profileId, user.uuid!!, profile.uuid!!, accountId, classLoader, resource)
+        testUtilComponent.createTransactionWithImage(profileId, user.uuid!!, profile.uuid!!, accountId, classLoader, resource)
 
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
@@ -131,7 +133,7 @@ class ImagesControllerTest {
 
         val profileUuidString = bytesToUUID(profile.uuid!!).toString()
 
-        val imageId = createTransactionWithImage(profileId, user.uuid!!, profile.uuid!!, accountId, classLoader, resource)
+        val imageId = testUtilComponent.createTransactionWithImage(profileId, user.uuid!!, profile.uuid!!, accountId, classLoader, resource)
 
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
@@ -160,7 +162,7 @@ class ImagesControllerTest {
 
         val profileUuidString = bytesToUUID(profile.uuid!!).toString()
 
-        val imageId = createTransactionWithImage(profileId, user.uuid!!, profile.uuid!!, accountId, classLoader, resource)
+        val imageId = testUtilComponent.createTransactionWithImage(profileId, user.uuid!!, profile.uuid!!, accountId, classLoader, resource)
 
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
@@ -179,48 +181,5 @@ class ImagesControllerTest {
     }
 
 
-    fun createTransactionWithImage(profileId: Long, userUuid: ByteArray, profileUuid: ByteArray, accountId: Long, classLoader: ClassLoader, resource: TestData.Resource): Long {
 
-        val amount = BigDecimal.TEN
-        val account = accountRepository.findByProfileIdAndId(profileId, accountId)!!
-
-        val maxSortkey = transactionRepository.getMaxSortKeyInDayForAccount(profileId, accountId, MOCKED_DATE)?: 0
-        var transactionSortKey = maxSortkey + 1_000
-
-        val transaction = TransactionPojo(null, accountId, amount, true.toByte(), MOCKED_DATE, MOCKED_TIME,
-            transactionSortKey, TransactionMode.Other, null, null, null, MOCKED_DATE.atTime(MOCKED_TIME))
-
-        val transactionId = transactionRepository.insertTransaction(transaction)
-        val misc = categoryRepository.findByProfileIdAndStringId(profileId, "miscellaneous")!!
-
-        val userUuidString = bytesToUUID(userUuid).toString()
-        val profileUuidString = bytesToUUID(profileUuid).toString()
-
-        val item = TransactionItemPojo(null, transactionId, "Basic", amount, misc.id!!, 1_000, 1, 1, null,
-            null, null, null, null, null,false.toByte(),
-            MOCKED_DATE.atTime(MOCKED_TIME))
-        val itemId = transactionItemRepository.insertTransactionItem(item)
-        //TODO make this more convenient
-        val newFileName = "${UUID.randomUUID()}.jpg"
-        val newPath = "/${Constants.FOLDER_NAME_PROFILES}/$profileUuidString/${Constants.FOLDER_NAME_DATA}/${Constants.SUBFOLDER_NAME_IMAGES}/${newFileName}"
-        val destinationFolder = file(timeHandler.getRoot(), Constants.FOLDER_NAME_USERS, userUuidString, Constants.FOLDER_NAME_PROFILES, profileUuidString, Constants.FOLDER_NAME_DATA, Constants.SUBFOLDER_NAME_IMAGES)
-        destinationFolder.mkdirs()
-        val destination = File(destinationFolder, newFileName)
-
-        val inputStream = classLoader.getResourceAsStream(resource.resourceName)
-        val outputStream = destination.outputStream()
-        inputStream.copyTo(outputStream)
-        inputStream.close()
-        outputStream.close()
-        val hashStream = destination.inputStream()
-
-        val hash = getSha256AsBytes(hashStream)
-        hashStream.close()
-
-        val image = ImagePojo(null, profileId, destination.length(), hash, "image/jpeg", "", newPath, MOCKED_DATE.atTime(MOCKED_TIME))
-        val imageId = imageRepository.insertImage(image)
-        val itemImage = TransactionItemImagesPojo(null, itemId, imageId, 1_000, 1, MOCKED_DATE.atTime(MOCKED_TIME))
-        itemImagesRepository.insertItemImage(itemImage)
-        return imageId
-    }
 }

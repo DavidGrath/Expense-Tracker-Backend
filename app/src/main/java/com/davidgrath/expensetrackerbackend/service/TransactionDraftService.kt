@@ -5,6 +5,7 @@ import com.davidgrath.expensetrackerbackend.entities.*
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.*
 import com.davidgrath.expensetrackerbackend.repository.*
 import com.davidgrath.expensetrackerbackend.service.exceptions.EntityNotFoundException
+import com.davidgrath.expensetrackerbackend.service.exceptions.InvalidDraftException
 import com.davidgrath.expensetrackerbackend.utils.*
 import com.google.gson.GsonBuilder
 import org.jooq.JSON
@@ -51,6 +52,8 @@ class TransactionDraftService {
 
     @Autowired
     lateinit var sellerLocationRepository: SellerLocationRepository
+    @Autowired
+    lateinit var sellerRepository: SellerRepository
 
     @Autowired
     lateinit var imageRepository: ImageRepository
@@ -87,7 +90,7 @@ class TransactionDraftService {
             val date = ZonedDateTime.now(timeHandler.getClock())
             val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
             val json = JSON.json(jsonString)
-            val userDraft = UserDraftPojo(null, profileId, null, UserDraftType.Create, json, utcDate)
+            val userDraft = UserDraftPojo(null, profileId, null, null, UserDraftType.Create, json, utcDate)
             userDraftRepository.insertDraft(userDraft)
         } else {
             LOGGER.info("Draft already exists")
@@ -174,7 +177,10 @@ class TransactionDraftService {
                 throw EntityNotFoundException()
             }
             LOGGER.info("Acquired lock for profile draft")
-            validateDraft(userDraft!!)
+            if(!validateDraft(userDraft!!)) {
+                LOGGER.error("Draft is invalid")
+                throw InvalidDraftException()
+            }
         val draft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
         val total = draft.items.map {
             if (it.isReduction) {
@@ -192,7 +198,7 @@ class TransactionDraftService {
         val actuallyUsedNewImages =
             draft.items.map { it.images }.fold(emptyList<TransactionDraftFile>()) { acc, list -> acc + list }
                 .filter { it.dbId == null }.toSet()
-        val imagesMap = mutableMapOf<String, Long>()
+        val imagesMap = mutableMapOf<String, Int>()
 
 
 
@@ -204,7 +210,7 @@ class TransactionDraftService {
                 val draftFile =
                     File(timeHandler.getRoot(), Constants.FOLDER_NAME_USERS + "/${userUuidString}" + image.path)
 
-                val path = fileService.moveFileToMain(
+                val path = fileService.moveFileToMain( //TODO Do not move here: simply copy and then delete on completion, in case a rollback i.e. exception happens
                     timeHandler.getRoot(),
                     userUuidString,
                     profileUuidString,
@@ -215,6 +221,9 @@ class TransactionDraftService {
                 val mainFile = File(timeHandler.getRoot(), Constants.FOLDER_NAME_USERS + "/${userUuidString}" + path)
 
                 val length = mainFile.length()
+
+                val maxImageOrdinal = imageRepository.getMaxOrdinalTrx(trxContext, profileId)
+                val nextImageOrdinal = (maxImageOrdinal?: 0) + 1
                 val imagePojo = ImagePojo(
                     null,
                     profileId,
@@ -223,10 +232,11 @@ class TransactionDraftService {
                     image.mimeType,
                     "",
                     path,
+                    nextImageOrdinal,
                     utcDate.toLocalDateTime()
                 )
                 val imageId = imageRepository.insertImageTrx(trxContext, imagePojo)
-                imagesMap[image.sha256] = imageId
+                imagesMap[image.sha256] = nextImageOrdinal
             }
 
             if (actuallyUsedNewImages.isNotEmpty()) {
@@ -238,9 +248,17 @@ class TransactionDraftService {
                 draft.note
             }
             val account = accountRepository.getByProfileIdAndIdTrx(trxContext, profileId, draft.accountId!!)!!
-            val maxSortKey =
-                transactionRepository.getMaxSortKeyInDayForAccountTrx(trxContext, profileId, draft.accountId, datedDate) ?: 0
-            var transactionSortKey = maxSortKey + 1000
+            val seller: SellerPojo? = if(draft.sellerId != null) {
+                sellerRepository.getByProfileIdAndIdTrx(trxContext, profileId, draft.sellerId)
+            } else {
+                null
+            }
+
+            val ordinalSortKeyOccupancySlot = transactionRepository.getMaxOrdinalSortKeyAndOccupancySlotTrx(trxContext, profileId, account.id!!, utcDate.toLocalDate())
+            val nextTransactionOrdinal = (ordinalSortKeyOccupancySlot.ordinal?: 0) + 1
+            val nextSortKey = (ordinalSortKeyOccupancySlot.sortKey?: 0) + 1_000
+            val nextOccupancySlot = (ordinalSortKeyOccupancySlot.occupancySlot?: 0) + 1
+            //TODO This is an oversimplified way of getting the max values, handle the case of slots or sort keys being taken
 
             /* TODO Fix ordinals later
             if(datedTime != null) {
@@ -286,8 +304,8 @@ class TransactionDraftService {
 
             val transaction = TransactionPojo(
                 null, account.id!!, total,
-                draft.debitOrCredit.toByte(), datedDate, datedTime, transactionSortKey,
-                draft.mode, note, draft.sellerId, draft.sellerLocationOrdinal, utcDate.toLocalDateTime()
+                draft.debitOrCredit.toByte(), datedDate, datedTime,
+                draft.mode, note, account.ordinal!!, seller?.ordinal, draft.sellerLocationOrdinal, nextTransactionOrdinal, nextSortKey, nextOccupancySlot,utcDate.toLocalDateTime()
             )
 
 
@@ -336,13 +354,18 @@ class TransactionDraftService {
             draft.items.forEachIndexed { i, draftItem ->
                 val occupancySlot = i + 1
                 val sortKey = i * 1_000
+                val itemOrdinal = i + 1
+                val category = categoryRepository.findByProfileIdAndIdTrx(trxContext, profileId, draftItem.category)!!
                 val item = if (draftItem.isReduction) {
                     TransactionItemPojo(
                         null,
-                        transactionId,
+                        profileId,
+                        account.ordinal,
+                        nextTransactionOrdinal,
                         draftItem.description!!,
                         draftItem.amount!!,
-                        draftItem.category,
+                        category.ordinal,
+                        itemOrdinal,
                         sortKey,
                         occupancySlot,
                         1,
@@ -358,10 +381,13 @@ class TransactionDraftService {
                 } else {
                     TransactionItemPojo(
                         null,
-                        transactionId,
+                        profileId,
+                        account.ordinal!!,
+                        nextTransactionOrdinal,
                         draftItem.description,
                         draftItem.amount!!,
-                        draftItem.category,
+                        category.ordinal,
+                        itemOrdinal,
                         sortKey,
                         occupancySlot,
                         draftItem.quantity,
@@ -380,11 +406,14 @@ class TransactionDraftService {
                 draftItem.images.forEachIndexed { i, image ->
                     val occupancySlot = i + 1
                     val sortKey = i * 1_000
-                    val imageId = imagesMap[image.sha256] ?: image.dbId!!
+                    val imageOrdinal = imagesMap[image.sha256] ?: image.dbOrdinal!!
                     val itemImage = TransactionItemImagesPojo(
                         null,
-                        itemId,
-                        imageId,
+                        profileId,
+                        account.ordinal,
+                        nextTransactionOrdinal,
+                        itemOrdinal,
+                        imageOrdinal,
                         sortKey,
                         occupancySlot,
                         utcDate.toLocalDateTime()
@@ -488,11 +517,13 @@ class TransactionDraftService {
                 valid = false
             }
         }
+        LOGGER.info("Draft is valid: {}", valid)
         return valid
     }
     fun validateDraft(profileId: Long): Boolean {
         val userDraft = userDraftRepository.getDraftByProfile(profileId)
         if (userDraft == null) {
+            LOGGER.error("Draft does not exist")
             throw EntityNotFoundException()
         }
         return validateDraft(userDraft!!)
@@ -603,7 +634,8 @@ class TransactionDraftService {
 
             if (sellerLocationId != null) {
                 val sellerLocation = sellerLocationRepository.getByProfileIdAndId(profileId, sellerLocationId)
-                if (transactionDraft.sellerId == sellerLocation!!.sellerId) {
+                val seller = sellerRepository.getByProfileIdAndOrdinal(profileId, sellerLocation!!.ordinal!!)
+                if (transactionDraft.sellerId == seller!!.id) {
                     LOGGER.info("Changed seller location")
                     transactionDraft = transactionDraft.copy(sellerLocationId = sellerLocation.id)
                 } else {
@@ -670,16 +702,17 @@ class TransactionDraftService {
                     )
                     val path =
                         "/profiles/${profileUuidString}/${Constants.FOLDER_NAME_DRAFT}/${Constants.SUBFOLDER_NAME_IMAGES}/${filename}"
-                    draftFile = TransactionDraftFile(null, path, mimeType, hash, tempFile.length(), null, false)
+                    draftFile = TransactionDraftFile(null, null, path, mimeType, hash, tempFile.length(), null, false)
                 } else {
                     LOGGER.info("Image already exists in draft. Adding to item {}", uuid)
-                    draftFile = TransactionDraftFile(null, draftPath, mimeType, hash, tempFile.length(), null, false)
+                    draftFile = TransactionDraftFile(null, null,  draftPath, mimeType, hash, tempFile.length(), null, false)
                 }
             } else {
                 LOGGER.info("File already exists in DB for image")
 //            val uri = URI.create(im.uri!!)
                 draftFile = TransactionDraftFile(
                     im.id!!,
+                    im.ordinal,
                     im.path!!,
                     im.mimeType!!,
                     sha256ToString(im.sha_256!!),
@@ -752,13 +785,13 @@ class TransactionDraftService {
                     copyFileToDraft(tempFile, mimeType, Constants.SUBFOLDER_NAME_DOCUMENTS, userUuid, profileStringId)
                 path =
                     "/profiles/${profileStringId}/${Constants.FOLDER_NAME_DRAFT}/${Constants.SUBFOLDER_NAME_DOCUMENTS}/${filename}"
-                draftFile = TransactionDraftFile(null, path, mimeType, hash, tempFile.length(), type, false)
+                draftFile = TransactionDraftFile(null, null, path, mimeType, hash, tempFile.length(), type, false)
 
                 newHashes[hash] = path
             } else {
                 LOGGER.info("File already exists in draft for document")
                 path = draftPath
-                draftFile = TransactionDraftFile(null, draftPath, mimeType, hash, tempFile.length(), type, false)
+                draftFile = TransactionDraftFile(null, null, draftPath, mimeType, hash, tempFile.length(), type, false)
             }
 
             newDocuments.add(draftFile)

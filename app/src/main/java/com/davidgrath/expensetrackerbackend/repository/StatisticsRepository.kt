@@ -5,6 +5,7 @@ import com.davidgrath.expensetrackerbackend.entities.views.ItemSumByCategory
 import com.davidgrath.expensetrackerbackend.entities.views.TransactionAndItemCount
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.ACCOUNT
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.CATEGORY
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.SELLER
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.SELLER_LOCATION
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION_ITEM
@@ -43,15 +44,16 @@ class StatisticsRepository {
             CATEGORY.ICON.`as`("categoryIcon")
         )
             .from(TRANSACTION_ITEM)
-            .innerJoin(CATEGORY).on(CATEGORY.ID.eq(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID))
-            .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(TRANSACTION_ITEM.TRANSACTION_ID))
-            .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
+            .innerJoin(CATEGORY).on(categoryToItemPath)
+            .innerJoin(TRANSACTION).on(itemToTransactionPath)
+            .innerJoin(SELLER).on(sellerToTransactionPath)
+            .innerJoin(ACCOUNT).on(accountToTransactionPath)
             .where(ACCOUNT.PROFILE_ID.eq(profileId))
             .and(TRANSACTION.DEBIT_OR_CREDIT.eq(debitOrCredit.toByte()))
         selectStep = applyFilters(selectStep, statisticsFilter)
 
         val seekStep =
-            selectStep.groupBy(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID).orderBy(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID)
+            selectStep.groupBy(TRANSACTION_ITEM.PRIMARY_CATEGORY_ORDINAL, TRANSACTION_ITEM.PROFILE_ID).orderBy(CATEGORY.SORT_KEY)
                 .limit(DEFAULT_FETCH_LIMIT)
 
         val result = seekStep.fetch().into(ItemSumByCategory::class.java)
@@ -69,13 +71,12 @@ class StatisticsRepository {
             DSL.count(TRANSACTION_ITEM.ID).`as`("itemCount")
         )
             .from(TRANSACTION)
-            .innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.TRANSACTION_ID.eq(TRANSACTION.ID))
-            .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
-            .leftJoin(SELLER_LOCATION).on(
-                SELLER_LOCATION.SELLER_ID.eq(TRANSACTION.SELLER_ID)
-                    .and(SELLER_LOCATION.ORDINAL.eq(TRANSACTION.SELLER_LOCATION_ORDINAL))
-            )
-            .where(ACCOUNT.PROFILE_ID.eq(profileId))
+            .innerJoin(TRANSACTION_ITEM).on(itemToTransactionPath)
+            .innerJoin(ACCOUNT).on(accountToTransactionPath)
+            .innerJoin(CATEGORY).on(categoryToItemPath)
+            .innerJoin(SELLER).on(sellerToTransactionPath)
+            .leftJoin(SELLER_LOCATION).on(transactionToSellerLocationPath)
+            .where(ACCOUNT.PROFILE_ID.eq(profileId))  //TODO candidate for replacement
         selectStep = applyFilters(selectStep, statisticsFilter)
 
         return selectStep.fetchOne()?.into(TransactionAndItemCount::class.java)!!
@@ -86,10 +87,12 @@ class StatisticsRepository {
         profileId: Long,
         statisticsFilter: StatisticsFilterDb
     ): BigDecimal {
-        var selectStep = mainContext.select(DSL.sum(TRANSACTION_ITEM.AMOUNT)).from(TRANSACTION_ITEM)
-            .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(TRANSACTION_ITEM.TRANSACTION_ID))
-            .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
-            .where(ACCOUNT.PROFILE_ID.eq(profileId))
+        var selectStep = mainContext
+            .select(DSL.sum(TRANSACTION_ITEM.AMOUNT))
+            .from(TRANSACTION_ITEM)
+            .innerJoin(TRANSACTION).on(itemToTransactionPath)
+            .innerJoin(ACCOUNT).on(accountToTransactionPath)
+            .where(ACCOUNT.PROFILE_ID.eq(profileId)) //TODO candidate for replacement
             .and( TRANSACTION.DEBIT_OR_CREDIT.eq(TRUE_BYTE))
             .and( TRANSACTION_ITEM.IS_REDUCTION.eq(FALSE_BYTE))
 
@@ -102,10 +105,12 @@ class StatisticsRepository {
         profileId: Long,
         statisticsFilter: StatisticsFilterDb
     ): BigDecimal {
-        var selectStep = mainContext.select(DSL.sum(TRANSACTION_ITEM.AMOUNT)).from(TRANSACTION_ITEM)
-            .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(TRANSACTION_ITEM.TRANSACTION_ID))
-            .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
-            .where(ACCOUNT.PROFILE_ID.eq(profileId))
+        var selectStep = mainContext
+            .select(DSL.sum(TRANSACTION_ITEM.AMOUNT))
+            .from(TRANSACTION_ITEM)
+            .innerJoin(TRANSACTION).on(itemToTransactionPath)
+            .innerJoin(ACCOUNT).on(accountToTransactionPath)
+            .where(ACCOUNT.PROFILE_ID.eq(profileId)) //TODO candidate for removal
             .and( TRANSACTION.DEBIT_OR_CREDIT.eq(FALSE_BYTE))
             .and( TRANSACTION_ITEM.IS_REDUCTION.eq(FALSE_BYTE))
 

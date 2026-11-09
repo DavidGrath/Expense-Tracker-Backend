@@ -9,9 +9,11 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.Transact
 import com.davidgrath.expensetrackerbackend.generatedapi.model.StatisticsFilter
 import com.davidgrath.expensetrackerbackend.generatedapi.model.SuggestionsFieldType
 import com.davidgrath.expensetrackerbackend.repository.AccountRepository
+import com.davidgrath.expensetrackerbackend.repository.CategoryRepository
 import com.davidgrath.expensetrackerbackend.repository.StatisticsRepository
 import com.davidgrath.expensetrackerbackend.repository.TransactionItemRepository
 import com.davidgrath.expensetrackerbackend.repository.TransactionRepository
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.FALSE_BYTE
 import com.davidgrath.expensetrackerbackend.utils.statisticsFilterToStatisticsFilterDb
 import com.davidgrath.expensetrackerbackend.utils.toByte
 import org.slf4j.LoggerFactory
@@ -32,6 +34,8 @@ class TransactionService {
     @Autowired
     lateinit var statisticsRepository: StatisticsRepository
     @Autowired
+    lateinit var categoryRepository: CategoryRepository
+    @Autowired
     lateinit var timeHandler: TimeHandler
     
     fun addTransaction(profileId: Long, accountId: Long, debitOrCredit: Boolean, amount: BigDecimal, description: String, categoryId: Long, zoneId: ZoneId): Long {
@@ -41,26 +45,34 @@ class TransactionService {
         var transactionIdRet = -1L
         transactionRepository.transactionContext { trx ->
             val trxContext = trx.dsl()
-
+            val account = accountRepository.getByProfileIdAndIdTrx(trxContext, profileId, accountId)!!
             val maxSortKey = transactionRepository.getMaxSortKeyInDayForAccountTrx(trxContext, profileId, accountId, utcDate.toLocalDate())?: 0
             val sortKey = maxSortKey + 1_000
+            val ordinalSortKeyOccupancySlot = transactionRepository.getMaxOrdinalSortKeyAndOccupancySlotTrx(trxContext, profileId, accountId, utcDate.toLocalDate())
+            val nextOrdinal = (ordinalSortKeyOccupancySlot.ordinal?: 0) + 1
+            val nextSortKey = (ordinalSortKeyOccupancySlot.sortKey?: 0) + 1_000
+            val nextOccupancySlot = (ordinalSortKeyOccupancySlot.occupancySlot?: 0) + 1
+            //TODO This is an oversimplified way of getting the max values, handle the case of slots or sort keys being taken
             val transaction = TransactionPojo(
                 null,
-                accountId,
+                profileId,
                 amount,
                 debitOrCredit.toByte(),
                 utcDate.toLocalDate(),
                 userTime,
-                sortKey,
                 TransactionMode.Other,
                 null,
+                account.ordinal,
                 null,
                 null,
+                nextOrdinal,
+                nextSortKey,
+                nextOccupancySlot,
                 utcDate.toLocalDateTime()
             )
             val transactionId = transactionRepository.insertTransactionTrx(trxContext, transaction)
-
-            val item = TransactionItemPojo(null, transactionId, description, amount, categoryId, 1_000, 1, 1, null,null, null, null, null, null,false.toByte(), utcDate.toLocalDateTime())
+            val category = categoryRepository.findByProfileIdAndIdTrx(trxContext, profileId, categoryId)
+            val item = TransactionItemPojo(null, transactionId, account.ordinal, nextOrdinal, description, amount, category!!.ordinal, 1, 1_000, 1, 1,  null,null, null, null, null, null,FALSE_BYTE, utcDate.toLocalDateTime())
             transactionItemRepository.insertTransactionItemTrx(trxContext, item)
             transactionIdRet = transactionId
         }

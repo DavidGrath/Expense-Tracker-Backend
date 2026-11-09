@@ -33,9 +33,10 @@ open class ItemImagesRepository {
     fun findByItemId(profileId: Long, itemId: Long): List<ImagePojo> {
         val selectStep = mainContext.select(IMAGE.asterisk())
             .from(IMAGE)
-            .innerJoin(TRANSACTION_ITEM_IMAGES).on(TRANSACTION_ITEM_IMAGES.IMAGE_ID.eq(IMAGE.ID))
+            .innerJoin(TRANSACTION_ITEM_IMAGES).on(imageToItemImagesPath)
+            .innerJoin(TRANSACTION_ITEM).on(itemToItemImagesPath)
             .where(IMAGE.PROFILE_ID.eq(profileId))
-            .and(TRANSACTION_ITEM_IMAGES.TRANSACTION_ITEM_ID.eq(itemId))
+            .and(TRANSACTION_ITEM.ID.eq(itemId))
             .limit(DEFAULT_FETCH_LIMIT)
         val result = selectStep.fetch().into(ImagePojo::class.java)
         LOGGER.info("Result size: {}", result.size)
@@ -47,14 +48,19 @@ open class ItemImagesRepository {
                         accountIds: List<Long>,
                         dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>
     ): List<ImageWithItemId> {
+
+
+
         var selectStep = mainContext.select(
-            TRANSACTION_ITEM_IMAGES.TRANSACTION_ITEM_ID.`as`("itemId"), IMAGE.asterisk()
+            TRANSACTION_ITEM.ID.`as`("itemId"), IMAGE.asterisk()
         )
             .from(IMAGE)
-            .innerJoin(TRANSACTION_ITEM_IMAGES).on(TRANSACTION_ITEM_IMAGES.IMAGE_ID.eq(IMAGE.ID))
-            .innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.ID.eq(TRANSACTION_ITEM_IMAGES.TRANSACTION_ITEM_ID))
-            .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(TRANSACTION_ITEM.TRANSACTION_ID))
-            .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
+            .innerJoin(TRANSACTION_ITEM_IMAGES).on(imageToItemImagesPath)
+            .innerJoin(TRANSACTION_ITEM).on(itemToItemImagesPath)
+            .innerJoin(CATEGORY).on(categoryToItemPath)
+            .innerJoin(TRANSACTION).on(itemToTransactionPath)
+            .innerJoin(ACCOUNT).on(accountToTransactionPath) //TODO elimination candidate
+            .leftJoin(SELLER).on(sellerToTransactionPath)
             .where(ACCOUNT.PROFILE_ID.eq(profileId))
         if(fromDate != null) {
             selectStep = selectStep.and(TRANSACTION.DATED_AT.greaterOrEqual(fromDate))
@@ -63,21 +69,19 @@ open class ItemImagesRepository {
             selectStep = selectStep.and(TRANSACTION.DATED_AT.lessOrEqual(toDate))
         }
         if(accountIds.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.ACCOUNT_ID.`in`(accountIds))
+            selectStep = selectStep.and(ACCOUNT.ID.`in`(accountIds))
         }
         if(dates.isNotEmpty()) {
             selectStep = selectStep.and(TRANSACTION.DATED_AT.`in`(dates))
         }
         if(categories.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.ID.`in`(
-                mainContext.select(TRANSACTION.ID).from(TRANSACTION).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.TRANSACTION_ID.eq(TRANSACTION.ID)).where(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.`in`(categories))
-            ))
+            selectStep = selectStep.and(CATEGORY.ID.`in`(categories))
         }
         if(modes.isNotEmpty()) {
             selectStep = selectStep.and(TRANSACTION.MODE.`in`(modes))
         }
         if(sellers.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.SELLER_ID.`in`(sellers))
+            selectStep = selectStep.and(SELLER.ID.`in`(sellers))
         }
         val seekStep = selectStep.orderBy(TRANSACTION.ID, TRANSACTION.DATED_AT)
             .limit(DEFAULT_FETCH_LIMIT)

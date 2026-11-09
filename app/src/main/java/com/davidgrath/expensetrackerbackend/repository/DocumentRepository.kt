@@ -35,8 +35,9 @@ open class DocumentRepository {
     fun findByTransactionIdAndHash(profileId: Long, transactionId: Long, sha256: ByteArray): DocumentPojo? {
         val selectStep = dslContext.select(DOCUMENT.fields().toList()) //To work around the excluded generated fields
             .from(DOCUMENT)
+
             .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(DOCUMENT.TRANSACTION_ID))
-            .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
+            .innerJoin(ACCOUNT).on(ACCOUNT.ORDINAL.eq(TRANSACTION.ACCOUNT_ORDINAL).and(ACCOUNT.PROFILE_ID.eq(TRANSACTION.PROFILE_ID)))
             .where(DOCUMENT.TRANSACTION_ID.eq(transactionId))
             .and(DOCUMENT.SHA_256.eq(sha256))
             .and(ACCOUNT.PROFILE_ID.eq(profileId))
@@ -48,9 +49,9 @@ open class DocumentRepository {
         val selectStep = dslContext.select(DOCUMENT.fields().toList()) //To work around the excluded generated fields
             .from(DOCUMENT)
             .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(DOCUMENT.TRANSACTION_ID))
-            .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
+            .innerJoin(ACCOUNT).on(accountToTransactionPath)
             .where(DOCUMENT.TRANSACTION_ID.eq(transactionId))
-            .and(ACCOUNT.PROFILE_ID.eq(profileId))
+            .and(ACCOUNT.PROFILE_ID.eq(profileId)) //TODO with the reworks I've done, I don't think I have to join back through account for most of my queries anymore since profileId is now in the composite key, but I'll save that for later
             .limit(DEFAULT_FETCH_LIMIT)
 
         val result = selectStep.fetch().into(DocumentPojo::class.java)
@@ -67,8 +68,11 @@ open class DocumentRepository {
         var selectStep = dslContext.select(DOCUMENT.fields().toList()) //To work around the excluded generated fields
             .from(DOCUMENT)
             .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(DOCUMENT.TRANSACTION_ID))
-            .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
-            .where(ACCOUNT.PROFILE_ID.eq(profileId))
+            .innerJoin(TRANSACTION_ITEM).on(itemToTransactionPath)
+            .innerJoin(CATEGORY).on(categoryToItemPath)
+            .innerJoin(ACCOUNT).on(accountToTransactionPath)
+            .leftJoin(SELLER).on(sellerToTransactionPath)
+            .where(ACCOUNT.PROFILE_ID.eq(profileId)) //TODO deletion candidate
         if(fromDate != null) {
             selectStep = selectStep.and(TRANSACTION.DATED_AT.greaterOrEqual(fromDate))
         }
@@ -76,21 +80,19 @@ open class DocumentRepository {
             selectStep = selectStep.and(TRANSACTION.DATED_AT.lessOrEqual(toDate))
         }
         if(accountIds.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.ACCOUNT_ID.`in`(accountIds))
+            selectStep = selectStep.and(ACCOUNT.ID.`in`(accountIds))
         }
         if(dates.isNotEmpty()) {
             selectStep = selectStep.and(TRANSACTION.DATED_AT.`in`(dates))
         }
         if(categories.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.ID.`in`(
-                dslContext.select(TRANSACTION.ID).from(TRANSACTION).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.TRANSACTION_ID.eq(TRANSACTION.ID)).where(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.`in`(categories))
-            ))
+            selectStep = selectStep.and(CATEGORY.ID.`in`(categories))
         }
         if(modes.isNotEmpty()) {
             selectStep = selectStep.and(TRANSACTION.MODE.`in`(modes))
         }
         if(sellers.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.SELLER_ID.`in`(sellers))
+            selectStep = selectStep.and(SELLER.ID.`in`(sellers))
         }
         val seekStep = selectStep.orderBy(TRANSACTION.ID, TRANSACTION.DATED_AT)
             .limit(DEFAULT_FETCH_LIMIT)
@@ -104,7 +106,7 @@ open class DocumentRepository {
         val selectStep = dslContext.select(DOCUMENT.fields().toList()) //To work around the excluded generated fields
             .from(DOCUMENT)
             .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(DOCUMENT.TRANSACTION_ID))
-            .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
+            .innerJoin(ACCOUNT).on(accountToTransactionPath)
             .innerJoin(PROFILE).on(PROFILE.ID.eq(ACCOUNT.PROFILE_ID))
             .where(DOCUMENT.ID.eq(id))
             .and(PROFILE.USER_ID.eq(userId))
@@ -119,7 +121,7 @@ open class DocumentRepository {
         )
             .from(DOCUMENT)
             .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(DOCUMENT.TRANSACTION_ID))
-            .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
+            .innerJoin(ACCOUNT).on(accountToTransactionPath)
             .where(DOCUMENT.ID.eq(id))
             .and(ACCOUNT.PROFILE_ID.eq(profileId))
 
@@ -134,7 +136,7 @@ open class DocumentRepository {
         )
             .from(DOCUMENT)
             .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(DOCUMENT.TRANSACTION_ID))
-            .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
+            .innerJoin(ACCOUNT).on(accountToTransactionPath)
             .where(ACCOUNT.PROFILE_ID.eq(profileId))
             .limit(DEFAULT_FETCH_LIMIT)
         return selectStep.fetch().into(DocumentWithTransactionDateAndOrdinal::class.java)
@@ -147,7 +149,7 @@ open class DocumentRepository {
         )
             .from(DOCUMENT)
             .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(DOCUMENT.TRANSACTION_ID))
-            .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
+            .innerJoin(ACCOUNT).on(accountToTransactionPath)
             .and(ACCOUNT.PROFILE_ID.eq(profileId))
 
         return selectStep.fetchOne()?.into(ImageDocumentStats::class.java)!!

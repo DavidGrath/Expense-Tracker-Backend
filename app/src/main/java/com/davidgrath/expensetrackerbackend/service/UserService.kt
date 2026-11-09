@@ -58,25 +58,32 @@ class UserService {
 
             //Create profile
             val profileUuid = uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID))
-            val profile = ProfilePojo(null, userId, "Default Profile", profileUuid, utcDate)
+
+            val nextProfileSortKey = 1_000
+            val nextProfileOccupancySlot = 1
+            val profile = ProfilePojo(null, userId, "Default Profile", profileUuid, nextProfileSortKey, nextProfileOccupancySlot, utcDate)
             val profileId = profileRepository.insertProfileTrx(trxContext, profile)
             LOGGER.info("Created default profile for user {}", username)
 
 
             //Create Accounts
             val currency = Currency.getInstance(locale)?.currencyCode ?: "USD"
-            val account = AccountPojo(null, profileId, currency, null, null, "Default Account", utcDate)
+            val nextAccountOrdinal = 1
+            val nextAccountSortKey = 1_000
+            val nextAccountOccupancySlot = 1
+            val account = AccountPojo(null, profileId, currency, null, null, "Default Account", nextAccountOrdinal, nextAccountSortKey, nextAccountOccupancySlot,utcDate)
 
             accountRepository.insertAccountTrx(trxContext, account) //TODO I made a mistake here where I didn't use the transaction context and it caused a lock wait timeout in 11 of my tests. I need to find a better way to make it more consistent
             LOGGER.info("Created default account with currency code {}", currency)
             //Create categories
 
-            var anyCategoryNotExist = false
-            for (category in CORE_CATEGORIES) {
-                val categoryDb = categoryRepository.findByProfileIdAndStringIdTrx(trxContext, profileId, category)
-                if (categoryDb == null) {
+            CORE_CATEGORIES.forEachIndexed { i, category ->
+                val nextOrdinal = i + 1
+                val nextSortKey = (i + 1) * 1_000
+                val nextOccupancySlot = i + 1
+                //TODO This is an oversimplified way of getting the max values, handle the case of slots or sort keys being taken
                     val defaultIcon = CATEGORY_IDS_ICONS_DEFAULT[category]!!
-                    anyCategoryNotExist = true
+
                     categoryRepository.insertCategoryTrx(trxContext,
                         CategoryPojo(
                             null,
@@ -84,14 +91,16 @@ class UserService {
                             category,
                             false.toByte(),
                             null,
-                            utcDate,
-                            defaultIcon
+                            defaultIcon,
+                            nextOrdinal,
+                            nextSortKey,
+                            nextOccupancySlot,
+                            utcDate
                         )
                     )
-                }
+
             }
             LOGGER.info("Created default categories")
-            LOGGER.info("Any category not exist: {}", anyCategoryNotExist)
             userIdRet = userId
         }
 

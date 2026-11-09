@@ -77,7 +77,7 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
             if(categoryDb == null) {
                 throw IllegalStateException("Category does not exist")
             }
-            items.add(TransactionItemPojo(null, -1, description, amount, categoryDb.id, 1, 1, 1,null, null, null,
+            items.add(TransactionItemPojo(null, profile.id, -1, -1, description, amount, categoryDb.ordinal, 1, 1_000, 1,1, null, null, null,
                 null, null, null,false.toByte(), LocalDateTime.now()))
             return this
         }
@@ -94,9 +94,13 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
                 throw IllegalStateException("New account already added")
             }
             val dateTime = LocalDateTime.now(timeHandler.getClock())
-            val xAccount = AccountPojo(null, profile.id!!, currencyCode, null, "", accountName, dateTime)
+            val ordinalSortKeyOccupancy = accountRepository.getMaxOrdinalSortKeyAndOccupancySlot(profile.id!!)
+            val nextOrdinal = (ordinalSortKeyOccupancy.ordinal?: 0) + 1
+            val nextSortKey = (ordinalSortKeyOccupancy.sortKey?: 0) + 1_000
+            val nextOccupancy = (ordinalSortKeyOccupancy.occupancySlot?: 0) + 1
+            val xAccount = AccountPojo(null, profile.id!!, currencyCode, null, "", accountName, nextOrdinal, nextSortKey, nextOccupancy, dateTime)
             val accountId = accountRepository.insertAccount(xAccount)
-            newAccount = AccountPojo(accountId, profile.id!!, currencyCode, null, "", accountName, dateTime)
+            newAccount = AccountPojo(accountId, profile.id!!, currencyCode, null, "", accountName, nextOrdinal, nextSortKey, nextOccupancy, dateTime)
             return this
         }
 
@@ -156,7 +160,7 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
             var dateTime = LocalDateTime.now(timeHandler.getClock())
 
             val repeats = listOf(firstDate) + repeatDates
-            val sha256Map = mutableMapOf<String, Long>()
+            val sha256Map = mutableMapOf<String, Int>()
             val classLoader = TransactionItemBuilderImpl::class.java.classLoader
             val mainImagesFolder = file(root, Constants.FOLDER_NAME_USERS, userUuid, Constants.FOLDER_NAME_PROFILES, profileUuid, Constants.FOLDER_NAME_DATA, Constants.SUBFOLDER_NAME_IMAGES)
             mainImagesFolder.mkdirs()
@@ -169,7 +173,11 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
                 if(useDatesAsCreationDates) {
                     dateTime = repeatDate.atTime(LocalTime.parse("08:00:00"))
                 }
-                val sortKey = transactionRepository.getMaxSortKeyInDayForAccount(profile.id!!, account.id!!, repeatDate)?: 0
+
+                val ordinalSortKeyOccupancy = transactionRepository.getMaxOrdinalSortKeyAndOccupancySlot(profile.id!!, account.id!!, repeatDate)
+                val nextOrdinal = (ordinalSortKeyOccupancy.ordinal?: 0) + 1
+                val nextSortKey = (ordinalSortKeyOccupancy.sortKey?: 0) + 1_000
+                val nextOccupancy = (ordinalSortKeyOccupancy.occupancySlot?: 0) + 1
 
                 if(customSellerLocation != null) {
                     val maxOrdinal = sellerLocationRepository.getMaxOrdinalForSeller(profile.id!!, customSeller!!.id!!)?: 0
@@ -178,7 +186,8 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
                     val newLocationId = sellerLocationRepository.insertSellerLocation(fixedLocation)
                     customSellerLocation = sellerLocationRepository.getByProfileIdAndId(profile!!.id!!, newLocationId)
                 }
-                val transaction = TransactionPojo(null, account.id!!, sum,  debitOrCredit.toByte(), repeatDate, time, sortKey + 1_000, mode,null, customSeller?.id, customSellerLocation?.ordinal, dateTime)
+                val transaction = TransactionPojo(null, profile.id!!,  sum,  debitOrCredit.toByte(), repeatDate, time, mode,null, nextOrdinal, customSeller?.ordinal, customSellerLocation?.ordinal,
+                    nextOrdinal, nextSortKey, nextOccupancy, dateTime)
                 val transactionId = transactionRepository.insertTransaction(transaction)
 
                 documents.forEachIndexed { i, doc ->
@@ -188,23 +197,24 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
                     val copied = resourceInputStream.copyTo(outputStream)
                     resourceInputStream.close()
                     outputStream.close()
-                    val documentDb = DocumentPojo(null, transactionId, DocumentType.Other, file.length(), HexFormat.of().parseHex(doc.sha256), "image/jpeg", "", "", i * 1_000, i,LocalDateTime.now()) //TODO date time
+                    val documentDb = DocumentPojo(null, transactionId, DocumentType.Other, file.length(), HexFormat.of().parseHex(doc.sha256), "image/jpeg", "", "", i * 1_000, i,dateTime)
                     val documentId = documentRepository.insertDocument(documentDb)
 //                sha256Map[doc.sha256] = imageId
 //                imageId
                 }
 
                 items.forEachIndexed { index, item ->
-                    val correctedItem = item.copy(transactionId = transactionId, createdAt = dateTime, sortKey = index * 1_000, occupancySlot = index + 1)
+                    val itemOrdinal = index+1
+                    val correctedItem = item.copy(accountOrdinal = account.ordinal, transactionOrdinal = nextOrdinal, createdAt = dateTime, sortKey = index * 1_000, occupancySlot = index + 1, ordinal = itemOrdinal)
                     val itemId = transactionItemRepository.insertTransactionItem(correctedItem)
                     val list = imagesMap[index]
                     if(list != null) {
                         list.forEachIndexed { i, resource ->
                             val existingDbImage = imagesRepository.findBySha256(profile.id!!, HexFormat.of().parseHex(resource.sha256))
-                            val imageId = if(sha256Map.contains(resource.sha256)) {
+                            val imageOrdinal = if(sha256Map.contains(resource.sha256)) {
                                 sha256Map[resource.sha256]!!
                             } else if(existingDbImage != null) {
-                                existingDbImage.id!!
+                                existingDbImage.ordinal!!
                             } else {
                                 val resourceInputStream = classLoader.getResourceAsStream(resource.resourceName)
                                 val file = File(mainImagesFolder, resource.fileName)
@@ -212,14 +222,15 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
                                 val copied = resourceInputStream.copyTo(outputStream)
                                 resourceInputStream.close()
                                 outputStream.close()
-                                val imageDb = ImagePojo(null, profile.id!!, file.length(), HexFormat.of().parseHex(resource.sha256), "image/jpeg", "", "", LocalDateTime.now()) //TODO date time
+                                val newOrdinal = (imagesRepository.getMaxOrdinal(profile.id!!)?:0) + 1
+                                val imageDb = ImagePojo(null, profile.id!!, file.length(), HexFormat.of().parseHex(resource.sha256), "image/jpeg", "", "", newOrdinal, dateTime)
                                 val imageId = imagesRepository.insertImage(imageDb)
-                                sha256Map[resource.sha256] = imageId
-                                imageId
+                                sha256Map[resource.sha256] = newOrdinal
+                                newOrdinal
                             }
                             val sortKey = i * 1_000
                             val occupancySlot = i+1
-                            val itemImage = TransactionItemImagesPojo(null, itemId, imageId, sortKey, occupancySlot,LocalDateTime.now()) //TODO date time
+                            val itemImage = TransactionItemImagesPojo(null, profile.id, account.ordinal, nextOrdinal, itemOrdinal, imageOrdinal, sortKey, occupancySlot,dateTime)
                             itemImagesRepository.insertItemImage(itemImage)
                         }
                     }
@@ -270,7 +281,11 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
                 throw IllegalArgumentException("Custom seller already set")
             }
 
-            val seller = SellerPojo(null, profile.id!!, name, LocalDateTime.now(timeHandler.getClock()))
+            val ordinalSortKeyOccupancy = sellerRepository.getMaxOrdinalSortKeyAndOccupancySlot(profile.id!!)
+            val nextOrdinal = (ordinalSortKeyOccupancy.ordinal?: 0) + 1
+            val nextSortKey = (ordinalSortKeyOccupancy.sortKey?: 0) + 1_000
+            val nextOccupancy = (ordinalSortKeyOccupancy.occupancySlot?: 0) + 1
+            val seller = SellerPojo(null, profile.id!!, name, nextOrdinal, nextSortKey, nextOccupancy, LocalDateTime.now(timeHandler.getClock()))
             val sellerId = sellerRepository.insertSeller(seller)
             this.customSeller = sellerRepository.getByProfileIdAndId(profile.id!!, sellerId)
             return this
@@ -304,7 +319,7 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
 
     private class TransactionItemBuilderImpl(private val xTransactionBuilderImpl: TransactionBuilderImpl, private val categoryRepository: CategoryRepository, private val profileDb: ProfilePojo): TransactionItemBuilder {
 
-        private var item = TransactionItemPojo(null, -1, "", BigDecimal.ZERO, -1, 0, 1, null, "", null,
+        private var item = TransactionItemPojo(null, profileDb.id, -1, -1, "", BigDecimal.ZERO, -1, 0, 0, 0, null, "", null,
             null, null, null, null,
             false.toByte(), LocalDateTime.now())
         private var images = listOf<TestData.Resource>()
@@ -323,9 +338,8 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
             if(categoryDb == null) {
                 throw IllegalStateException("Category does not exist")
             }
-            item = TransactionItemPojo(null, -1, description, amount, categoryDb.id!!, 0, 1, null, "", null,
-            null, null, null, null,
-                false.toByte(), LocalDateTime.now())
+            item = TransactionItemPojo(null, profileDb.id, -1, -1, description, amount, categoryDb.ordinal!!, 0, 1, 1, 1, null, "", null,
+            null, null, null, false.toByte(), LocalDateTime.now())
             mainDetailsSet = true
             return this
         }
@@ -342,7 +356,7 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
 
         override fun build(): TransactionBuilder {
             if(!mainDetailsSet ||
-                item.amount!!.compareTo(BigDecimal.ZERO) == 0 || item.description!!.isBlank() || item.primaryCategoryId == -1L) {
+                item.amount!!.compareTo(BigDecimal.ZERO) == 0 || item.description!!.isBlank() || item.primaryCategoryOrdinal == -1) {
                 throw IllegalStateException("Item not properly initialized")
             }
             if(images.isEmpty()) {

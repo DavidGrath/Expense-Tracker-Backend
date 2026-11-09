@@ -1,6 +1,7 @@
 package com.davidgrath.expensetrackerbackend.repository
 
 import com.davidgrath.expensetrackerbackend.entities.views.AccountWithStats
+import com.davidgrath.expensetrackerbackend.entities.views.OrdinalSortKeyOccupancySlot
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.AccountPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.ACCOUNT
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.PROFILE
@@ -67,6 +68,13 @@ open class AccountRepository {
         return getByProfileIdAndIdTrx(mainContext, profileId, id)
     }
 
+    fun getByProfileIdAndOrdinal(profileId: Long, ordinal: Int): AccountPojo? {
+        val selectStep = mainContext.selectFrom(ACCOUNT)
+            .where(ACCOUNT.PROFILE_ID.eq(profileId))
+            .and(ACCOUNT.ORDINAL.eq(ordinal))
+        return selectStep.fetchOne()?.into(AccountPojo::class.java)
+    }
+
     fun getByProfileIdAndIdTrx(trxContext: DSLContext, profileId: Long, id: Long): AccountPojo? {
         val selectStep = trxContext.selectFrom(ACCOUNT)
             .where(ACCOUNT.PROFILE_ID.eq(profileId))
@@ -97,12 +105,12 @@ open class AccountRepository {
     fun getAccountSummary(profileId: Long, id: Long): AccountWithStats? {
         val selectStep = mainContext
             .select(ACCOUNT.asterisk(),
-                mainContext.select(DSL.ifnull(DSL.sum(TRANSACTION.AMOUNT), BigDecimal.ZERO)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID).and(TRANSACTION.DEBIT_OR_CREDIT.notEqual(0))).asField<BigDecimal>().`as`("expenses"),
-                mainContext.select(DSL.ifnull(DSL.sum(TRANSACTION.AMOUNT), BigDecimal.ZERO)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID).and(TRANSACTION.DEBIT_OR_CREDIT.equal(0))).asField<BigDecimal>().`as`("income"),
-                mainContext.select(DSL.count(TRANSACTION.ID)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID)).asField<Long>().`as`("transactionCount"),
+                mainContext.select(DSL.ifnull(DSL.sum(TRANSACTION.AMOUNT), BigDecimal.ZERO)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ORDINAL.eq(ACCOUNT.ORDINAL).and(TRANSACTION.PROFILE_ID.eq(ACCOUNT.PROFILE_ID)).and(TRANSACTION.DEBIT_OR_CREDIT.notEqual(0))).asField<BigDecimal>().`as`("expenses"),
+                mainContext.select(DSL.ifnull(DSL.sum(TRANSACTION.AMOUNT), BigDecimal.ZERO)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ORDINAL.eq(ACCOUNT.ORDINAL).and(TRANSACTION.PROFILE_ID.eq(ACCOUNT.PROFILE_ID)).and(TRANSACTION.DEBIT_OR_CREDIT.equal(0))).asField<BigDecimal>().`as`("income"),
+                mainContext.select(DSL.count(TRANSACTION.ID)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ORDINAL.eq(ACCOUNT.ORDINAL).and(TRANSACTION.PROFILE_ID.eq(ACCOUNT.PROFILE_ID))).asField<Long>().`as`("transactionCount"),
                 mainContext.select(DSL.count(TRANSACTION_ITEM.ID)).from(TRANSACTION_ITEM)
-                    .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(TRANSACTION_ITEM.TRANSACTION_ID))
-                    .where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID))
+                    .innerJoin(TRANSACTION).on(TRANSACTION.ORDINAL.eq(TRANSACTION_ITEM.TRANSACTION_ORDINAL).and(TRANSACTION.ACCOUNT_ORDINAL.eq(TRANSACTION_ITEM.ACCOUNT_ORDINAL)).and(TRANSACTION.PROFILE_ID.eq(TRANSACTION_ITEM.PROFILE_ID)))
+                    .where(TRANSACTION.ACCOUNT_ORDINAL.eq(ACCOUNT.ORDINAL).and(TRANSACTION.PROFILE_ID.eq(ACCOUNT.PROFILE_ID)))
                     .asField<Long>().`as`("itemCount")
                 )
             .from(ACCOUNT)
@@ -113,12 +121,12 @@ open class AccountRepository {
     fun getAccountSummariesForProfile(profileId: Long): List<AccountWithStats> {
         val selectStep = mainContext
             .select(ACCOUNT.asterisk(),
-                mainContext.select(DSL.ifnull(DSL.sum(TRANSACTION.AMOUNT), BigDecimal.ZERO)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID).and(TRANSACTION.DEBIT_OR_CREDIT.notEqual(0))).asField<BigDecimal>().`as`("expenses"),
-                mainContext.select(DSL.ifnull(DSL.sum(TRANSACTION.AMOUNT), BigDecimal.ZERO)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID).and(TRANSACTION.DEBIT_OR_CREDIT.equal(0))).asField<BigDecimal>().`as`("income"),
-                mainContext.select(DSL.count(TRANSACTION.ID)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID)).asField<Long>().`as`("transactionCount"),
+                mainContext.select(DSL.ifnull(DSL.sum(TRANSACTION.AMOUNT), BigDecimal.ZERO)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ORDINAL.eq(ACCOUNT.ORDINAL).and(TRANSACTION.PROFILE_ID.eq(ACCOUNT.PROFILE_ID)).and(TRANSACTION.DEBIT_OR_CREDIT.notEqual(0))).asField<BigDecimal>().`as`("expenses"),
+                mainContext.select(DSL.ifnull(DSL.sum(TRANSACTION.AMOUNT), BigDecimal.ZERO)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ORDINAL.eq(ACCOUNT.ORDINAL).and(TRANSACTION.PROFILE_ID.eq(ACCOUNT.PROFILE_ID)).and(TRANSACTION.DEBIT_OR_CREDIT.equal(0))).asField<BigDecimal>().`as`("income"),
+                mainContext.select(DSL.count(TRANSACTION.ID)).from(TRANSACTION).where(TRANSACTION.ACCOUNT_ORDINAL.eq(ACCOUNT.ORDINAL).and(TRANSACTION.PROFILE_ID.eq(ACCOUNT.PROFILE_ID))).asField<Long>().`as`("transactionCount"),
                 mainContext.select(DSL.count(TRANSACTION_ITEM.ID)).from(TRANSACTION_ITEM)
-                    .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(TRANSACTION_ITEM.TRANSACTION_ID))
-                    .where(TRANSACTION.ACCOUNT_ID.eq(ACCOUNT.ID))
+                    .innerJoin(TRANSACTION).on(TRANSACTION.ORDINAL.eq(TRANSACTION_ITEM.TRANSACTION_ORDINAL).and(TRANSACTION.ACCOUNT_ORDINAL.eq(TRANSACTION_ITEM.ACCOUNT_ORDINAL)).and(TRANSACTION.PROFILE_ID.eq(TRANSACTION_ITEM.PROFILE_ID)))
+                    .where(TRANSACTION.ACCOUNT_ORDINAL.eq(ACCOUNT.ORDINAL).and(TRANSACTION.PROFILE_ID.eq(ACCOUNT.PROFILE_ID)))
                     .asField<Long>().`as`("itemCount")
                 )
             .from(ACCOUNT).where(ACCOUNT.PROFILE_ID.eq(profileId))
@@ -135,6 +143,21 @@ open class AccountRepository {
             .and(ACCOUNT.PROFILE_ID.eq(profileId))
 
         return selectStep.fetchOne()!!.value1()
+    }
+
+    fun getMaxOrdinalSortKeyAndOccupancySlot(profileId: Long): OrdinalSortKeyOccupancySlot {
+        return getMaxOrdinalSortKeyAndOccupancySlotTrx(mainContext, profileId)
+    }
+
+    fun getMaxOrdinalSortKeyAndOccupancySlotTrx(trxContext: DSLContext, profileId: Long): OrdinalSortKeyOccupancySlot {
+        val selectStep = trxContext.select(
+            DSL.max(ACCOUNT.ORDINAL).`as`("ordinal"),
+            DSL.max(ACCOUNT.SORT_KEY).`as`("sortKey"),
+            DSL.max(ACCOUNT.OCCUPANCY_SLOT).`as`("occupancySlot"),
+        ).from(ACCOUNT)
+            .where(ACCOUNT.PROFILE_ID.eq(profileId))
+
+        return selectStep.fetchOne()?.into(OrdinalSortKeyOccupancySlot::class.java)!!
     }
 
     // endregion

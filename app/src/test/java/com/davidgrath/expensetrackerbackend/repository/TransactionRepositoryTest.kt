@@ -141,9 +141,9 @@ class TransactionRepositoryTest {
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
         val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)
         val newAccountId = accountRepository.insertAccount(AccountPojo(null, profile!!.id!!, "GBP",  null, null, "British",
-            LocalDateTime.now(timeHandler.getClock())))
+            2, 2_000, 2,LocalDateTime.now(timeHandler.getClock())))
         val emptyAccountId = accountRepository.insertAccount(AccountPojo(null, profile!!.id!!, "GBP",  null, null, "Empty",
-            LocalDateTime.now(timeHandler.getClock())))
+            3, 3_000, 3, LocalDateTime.now(timeHandler.getClock())))
         val dataBuilder = DataBuilder(folder, timeHandler, null, Constants.DEFAULT_PROFILE_ID, testUtilComponent)
         dataBuilder.createTransaction()
             .withItem("Description", "miscellaneous", BigDecimal(110.00))

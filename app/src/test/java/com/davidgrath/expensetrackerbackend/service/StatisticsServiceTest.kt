@@ -126,7 +126,7 @@ class StatisticsServiceTest {
         val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
 
         val profileId = getDefaultProfileId(userRepository, profileRepository)
-        val account = AccountPojo(null, profileId, "GBP", null, null, "Account name", utcDate)
+        val account = AccountPojo(null, profileId, "GBP", null, null, "Account name", 2, 2_000, 2, utcDate)
         val newAccountId = accountRepository.insertAccount(account)
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
 
@@ -146,7 +146,7 @@ class StatisticsServiceTest {
         val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
 
         val profileId = getDefaultProfileId(userRepository, profileRepository)
-        val account = AccountPojo(null, profileId, "GBP", null, null, "Account name", utcDate)
+        val account = AccountPojo(null, profileId, "GBP", null, null, "Account name", 2, 2_000, 2, utcDate)
         val newAccountId = accountRepository.insertAccount(account)
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
         val statisticsFilter = StatisticsFilter().accounts(listOf(accountId, newAccountId))
@@ -200,7 +200,7 @@ class StatisticsServiceTest {
         val defaultUserProfileUuid = uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID))
         val defaultUserAccount = getDefaultAccountId(userRepository, profileRepository, accountRepository)
         val user2ProfileUuid = uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID))
-        val user2Profile = ProfilePojo(null, user2Id, "Default Profile", user2ProfileUuid, utcDate)
+        val user2Profile = ProfilePojo(null, user2Id, "Default Profile", user2ProfileUuid, 1_000, 1, utcDate)
         val user2ProfileId = profileRepository.insertProfile(user2Profile)
 
         val folder = Files.createTempDirectory("temp").toFile()
@@ -213,9 +213,9 @@ class StatisticsServiceTest {
             .commit()
 
         val user2DataBuilder = DataBuilder(folder, timeHandler, user2Uuid.toString(), Constants.DEFAULT_PROFILE_ID, testUtilComponent)
-        val account = AccountPojo(null, user2ProfileId, "USD", null, null, "Default Account", utcDate)
+        val account = AccountPojo(null, user2ProfileId, "USD", null, null, "Default Account", 1, 1_000, 1, utcDate)
         accountRepository.insertAccount(account)
-        categoryRepository.insertCategory(CategoryPojo(null, user2ProfileId, "miscellaneous", FALSE_BYTE, null, utcDate, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category"))
+        categoryRepository.insertCategory(CategoryPojo(null, user2ProfileId, "miscellaneous", FALSE_BYTE, null, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category", 1, 1_000, 1, utcDate))
         user2DataBuilder.createTransaction()
             .withItem("Description", "miscellaneous", BigDecimal(100))
             .withNewSeller("Hardware store")
@@ -241,7 +241,7 @@ class StatisticsServiceTest {
         val defaultUserProfileUuid = uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID))
         val defaultUserAccount = getDefaultAccountId(userRepository, profileRepository, accountRepository)
         val user2ProfileUuid = uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID))
-        val user2Profile = ProfilePojo(null, user2Id, "Default Profile", user2ProfileUuid, utcDate)
+        val user2Profile = ProfilePojo(null, user2Id, "Default Profile", user2ProfileUuid, 1_000, 1, utcDate)
         val user2ProfileId = profileRepository.insertProfile(user2Profile)
 
         val folder = Files.createTempDirectory("temp").toFile()
@@ -254,9 +254,9 @@ class StatisticsServiceTest {
             .commit()
 
         val user2DataBuilder = DataBuilder(folder, timeHandler, user2Uuid.toString(), Constants.DEFAULT_PROFILE_ID, testUtilComponent)
-        val account = AccountPojo(null, user2ProfileId, "USD", null, null, "Default Account", utcDate)
+        val account = AccountPojo(null, user2ProfileId, "USD", null, null, "Default Account", 1, 1_000, 1,utcDate)
         val user2AccountId = accountRepository.insertAccount(account)
-        categoryRepository.insertCategory(CategoryPojo(null, user2ProfileId, "miscellaneous", FALSE_BYTE, null, utcDate, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category"))
+        categoryRepository.insertCategory(CategoryPojo(null, user2ProfileId, "miscellaneous", FALSE_BYTE, null, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category", 1, 1_000, 1, utcDate, ))
         user2DataBuilder.createTransaction()
             .withItem("Description", "miscellaneous", BigDecimal(100))
             .withNewSeller("Hardware store")
@@ -281,7 +281,7 @@ class StatisticsServiceTest {
         val defaultUserProfileUuid = uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID))
         val defaultUserAccount = getDefaultAccountId(userRepository, profileRepository, accountRepository)
         val user2ProfileUuid = uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID))
-        val user2Profile = ProfilePojo(null, user2Id, "Default Profile", user2ProfileUuid, utcDate)
+        val user2Profile = ProfilePojo(null, user2Id, "Default Profile", user2ProfileUuid, 1_000, 1, utcDate)
         val user2ProfileId = profileRepository.insertProfile(user2Profile)
 
         val folder = Files.createTempDirectory("temp").toFile()
@@ -294,9 +294,9 @@ class StatisticsServiceTest {
             .commit()
 
         val user2DataBuilder = DataBuilder(folder, timeHandler, user2Uuid.toString(), Constants.DEFAULT_PROFILE_ID, testUtilComponent)
-        val account = AccountPojo(null, user2ProfileId, "USD", null, null, "Default Account", utcDate)
+        val account = AccountPojo(null, user2ProfileId, "USD", null, null, "Default Account", 1, 1_000, 1, utcDate)
         val user2AccountId = accountRepository.insertAccount(account)
-        val user2CategoryId = categoryRepository.insertCategory(CategoryPojo(null, user2ProfileId, "miscellaneous", FALSE_BYTE, null, utcDate, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category"))
+        val user2CategoryId = categoryRepository.insertCategory(CategoryPojo(null, user2ProfileId, "miscellaneous", FALSE_BYTE, null, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category", 1, 1_000, 1, utcDate, ))
         user2DataBuilder.createTransaction()
             .withItem("Description", "miscellaneous", BigDecimal(100))
             .withNewSeller("Hardware store")
@@ -321,7 +321,7 @@ class StatisticsServiceTest {
         val defaultUserProfileUuid = uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID))
         val defaultUserAccount = getDefaultAccountId(userRepository, profileRepository, accountRepository)
         val user2ProfileUuid = uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID))
-        val user2Profile = ProfilePojo(null, user2Id, "Default Profile", user2ProfileUuid, utcDate)
+        val user2Profile = ProfilePojo(null, user2Id, "Default Profile", user2ProfileUuid, 1_000, 1, utcDate)
         val user2ProfileId = profileRepository.insertProfile(user2Profile)
 
         val folder = Files.createTempDirectory("temp").toFile()
@@ -334,9 +334,9 @@ class StatisticsServiceTest {
             .commit()
 
         val user2DataBuilder = DataBuilder(folder, timeHandler, user2Uuid.toString(), Constants.DEFAULT_PROFILE_ID, testUtilComponent)
-        val account = AccountPojo(null, user2ProfileId, "USD", null, null, "Default Account", utcDate)
+        val account = AccountPojo(null, user2ProfileId, "USD", null, null, "Default Account", 1, 1_000, 1, utcDate)
         accountRepository.insertAccount(account)
-        categoryRepository.insertCategory(CategoryPojo(null, user2ProfileId, "miscellaneous", FALSE_BYTE, null, utcDate, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category"))
+        categoryRepository.insertCategory(CategoryPojo(null, user2ProfileId, "miscellaneous", FALSE_BYTE, null, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category", 1, 1_000, 1, utcDate, ))
         user2DataBuilder.createTransaction()
             .withItem("Description", "miscellaneous", BigDecimal(100))
             .withNewSeller("Hardware store")

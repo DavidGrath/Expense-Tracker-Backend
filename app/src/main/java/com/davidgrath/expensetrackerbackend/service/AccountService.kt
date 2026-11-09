@@ -39,6 +39,9 @@ class AccountService {
     fun getAccount(profileId: Long, accountId: Long): AccountPojo? {
         return accountRepository.getByProfileIdAndId(profileId, accountId)
     }
+    fun getAccountByOrdinal(profileId: Long, accountOrdinal: Int): AccountPojo? {
+        return accountRepository.getByProfileIdAndOrdinal(profileId, accountOrdinal)
+    }
 
     fun getAccountsForProfile(profileId: Long): List<AccountPojo> {
         val list = accountRepository.getAllByProfileId(profileId)
@@ -70,9 +73,14 @@ class AccountService {
                 LOGGER.error("Max accounts reached", exception)
                 throw exception
             }
+            val ordinalSortKeyOccupancySlot = accountRepository.getMaxOrdinalSortKeyAndOccupancySlotTrx(trxContext, profileId)
+            val nextOrdinal = (ordinalSortKeyOccupancySlot.ordinal?: 0) + 1
+            val nextSortKey = (ordinalSortKeyOccupancySlot.sortKey?: 0) + 1_000
+            val nextOccupancySlot = (ordinalSortKeyOccupancySlot.occupancySlot?: 0) + 1
+            //TODO This is an oversimplified way of getting the max values, handle the case of slots or sort keys being taken
             val date = ZonedDateTime.now(timeHandler.getClock())
             val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
-            val accountPojo = AccountPojo(null, profileId, currencyCode, null, null, name, utcDate)
+            val accountPojo = AccountPojo(null, profileId, currencyCode, null, null, name, nextOrdinal, nextSortKey, nextOccupancySlot, utcDate)
             val id = accountRepository.insertAccountTrx(trxContext, accountPojo)
             LOGGER.info("ID: {}", id)
             retId = id

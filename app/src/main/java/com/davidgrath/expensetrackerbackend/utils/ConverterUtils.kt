@@ -78,7 +78,9 @@ fun accountPojoToAccount(accountPojo: AccountPojo): Account {
 fun accountPojoToAccount(accountPojo: TransactionWithItemAndAccount): Account {
     return Account(accountPojo.accountId, accountPojo.accountProfileId, accountPojo.accountCurrencyCode, accountPojo.accountName)
 }
-fun transactionWithItemToTransactionItem(transactionWithItem: TransactionWithItemAndAccount, baseUrl: Triple<String, String, Int>, images: List<ImagePojo>): TransactionItem {
+
+
+fun transactionWithItemToTransactionItem(transactionWithItem: TransactionWithItemAndAccount, baseUrl: Triple<String, String, Int>, images: List<ImageWithItemId>): TransactionItem {
     val imagesApi = images.map {
         val imageUrl = URI(baseUrl.first, null, baseUrl.second, baseUrl.third, "/files" + it.path, null, null)
         Image(it.id, it.sizeBytes, imageUrl, it.mimeType)
@@ -86,7 +88,7 @@ fun transactionWithItemToTransactionItem(transactionWithItem: TransactionWithIte
     return TransactionItem(
         transactionWithItem.itemId, transactionWithItem.itemAmount, transactionWithItem.itemDescription, transactionWithItemToCategory(transactionWithItem),
         transactionWithItem.itemQuantity, transactionWithItem.itemIsReduction.toBoolean(), transactionWithItem.itemBrand, transactionWithItem.itemVariation, imagesApi
-        )
+    )
 }
 
 fun transactionItemPojoToTransactionItem(transactionItemPojo: TransactionItemPojo, baseUrl: Triple<String, String, Int>, categoryPojo: CategoryPojo, images: List<ImagePojo>): TransactionItem {

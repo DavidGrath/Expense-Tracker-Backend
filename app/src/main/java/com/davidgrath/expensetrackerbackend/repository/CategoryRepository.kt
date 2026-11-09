@@ -1,8 +1,10 @@
 package com.davidgrath.expensetrackerbackend.repository
 
 import com.davidgrath.expensetrackerbackend.entities.views.CategoryWithStats
+import com.davidgrath.expensetrackerbackend.entities.views.OrdinalSortKeyOccupancySlot
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.Category
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.CategoryPojo
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.ACCOUNT
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.PROFILE
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION_ITEM
@@ -42,9 +44,19 @@ open class CategoryRepository {
     }
 
     fun findByProfileIdAndId(profileId: Long, id: Long): CategoryPojo? {
-        val selectStep = mainContext.selectFrom(CATEGORY)
+        return findByProfileIdAndIdTrx(mainContext, profileId, id)
+    }
+    fun findByProfileIdAndIdTrx(trxContext: DSLContext, profileId: Long, id: Long): CategoryPojo? {
+        val selectStep = trxContext.selectFrom(CATEGORY)
             .where(CATEGORY.PROFILE_ID.eq(profileId))
             .and(CATEGORY.ID.eq(id))
+        return selectStep.fetchOne()?.into(CategoryPojo::class.java)
+    }
+
+    fun findByProfileIdAndOrdinal(profileId: Long, ordinal: Int): CategoryPojo? {
+        val selectStep = mainContext.selectFrom(CATEGORY)
+            .where(CATEGORY.PROFILE_ID.eq(profileId))
+            .and(CATEGORY.ORDINAL.eq(ordinal))
         return selectStep.fetchOne()?.into(CategoryPojo::class.java)
     }
 
@@ -77,10 +89,10 @@ open class CategoryRepository {
             mainContext.select(DSL.countDistinct(TRANSACTION.ID))
                 .from(TRANSACTION)
                 .innerJoin(TRANSACTION_ITEM).on(TRANSACTION.ID.eq(TRANSACTION_ITEM.ID))
-                .where(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.eq(CATEGORY.ID)).asField<Long>("transactionCount"),
+                .where(TRANSACTION_ITEM.PRIMARY_CATEGORY_ORDINAL.eq(CATEGORY.ORDINAL).and(TRANSACTION_ITEM.PROFILE_ID.eq(CATEGORY.PROFILE_ID))).asField<Long>("transactionCount"),
             mainContext.select(DSL.count(TRANSACTION_ITEM.ID))
                 .from(TRANSACTION_ITEM)
-                .where(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.eq(CATEGORY.ID)).asField<Long>("itemCount")
+                .where(TRANSACTION_ITEM.PRIMARY_CATEGORY_ORDINAL.eq(CATEGORY.ORDINAL).and(TRANSACTION_ITEM.PROFILE_ID.eq(CATEGORY.PROFILE_ID))).asField<Long>("itemCount")
 
         )
             .from(CATEGORY)
@@ -89,6 +101,22 @@ open class CategoryRepository {
         val result = selectStep.fetch().into(CategoryWithStats::class.java)
         LOGGER.info("Result size: {}", result.size)
         return result
+    }
+
+
+    fun getMaxOrdinalSortKeyAndOccupancySlot(profileId: Long): OrdinalSortKeyOccupancySlot {
+        return getMaxOrdinalSortKeyAndOccupancySlotTrx(mainContext, profileId)
+    }
+
+    fun getMaxOrdinalSortKeyAndOccupancySlotTrx(trxContext: DSLContext, profileId: Long): OrdinalSortKeyOccupancySlot {
+        val selectStep = trxContext.select(
+            DSL.max(CATEGORY.ORDINAL).`as`("ordinal"),
+            DSL.max(CATEGORY.SORT_KEY).`as`("sortKey"),
+            DSL.max(CATEGORY.OCCUPANCY_SLOT).`as`("occupancySlot"),
+        ).from(CATEGORY)
+            .where(CATEGORY.PROFILE_ID.eq(profileId))
+
+        return selectStep.fetchOne()?.into(OrdinalSortKeyOccupancySlot::class.java)!!
     }
 
     fun updateCategory(id: Long, profileId: Long, name: String, icon: String): Int {

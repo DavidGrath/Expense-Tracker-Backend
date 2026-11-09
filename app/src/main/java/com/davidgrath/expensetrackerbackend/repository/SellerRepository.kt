@@ -1,8 +1,12 @@
 package com.davidgrath.expensetrackerbackend.repository
 
+import com.davidgrath.expensetrackerbackend.entities.views.OrdinalSortKeyOccupancySlot
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ProfilePojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.SellerPojo
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.ACCOUNT
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.PROFILE
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.SELLER
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.SELLER_LOCATION
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.DEFAULT_FETCH_LIMIT
 import org.jooq.DSLContext
 import org.jooq.impl.DSL
@@ -30,8 +34,23 @@ class SellerRepository @Autowired constructor(open var mainContext: DSLContext) 
     // region Read
 
     fun getByProfileIdAndId(profileId: Long, id: Long): SellerPojo? {
-        val selectStep = mainContext.selectFrom(SELLER)
+        return getByProfileIdAndIdTrx(mainContext, profileId, id)
+    }
+
+    fun getByProfileIdAndIdTrx(trxContext: DSLContext, profileId: Long, id: Long): SellerPojo? {
+        val selectStep = trxContext.selectFrom(SELLER)
             .where(SELLER.ID.eq(id))
+            .and(SELLER.PROFILE_ID.eq(profileId))
+        return selectStep.fetchOne()?.into(SellerPojo::class.java)
+    }
+
+    fun getByProfileIdAndOrdinal(profileId: Long, ordinal: Int): SellerPojo? {
+        return getByProfileIdAndOrdinalTrx(mainContext, profileId, ordinal)
+    }
+
+    fun getByProfileIdAndOrdinalTrx(trxContext: DSLContext, profileId: Long, ordinal: Int): SellerPojo? {
+        val selectStep = trxContext.selectFrom(SELLER)
+            .where(SELLER.ORDINAL.eq(ordinal))
             .and(SELLER.PROFILE_ID.eq(profileId))
         return selectStep.fetchOne()?.into(SellerPojo::class.java)
     }
@@ -66,6 +85,30 @@ class SellerRepository @Autowired constructor(open var mainContext: DSLContext) 
             .from(SELLER)
             .where(SELLER.PROFILE_ID.eq(profileId))
         return selectStep.fetchOne()!!.value1()
+    }
+
+
+    fun getMaxOrdinalSortKeyAndOccupancySlot(profileId: Long): OrdinalSortKeyOccupancySlot {
+        return getMaxOrdinalSortKeyAndOccupancySlotTrx(mainContext, profileId)
+    }
+
+    fun getMaxOrdinalSortKeyAndOccupancySlotTrx(trxContext: DSLContext, profileId: Long): OrdinalSortKeyOccupancySlot {
+        val selectStep = trxContext.select(
+            DSL.max(SELLER.ORDINAL).`as`("ordinal"),
+            DSL.max(SELLER.SORT_KEY).`as`("sortKey"),
+            DSL.max(SELLER.OCCUPANCY_SLOT).`as`("occupancySlot"),
+        ).from(SELLER)
+            .where(SELLER.PROFILE_ID.eq(profileId))
+
+        return selectStep.fetchOne()?.into(OrdinalSortKeyOccupancySlot::class.java)!!
+    }
+
+    fun getByIdForUpdateTrx(trxContext: DSLContext, profileId: Long, id: Long): SellerPojo {
+        val selectStep = trxContext.selectFrom(SELLER)
+            .where(SELLER.ID.eq(id))
+            .and(SELLER.PROFILE_ID.eq(profileId))
+            .forUpdate()
+        return selectStep.fetchOne()!!.into(SellerPojo::class.java)
     }
 
     fun updateSeller(profileId: Long, id: Long, name: String): Int {

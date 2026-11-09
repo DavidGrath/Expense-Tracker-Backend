@@ -157,7 +157,7 @@ class TransactionsDraftControllerTest {
 
         val date = ZonedDateTime.now(timeHandler.getClock())
         val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
-        val seller2Id = sellerRepository.insertSeller(SellerPojo(null, profile2.id!!, "Restaurant", utcDate))
+        val seller2Id = sellerRepository.insertSeller(SellerPojo(null, profile2.id!!, "Restaurant", 1, 1_000, 1, utcDate))
 
         transactionDraftService.createDraft(profile!!.id!!, accountId)
 

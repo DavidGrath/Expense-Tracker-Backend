@@ -9,6 +9,7 @@ import com.davidgrath.expensetrackerbackend.repository.GenericRepository
 import com.davidgrath.expensetrackerbackend.repository.ProfileRepository
 import com.davidgrath.expensetrackerbackend.repository.SellerLocationRepository
 import com.davidgrath.expensetrackerbackend.repository.SellerRepository
+import com.davidgrath.expensetrackerbackend.service.exceptions.CountLimitExceeded
 import com.davidgrath.expensetrackerbackend.utils.Constants
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -103,13 +104,18 @@ class SellerService {
 
             val sellerCount = sellerRepository.countAllTrx(trxContext, profile.id!!)
             if(sellerCount >= Constants.Constraints.MAX_SELLERS_PER_PROFILE) {
-                val exception = CustomHttpException(ErrorCode.LIMITS_EXCEEDED, HttpStatus.BAD_REQUEST)
+                val exception = CountLimitExceeded(Constants.Constraints.MAX_SELLERS_PER_PROFILE)
                 LOGGER.error("Max sellers reached", exception)
                 throw exception
             }
+            val ordinalSortKeyOccupancySlot = sellerRepository.getMaxOrdinalSortKeyAndOccupancySlotTrx(trxContext, profileId)
+            val nextOrdinal = (ordinalSortKeyOccupancySlot.ordinal?: 0) + 1
+            val nextSortKey = (ordinalSortKeyOccupancySlot.sortKey?: 0) + 1_000
+            val nextOccupancySlot = (ordinalSortKeyOccupancySlot.occupancySlot?: 0) + 1
+            //TODO This is an oversimplified way of getting the max values, handle the case of slots or sort keys being taken
             val date = ZonedDateTime.now(timeHandler.getClock())
             val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
-            val sellerPojo = SellerPojo(null, profileId, name, utcDate)
+            val sellerPojo = SellerPojo(null, profileId, name, nextOrdinal, nextSortKey, nextOccupancySlot, utcDate)
             val id = sellerRepository.insertSellerTrx(trxContext, sellerPojo)
             LOGGER.info("ID: {}", id)
         }
@@ -118,14 +124,34 @@ class SellerService {
 
 
     fun createSellerLocation(profileId: Long, sellerId: Long, name: String): Long {
-        val date = ZonedDateTime.now(timeHandler.getClock())
-        val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
-        val maxOrdinal = sellerLocationRepository.getMaxOrdinalForSeller(profileId, sellerId)?: 0
-        val newOrdinal = maxOrdinal + 1
-        val sellerLocationPojo = SellerLocationPojo(null, sellerId, newOrdinal, name, null, null, null, utcDate)
-        val id = sellerLocationRepository.insertSellerLocation(sellerLocationPojo)
-        LOGGER.info("ID: {}", id)
-        return id
+        var retId = -1L
+        genericRepository.transactionContext { trx ->
+            val trxContext = trx.dsl()
+            val seller = sellerRepository.getByIdForUpdateTrx(trxContext, profileId, sellerId)
+            LOGGER.info("Acquired lock for seller {}", seller.id)
+
+            val sellerCount = sellerLocationRepository.countByProfileIdAndSellerIdTrx(trxContext, profileId, sellerId)
+            if(sellerCount >= Constants.Constraints.MAX_LOCATIONS_PER_SELLER) {
+                val exception = CountLimitExceeded(Constants.Constraints.MAX_LOCATIONS_PER_SELLER)
+                LOGGER.error("Max sellers reached", exception)
+                throw exception
+            }
+            val date = ZonedDateTime.now(timeHandler.getClock())
+            val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
+
+
+            val ordinalSortKeyOccupancySlot = sellerLocationRepository.getMaxOrdinalSortKeyAndOccupancySlotTrx(trxContext, profileId, sellerId)
+            val nextOrdinal = (ordinalSortKeyOccupancySlot.ordinal?: 0) + 1
+            val nextSortKey = (ordinalSortKeyOccupancySlot.sortKey?: 0) + 1_000 //TODO I should eventually rework all of my fetch queries to actually sort by sort key. Was sort key actually necessary for every table? Not really, but I decided I might as well go all out since I've started this massive rework
+            val nextOccupancySlot = (ordinalSortKeyOccupancySlot.occupancySlot?: 0) + 1
+            //TODO This is an oversimplified way of getting the max values, handle the case of slots or sort keys being taken
+
+            val sellerLocationPojo = SellerLocationPojo(null, sellerId, seller.ordinal!!, name, null, null, null, nextOrdinal, nextSortKey, nextOccupancySlot, utcDate)
+            val id = sellerLocationRepository.insertSellerLocation(sellerLocationPojo)
+            LOGGER.info("ID: {}", id)
+            retId = id
+        }
+        return retId
     }
 
     fun updateSeller(profileId: Long, id: Long, name: String): Int {

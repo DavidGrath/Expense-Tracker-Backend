@@ -17,6 +17,7 @@ import com.davidgrath.expensetrackerbackend.testutils.createBearerToken
 import com.davidgrath.expensetrackerbackend.testutils.tempInit
 import com.davidgrath.expensetrackerbackend.utils.Constants
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.JWT_ALG
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.TRUE_BYTE
 import com.davidgrath.expensetrackerbackend.utils.bytesToUUID
 import com.davidgrath.expensetrackerbackend.utils.toByte
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -107,8 +108,8 @@ class CategoriesControllerTest {
             throw RuntimeException("Existing categories too many")
         }
         for(cat in 0 until remaining) {
-            categoryRepository.insertCategory(CategoryPojo(null, profile.id!!, null, true.toByte(), "Custom",
-                LocalDateTime.now(timeHandler.getClock())))
+            categoryRepository.insertCategory(CategoryPojo(null, profile.id!!, null, TRUE_BYTE, "Custom",
+                null, cat+1, (cat+1) * 1_000, cat+1, LocalDateTime.now(timeHandler.getClock())))
         }
         val createRequest = CategoryCreateRequest("new category", "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category")
         var json: String = objectWriter.writeValueAsString(createRequest)
@@ -161,8 +162,12 @@ class CategoriesControllerTest {
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
         val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 
-        val customCategoryId = categoryRepository.insertCategory(CategoryPojo(null, profile.id!!, null, true.toByte(), "Shopping",
-            LocalDateTime.now(timeHandler.getClock())))
+        val ordinalSortKeyOccupancy = categoryRepository.getMaxOrdinalSortKeyAndOccupancySlot(profile.id!!)
+        val nextOrdinal = (ordinalSortKeyOccupancy.ordinal?: 0) + 1
+        val nextSortKey = (ordinalSortKeyOccupancy.sortKey?: 0) + 1_000
+        val nextOccupancy = (ordinalSortKeyOccupancy.occupancySlot?: 0) + 1
+        val customCategoryId = categoryRepository.insertCategory(CategoryPojo(null, profile.id!!, null, TRUE_BYTE, "Shopping",
+            null, nextOrdinal, nextSortKey, nextOccupancy, LocalDateTime.now(timeHandler.getClock()))) //TODO this should fail because there's no icon
 
         val objectWriter: ObjectWriter = ObjectMapper().writer()
 
@@ -216,8 +221,12 @@ class CategoriesControllerTest {
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
         val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 
+        val ordinalSortKeyOccupancy = categoryRepository.getMaxOrdinalSortKeyAndOccupancySlot(profile.id!!)
+        val nextOrdinal = (ordinalSortKeyOccupancy.ordinal?: 0) + 1
+        val nextSortKey = (ordinalSortKeyOccupancy.sortKey?: 0) + 1_000
+        val nextOccupancy = (ordinalSortKeyOccupancy.occupancySlot?: 0) + 1
         val customCategoryId = categoryRepository.insertCategory(CategoryPojo(null, profile.id!!, null, true.toByte(), "Shopping",
-            LocalDateTime.now(timeHandler.getClock()), "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category"))
+            "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category", nextOrdinal, nextSortKey, nextOccupancy,LocalDateTime.now(timeHandler.getClock()), ))
 
         val objectWriter: ObjectWriter = ObjectMapper().writer()
 
@@ -310,8 +319,12 @@ class CategoriesControllerTest {
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
         val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 
+        val ordinalSortKeyOccupancy = categoryRepository.getMaxOrdinalSortKeyAndOccupancySlot(profile.id!!)
+        val nextOrdinal = (ordinalSortKeyOccupancy.ordinal?: 0) + 1
+        val nextSortKey = (ordinalSortKeyOccupancy.sortKey?: 0) + 1_000
+        val nextOccupancy = (ordinalSortKeyOccupancy.occupancySlot?: 0) + 1
         val customCategoryId = categoryRepository.insertCategory(CategoryPojo(null, profile.id!!, null, true.toByte(), "Shopping",
-            LocalDateTime.now(timeHandler.getClock())))
+            null, nextOrdinal, nextSortKey, nextOccupancy,LocalDateTime.now(timeHandler.getClock()))) //TODO should fail cause no icon
 
         val objectWriter: ObjectWriter = ObjectMapper().writer()
 

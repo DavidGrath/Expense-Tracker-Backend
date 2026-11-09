@@ -122,7 +122,7 @@ class TransactionDraftServiceTest {
         assertTrue(item.isReduction.toBoolean())
         assertEqualsBD(BigDecimal.TEN, item.amount!!)
         assertEquals("Discount", item.description)
-        assertEquals(misc.id!!, item.primaryCategoryId)
+        assertEquals((misc.profileId to misc.ordinal), (item.profileId to item.primaryCategoryOrdinal))
         //Assert all other fields discarded
         assertNull(item.variation)
         assertNull(item.brand)
@@ -347,9 +347,11 @@ class TransactionDraftServiceTest {
         val date = ZonedDateTime.now(timeHandler.getClock())
         val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
 
-        val sellerId = sellerRepository.insertSeller(SellerPojo(null, profile.id!!, "Restaurant", utcDate))
-        val sellerId2 = sellerRepository.insertSeller(SellerPojo(null, profile.id!!, "Coffee Shop", utcDate))
-        val sellerLocationId = sellerLocationRepository.insertSellerLocation(SellerLocationPojo(null, sellerId, 1,"Downtown", null, null, null, utcDate))
+        val seller1Ordinal = 1
+        val sellerId = sellerRepository.insertSeller(SellerPojo(null, profile.id!!, "Restaurant", seller1Ordinal, 1_000, 1, utcDate))
+        val seller2Ordinal = 2
+        val sellerId2 = sellerRepository.insertSeller(SellerPojo(null, profile.id!!, "Coffee Shop", seller2Ordinal, 2_000, 2, utcDate))
+        val sellerLocationId = sellerLocationRepository.insertSellerLocation(SellerLocationPojo(null, profileId, seller1Ordinal,"Downtown", null, null, null, 1, 1_000, 1, utcDate))
 
         transactionDraftService.createDraft(profileId, accountId)
 
@@ -370,7 +372,7 @@ class TransactionDraftServiceTest {
         val transactionId = transactionDraftService.finishDraft(profileId, user.uuid!!, profile.uuid!!,ZoneId.of("UTC"))
         val transaction = transactionRepository.getByProfileIdAndId(profileId, transactionId)!!
 
-        assertNotNull(transaction.sellerId)
+        assertNotNull(transaction.sellerOrdinal)
         assertNull(transaction.sellerLocationOrdinal)
     }
 
@@ -630,7 +632,7 @@ class TransactionDraftServiceTest {
 
         val path = "/${Constants.FOLDER_NAME_PROFILES}/${profileUuidString}/${Constants.FOLDER_NAME_DRAFT}/${Constants.SUBFOLDER_NAME_IMAGES}/${tempFile.name}"
 
-        createTransactionWithImage(profileId, userUuidString, profileUuidString, accountId, classLoader, resource)
+        testUtilComponent.createTransactionWithImage(profileId, user.uuid!!, profile.uuid!!, accountId, classLoader, resource)
 
 
         val draftImagesFolder = file(timeHandler.getRoot(),
@@ -795,48 +797,6 @@ class TransactionDraftServiceTest {
         val documents = newDraft.documents
         assertEquals(1, documents.size)
         assertEquals(1, getHashCount(resource.sha256, draftDocumentsFolder))
-    }
-
-    fun createTransactionWithImage(profileId: Long, userUuid: String, profileUuid: String, accountId: Long, classLoader: ClassLoader, resource: TestData.Resource): Long {
-        val amount = BigDecimal.TEN
-        val account = accountRepository.findByProfileIdAndId(profileId, accountId)!!
-
-        val maxSortKey = transactionRepository.getMaxSortKeyInDayForAccount(profileId, accountId, MOCKED_DATE)?: 0
-        var transactionSortKey = maxSortKey + 1
-
-        val transaction = TransactionPojo(null, accountId, amount,
-             true.toByte(), MOCKED_DATE, MOCKED_TIME, transactionSortKey,
-            TransactionMode.Other, null, null, null, MOCKED_DATE.atTime(MOCKED_TIME))
-
-        val transactionId = transactionRepository.insertTransaction(transaction)
-        val misc = categoryRepository.findByProfileIdAndStringId(profileId, "miscellaneous")!!
-
-        val item = TransactionItemPojo(null, transactionId, "Basic", amount, misc.id!!, 1000, 1, 1,
-            null, null, null, null, null, null,false.toByte(),
-            MOCKED_DATE.atTime(MOCKED_TIME))
-        val itemId = transactionItemRepository.insertTransactionItem(item)
-        //TODO make this more convenient
-        val newFileName = "${UUID.randomUUID()}.jpg"
-        val newPath = "/${Constants.FOLDER_NAME_PROFILES}/$profileUuid/${Constants.FOLDER_NAME_DATA}/${Constants.SUBFOLDER_NAME_IMAGES}/${newFileName}"
-        val destinationFolder = file(timeHandler.getRoot(), Constants.FOLDER_NAME_USERS, userUuid, Constants.FOLDER_NAME_PROFILES,profileUuid, Constants.FOLDER_NAME_DATA, Constants.SUBFOLDER_NAME_IMAGES)
-        destinationFolder.mkdirs()
-        val destination = File(destinationFolder, newFileName)
-
-        val inputStream = classLoader.getResourceAsStream(resource.resourceName)
-        val outputStream = destination.outputStream()
-        inputStream.copyTo(outputStream)
-        inputStream.close()
-        outputStream.close()
-        val hashStream = destination.inputStream()
-
-        val hash = getSha256AsBytes(hashStream)
-        hashStream.close()
-
-        val image = ImagePojo(null, profileId, destination.length(), hash, "image/jpeg", "", newPath, MOCKED_DATE.atTime(MOCKED_TIME))
-        val imageId = imageRepository.insertImage(image)
-        val itemImage = TransactionItemImagesPojo(null, itemId, imageId, 1_000, 1, MOCKED_DATE.atTime(MOCKED_TIME))
-        itemImagesRepository.insertItemImage(itemImage)
-        return imageId
     }
 
 

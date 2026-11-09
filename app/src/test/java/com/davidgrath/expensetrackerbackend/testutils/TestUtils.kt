@@ -95,7 +95,7 @@ fun tempCreateDefaultProfile(user: UserPojo, profileRepository: ProfileRepositor
     val clock = timeHandler.getClock()
     val date = ZonedDateTime.now(clock)
     val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
-    val profile = ProfilePojo(null, user.id!!, "Default", uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID)), utcDate)
+    val profile = ProfilePojo(null, user.id!!, "Default", uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID)), 1_000, 1, utcDate)
     val id = profileRepository.insertProfile(profile)
     return profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 }
@@ -120,9 +120,12 @@ fun tempInitProfile(profile: ProfilePojo, accountRepository: AccountRepository, 
                 profile.id!!,
                 currency,
                 null,
-                "",
+                null,
                 "Default Account",
-                utcDate,
+                1,
+                1_000,
+                1,
+                utcDate
             )
             val id = accountRepository.insertAccount(account)
             defaultAccount = accountRepository.findByProfileIdAndId(profile.id!!, id)!!
@@ -139,8 +142,11 @@ fun tempInitDefaultCategories(profileId: Long, categoryRepository: CategoryRepos
         val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
 
         var anyCategoryNotExist = false
-        for (category in CORE_CATEGORIES) {
+        CORE_CATEGORIES.forEachIndexed { i, category ->
             val categoryDb = categoryRepository.findByProfileIdAndStringId(profileId, category)
+            val ordinal = i+1
+            val sortKey = (i+1) * 1_000
+            val occupancySlot = i+1
             if (categoryDb == null) {
                 val defaultIcon = CATEGORY_IDS_ICONS_DEFAULT[category]!!
                 anyCategoryNotExist = true
@@ -151,8 +157,11 @@ fun tempInitDefaultCategories(profileId: Long, categoryRepository: CategoryRepos
                         category,
                         false.toByte(),
                         null,
-                        utcDate,
-                        defaultIcon
+                        defaultIcon,
+                        ordinal,
+                        sortKey,
+                        occupancySlot,
+                        utcDate
                     )
                 )
             }

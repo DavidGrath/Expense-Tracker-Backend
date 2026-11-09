@@ -144,7 +144,7 @@ open class TransactionsController: TransactionsApi {
             } else {
                 emptyList()
             }*/
-            val images = imagePojos.map { ImagePojo(it.id, it.profileId, it.sizeBytes, it.sha_256, it.mimeType, it.uri, it.path, it.createdAt) }
+            val images = imagePojos
 
             items.add(transactionWithItemToTransactionItem(t, triple, images))
 
@@ -188,7 +188,7 @@ open class TransactionsController: TransactionsApi {
             LOGGER.error("Not found", exception)
             throw exception
         }
-        val accountStats = accountService.getAccount(profile.id!!,t.accountId!!)!!
+        val accountStats = accountService.getAccountByOrdinal(profile.id!!,t.accountOrdinal!!)!!
         val account = accountPojoToAccount(accountStats)
         val itemsPojo = transactionService.getItemsForTransaction(profile.id!!,t.id!!)
         val scheme = httpServletRequest.scheme
@@ -197,7 +197,7 @@ open class TransactionsController: TransactionsApi {
         val triple = Triple(scheme, host, port)
         val items = itemsPojo.map { item ->
             val images = imageService.getImagesForItem(profile.id!!, item.id!!)
-            val category = categoryService.getByProfileIdAndId(profile.id!!, item.primaryCategoryId!!)
+            val category = categoryService.getByProfileIdAndOrdinal(profile.id!!, item.primaryCategoryOrdinal!!)
             transactionItemPojoToTransactionItem(item, triple,category!!, images)
         }
         val mode = t.mode.toApiMode()

@@ -92,7 +92,7 @@ class AccountRepositoryTest {
         assertEquals(totalItems, accountStats.itemCount)
 
         val newAccountId = accountRepository.insertAccount(AccountPojo(null, profile.id!!, "GBP",  null, null, "British",
-            LocalDateTime.now(timeHandler.getClock())))
+            2, 2_000, 2, LocalDateTime.now(timeHandler.getClock())))
 
 
         val newAccountStats = accountRepository.getAccountSummary(profile.id!!, newAccountId)!!
@@ -133,7 +133,7 @@ class AccountRepositoryTest {
 
 
         val newAccountId = accountRepository.insertAccount(AccountPojo(null, profile.id!!, "GBP",  null, null, "British",
-            LocalDateTime.now(timeHandler.getClock())))
+            2, 2_000, 2, LocalDateTime.now(timeHandler.getClock())))
 
         val accountStatsList = accountRepository.getAccountSummariesForProfile(profile.id!!)
 

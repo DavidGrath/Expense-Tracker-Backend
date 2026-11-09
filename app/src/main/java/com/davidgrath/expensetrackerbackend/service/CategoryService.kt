@@ -47,6 +47,10 @@ class CategoryService {
         return categoryRepository.findByProfileIdAndId(profileId, categoryId)
     }
 
+    fun getByProfileIdAndOrdinal(profileId: Long, categoryOrdinal: Int): CategoryPojo? {
+        return categoryRepository.findByProfileIdAndOrdinal(profileId, categoryOrdinal)
+    }
+
     fun getCategoriesForProfile(profileId: Long): List<CategoryPojo> {
         val categories = categoryRepository.getAllByProfileId(profileId)
         LOGGER.info("Categories size: {}", categories.size)
@@ -73,9 +77,14 @@ class CategoryService {
                 LOGGER.error("Too many categories", exception)
                 throw exception
             }
+            val ordinalSortKeyOccupancySlot = categoryRepository.getMaxOrdinalSortKeyAndOccupancySlotTrx(trxContext, profileId)
+            val nextOrdinal = (ordinalSortKeyOccupancySlot.ordinal?: 0) + 1
+            val nextSortKey = (ordinalSortKeyOccupancySlot.sortKey?: 0) + 1_000
+            val nextOccupancySlot = (ordinalSortKeyOccupancySlot.occupancySlot?: 0) + 1
+            //TODO This is an oversimplified way of getting the max values, handle the case of slots or sort keys being taken
             val date = ZonedDateTime.now(timeHandler.getClock())
             val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
-            val category = CategoryPojo(null, profileId, null, true.toByte(), name, utcDate, icon)
+            val category = CategoryPojo(null, profileId, null, true.toByte(), name, icon, nextOrdinal, nextSortKey, nextOccupancySlot,utcDate)
             val id = categoryRepository.insertCategoryTrx(trxContext, category)
             LOGGER.info("ID: {}", id)
             retId = id

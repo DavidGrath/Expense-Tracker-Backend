@@ -156,7 +156,7 @@ class GeneralConstraintsTest {
         val utcDateTime = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
         val user = UserPojo(null, uuidToBytes(UUID.fromString(TestConstants.DEFAULT_USER_ID)), "username", "password", "", LocalDateTime.now(timeHandler.getClock()))
         val userId = userRepository.insertUser(user)
-        val profile = ProfilePojo(null, userId, "Default", uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID)), utcDateTime)
+        val profile = ProfilePojo(null, userId, "Default", uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID)), 1_000, 1,utcDateTime)
         val profileId = profileRepository.insertProfile(profile)
         return profileId to utcDateTime
     }
@@ -166,7 +166,7 @@ class GeneralConstraintsTest {
         val (profileId, dateTime) = createProfile()
         val noSlash = "imagejpeg"
         var invalidMimeType = noSlash
-        var imageFile = ImagePojo(null, profileId, 1L, alrightHashBytes, invalidMimeType, "", "files/user", dateTime)
+        var imageFile = ImagePojo(null, profileId, 1L, alrightHashBytes, invalidMimeType, "", "files/user", 1, dateTime)
         var exception: DataAccessException? = try {
             imageRepository.insertImage(imageFile)
             null
@@ -178,7 +178,7 @@ class GeneralConstraintsTest {
 
         val mixedCase = "iMAGe/JPEg"
         invalidMimeType = mixedCase
-        imageFile = ImagePojo(null, profileId, 1L, alrightHashBytes, invalidMimeType, "", "files/user", dateTime)
+        imageFile = ImagePojo(null, profileId, 1L, alrightHashBytes, invalidMimeType, "", "files/user", 1, dateTime)
         exception = try {
             imageRepository.insertImage(imageFile)
             null
@@ -192,7 +192,7 @@ class GeneralConstraintsTest {
     fun givenMimeTypeIsValidWhenSaveImageThenSuccess() {
 
         val (profileId, dateTime) = createProfile()
-        val imageFile = ImagePojo(null, profileId, 1L, alrightHashBytes,"image/jpeg", "", "files/user", dateTime)
+        val imageFile = ImagePojo(null, profileId, 1L, alrightHashBytes,"image/jpeg", "", "files/user", 1, dateTime)
         val exception: DataAccessException? = try {
             imageRepository.insertImage(imageFile)
             null
@@ -318,7 +318,7 @@ class GeneralConstraintsTest {
 
         for(invalidProfileName in invalidNames) {
 
-            var profile = ProfilePojo(null, userId, invalidProfileName, uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID)), utcDateTime)
+            var profile = ProfilePojo(null, userId, invalidProfileName, uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID)), 1_000, 1, utcDateTime)
             var exception: DataAccessException? = try {
                 profileRepository.insertProfile(profile)
                 null
@@ -340,7 +340,7 @@ class GeneralConstraintsTest {
         val userId = userRepository.insertUser(user)
 
         val validProfileName = nameWithMark
-        val profile = ProfilePojo(null, userId, validProfileName, uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID)), utcDateTime)
+        val profile = ProfilePojo(null, userId, validProfileName, uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID)), 1_000, 1, utcDateTime)
 
         val exception: DataAccessException? = try {
             profileRepository.insertProfile(profile)
@@ -355,13 +355,14 @@ class GeneralConstraintsTest {
     fun givenTransactionNoteIsInvalidWhenSaveThenFailure() {
         val (profileId, dateTime) = createProfile()
 
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", dateTime)
+        val accountOrdinal = 1
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
         val accountId = accountRepository.insertAccount(account)
 
 
 
         var invalidNote = "This is a $controlChar bad note"
-        var transaction = TransactionPojo(null, accountId, BigDecimal(100), TRUE_BYTE, dateTime.toLocalDate(), null, 1_000, TransactionMode.Other, invalidNote)
+        var transaction = TransactionPojo(null, profileId, BigDecimal(100), TRUE_BYTE, dateTime.toLocalDate(), null, TransactionMode.Other, invalidNote, accountOrdinal, null, null, 1, 1_000, 1, dateTime)
 
         var exception: DataAccessException? = try {
             transactionRepository.insertTransaction(transaction)
@@ -378,7 +379,7 @@ class GeneralConstraintsTest {
         )
 
         invalidNote = completeNonsenseString
-        transaction = TransactionPojo(null, accountId, BigDecimal(100), TRUE_BYTE, dateTime.toLocalDate(), null, 1_000, TransactionMode.Other, invalidNote)
+        transaction = TransactionPojo(null, profileId, BigDecimal(100), TRUE_BYTE, dateTime.toLocalDate(), null, TransactionMode.Other, invalidNote, accountOrdinal, null, null, 1, 1_000, 1, dateTime)
 
         exception = try {
             transactionRepository.insertTransaction(transaction)
@@ -396,7 +397,7 @@ class GeneralConstraintsTest {
 
         val empty = ""
         invalidNote = empty
-        transaction = TransactionPojo(null, accountId, BigDecimal(100), TRUE_BYTE, dateTime.toLocalDate(), null, 1_000, TransactionMode.Other, invalidNote)
+        transaction = TransactionPojo(null, profileId, BigDecimal(100), TRUE_BYTE, dateTime.toLocalDate(), null, TransactionMode.Other, invalidNote, accountOrdinal, null, null, 1, 1_000, 1, dateTime)
 
         exception = try {
             transactionRepository.insertTransaction(transaction)
@@ -419,12 +420,13 @@ class GeneralConstraintsTest {
 
         val (profileId, dateTime) = createProfile()
 
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", dateTime)
+        val accountOrdinal = 1
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", 1, 1_000, 1, dateTime)
         val accountId = accountRepository.insertAccount(account)
 
 
         val validNote = "This is a good $controlCharsWhitespace note"
-        val transaction = TransactionPojo(null, accountId, BigDecimal(100), TRUE_BYTE, dateTime.toLocalDate(), null, 1_000, TransactionMode.Other, validNote)
+        val transaction = TransactionPojo(null, profileId, BigDecimal(100), TRUE_BYTE, dateTime.toLocalDate(), null, TransactionMode.Other, validNote, accountOrdinal, null, null, 1, 1_000, 1, dateTime)
 
         val exception: DataAccessException? = try {
             transactionRepository.insertTransaction(transaction)
@@ -443,7 +445,7 @@ class GeneralConstraintsTest {
 
         val tooLong = "USDD"
         var invalidCurrencyCode = tooLong
-        var account = AccountPojo(null, profileId, invalidCurrencyCode, null, "", "Basic Account", dateTime)
+        var account = AccountPojo(null, profileId, invalidCurrencyCode, null, "", "Basic Account", 1, 1_000, 1,dateTime)
 
         var exception: DataAccessException? = try {
             accountRepository.insertAccount(account)
@@ -463,7 +465,7 @@ class GeneralConstraintsTest {
         val lowerCase = "usd"
         invalidCurrencyCode = lowerCase
 
-        account = AccountPojo(null, profileId, invalidCurrencyCode, null, "", "Basic Account", dateTime)
+        account = AccountPojo(null, profileId, invalidCurrencyCode, null, "", "Basic Account", 1, 1_000, 1, dateTime)
 
         exception = try {
             accountRepository.insertAccount(account)
@@ -482,7 +484,7 @@ class GeneralConstraintsTest {
         val notAlphabets = "123"
         invalidCurrencyCode = notAlphabets
 
-        account = AccountPojo(null, profileId, invalidCurrencyCode, null, "", "Basic Account", dateTime)
+        account = AccountPojo(null, profileId, invalidCurrencyCode, null, "", "Basic Account", 1, 1_000, 1,dateTime)
 
         exception = try {
             accountRepository.insertAccount(account)
@@ -501,7 +503,7 @@ class GeneralConstraintsTest {
         val tooShort = "US"
         invalidCurrencyCode = tooShort
 
-        account = AccountPojo(null, profileId, invalidCurrencyCode, null, "", "Basic Account", dateTime)
+        account = AccountPojo(null, profileId, invalidCurrencyCode, null, "", "Basic Account", 1, 1_000, 1,dateTime)
 
         exception = try {
             accountRepository.insertAccount(account)
@@ -523,7 +525,7 @@ class GeneralConstraintsTest {
         val (profileId, dateTime) = createProfile()
 
         val validCurrencyCode = "USD"
-        val account = AccountPojo(null, profileId, validCurrencyCode, null, "", "Basic Account", dateTime)
+        val account = AccountPojo(null, profileId, validCurrencyCode, null, "", "Basic Account", 1, 1_000, 1,dateTime)
 
         val exception: DataAccessException? = try {
             accountRepository.insertAccount(account)
@@ -539,20 +541,23 @@ class GeneralConstraintsTest {
     fun givenTransactionItemWeightIsInvalidWhenSaveThenFailure() {
         val (profileId, dateTime) = createProfile()
 
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", dateTime)
+        val accountOrdinal = 1
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1,dateTime)
         val accountId = accountRepository.insertAccount(account)
 
+        val transactionOrdinal = 1
         val transactionAmount = BigDecimal(100)
-        val transaction = TransactionPojo(null, accountId, transactionAmount, TRUE_BYTE, dateTime.toLocalDate(), null, 1_000, TransactionMode.Other)
+        val transaction = TransactionPojo(null, profileId, transactionAmount, TRUE_BYTE, dateTime.toLocalDate(), null, TransactionMode.Other, null, accountOrdinal, null, null, transactionOrdinal, 1_000, 1, dateTime)
         val transactionId = transactionRepository.insertTransaction(transaction)
 
-        val category = CategoryPojo(null, profileId, "miscellaneous", FALSE_BYTE, null, dateTime, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category")
+        val categoryOrdinal = 1
+        val category = CategoryPojo(null, profileId, "miscellaneous", FALSE_BYTE, null, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category", categoryOrdinal, 1_000, 1, dateTime)
         val categoryId = categoryRepository.insertCategory(category)
 
         var weight: BigDecimal? = BigDecimal(100)
         var weightUnit: String? = null
 
-        var item = TransactionItemPojo(null, transactionId, "Description", transactionAmount, categoryId, 1_000, 1, 1, null, null,
+        var item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal,"Description", transactionAmount, categoryOrdinal, 1, 1_000, 1, 1, null, null,
             weight, weightUnit, null, null, FALSE_BYTE, dateTime)
 
         var exception: DataAccessException? = try {
@@ -595,18 +600,21 @@ class GeneralConstraintsTest {
 
         val (profileId, dateTime) = createProfile()
 
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", dateTime)
+        val accountOrdinal = 1
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
         val accountId = accountRepository.insertAccount(account)
 
+        val transactionOrdinal = 1
         val transactionAmount = BigDecimal(100)
-        val transaction = TransactionPojo(null, accountId, transactionAmount, TRUE_BYTE, dateTime.toLocalDate(), null, 1_000, TransactionMode.Other)
+        val transaction = TransactionPojo(null, profileId, transactionAmount, TRUE_BYTE, dateTime.toLocalDate(), null, TransactionMode.Other,null, accountOrdinal, null, null, transactionOrdinal, 1_000, 1, dateTime)
         val transactionId = transactionRepository.insertTransaction(transaction)
 
-        val category = CategoryPojo(null, profileId, "miscellaneous", FALSE_BYTE, null, dateTime, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category")
+        val categoryOrdinal = 1
+        val category = CategoryPojo(null, profileId, "miscellaneous", FALSE_BYTE, null, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category",categoryOrdinal, 1_000, 1,dateTime)
         val categoryId = categoryRepository.insertCategory(category)
         var weight: BigDecimal? = null
         var weightUnit: String? = null
-        var item = TransactionItemPojo(null, transactionId, "Description", transactionAmount, categoryId, 1_000, 1, 1, null, null,
+        var item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal,  "Description", transactionAmount, categoryOrdinal, 1, 1_000, 1, 1, null, null,
             weight, weightUnit, null, null, FALSE_BYTE, dateTime)
 
         var exception: DataAccessException? = try {
@@ -621,7 +629,7 @@ class GeneralConstraintsTest {
         weight = BigDecimal(100)
         weightUnit = "g"
 
-        item = item.copy(weight = weight, weightUnit = weightUnit, sortKey = 2_000, occupancySlot = 2)
+        item = item.copy(weight = weight, weightUnit = weightUnit, sortKey = 2_000, occupancySlot = 2, ordinal = 2)
 
         exception = try {
             itemRepository.insertTransactionItem(item)
@@ -637,20 +645,23 @@ class GeneralConstraintsTest {
     fun givenTransactionItemVolumeIsInvalidWhenSaveThenFailure() {
         val (profileId, dateTime) = createProfile()
 
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", dateTime)
+        val accountOrdinal = 1
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
         val accountId = accountRepository.insertAccount(account)
 
+        val transactionOrdinal = 1
         val transactionAmount = BigDecimal(100)
-        val transaction = TransactionPojo(null, accountId, transactionAmount, TRUE_BYTE, dateTime.toLocalDate(), null, 1_000, TransactionMode.Other)
+        val transaction = TransactionPojo(null, profileId, transactionAmount, TRUE_BYTE, dateTime.toLocalDate(), null, TransactionMode.Other,null, accountOrdinal, null, null, transactionOrdinal, 1_000, 1, dateTime)
         val transactionId = transactionRepository.insertTransaction(transaction)
 
-        val category = CategoryPojo(null, profileId, "miscellaneous", FALSE_BYTE, null, dateTime, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category")
+        val categoryOrdinal = 1
+        val category = CategoryPojo(null, profileId, "miscellaneous", FALSE_BYTE, null, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category", categoryOrdinal, 1_000, 1, dateTime)
         val categoryId = categoryRepository.insertCategory(category)
 
         var volume: BigDecimal? = BigDecimal(100)
         var volumeUnit: String? = null
 
-        var item = TransactionItemPojo(null, transactionId, "Description", transactionAmount, categoryId, 1_000, 1, 1, null, null,
+        var item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal,  "Description", transactionAmount, categoryOrdinal, 1, 1_000, 1, 1, null, null,
             null, null, volume, volumeUnit, FALSE_BYTE, dateTime)
 
         var exception: DataAccessException? = try {
@@ -693,18 +704,21 @@ class GeneralConstraintsTest {
 
         val (profileId, dateTime) = createProfile()
 
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", dateTime)
+        val accountOrdinal = 1
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
         val accountId = accountRepository.insertAccount(account)
 
+        val transactionOrdinal = 1
         val transactionAmount = BigDecimal(100)
-        val transaction = TransactionPojo(null, accountId, transactionAmount, TRUE_BYTE, dateTime.toLocalDate(), null, 1_000, TransactionMode.Other)
+        val transaction = TransactionPojo(null, profileId, transactionAmount, TRUE_BYTE, dateTime.toLocalDate(), null, TransactionMode.Other,null, accountOrdinal, null, null, transactionOrdinal, 1_000, 1, dateTime)
         val transactionId = transactionRepository.insertTransaction(transaction)
 
-        val category = CategoryPojo(null, profileId, "miscellaneous", FALSE_BYTE, null, dateTime, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category")
+        val categoryOrdinal = 1
+        val category = CategoryPojo(null, profileId, "miscellaneous", FALSE_BYTE, null, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category", categoryOrdinal, 1_000, 1, dateTime)
         val categoryId = categoryRepository.insertCategory(category)
         var volume: BigDecimal? = null
         var volumeUnit: String? = null
-        var item = TransactionItemPojo(null, transactionId, "Description", transactionAmount, categoryId, 1_000, 1, 1, null, null,
+        var item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal, "Description", transactionAmount, categoryOrdinal, 1, 1_000, 1, 1, null, null,
             null, null, volume, volumeUnit, FALSE_BYTE, dateTime)
 
         var exception: DataAccessException? = try {
@@ -719,7 +733,7 @@ class GeneralConstraintsTest {
         volume = BigDecimal(100)
         volumeUnit = "L" //TODO UCUM
 
-        item = item.copy(volume = volume, volumeUnit = volumeUnit, sortKey = 2_000, occupancySlot = 2)
+        item = item.copy(volume = volume, volumeUnit = volumeUnit, sortKey = 2_000, occupancySlot = 2, ordinal = 2)
 
         exception = try {
             itemRepository.insertTransactionItem(item)
@@ -737,7 +751,7 @@ class GeneralConstraintsTest {
         var isCustom: Byte = FALSE_BYTE
         var name: String? = "Name"
         var stringId: String? = null
-        var category = CategoryPojo(null, profileId, stringId, isCustom, name, dateTime, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category")
+        var category = CategoryPojo(null, profileId, stringId, isCustom, name, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category",1, 1_000, 1,dateTime)
 
         var exception: DataAccessException? = try {
             categoryRepository.insertCategory(category)
@@ -756,7 +770,7 @@ class GeneralConstraintsTest {
         isCustom = TRUE_BYTE
         name = null
         stringId = "miscellaneous"
-        category = CategoryPojo(null, profileId, stringId, isCustom, name, dateTime, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category")
+        category = CategoryPojo(null, profileId, stringId, isCustom, name, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category",1, 1_000, 1,dateTime)
 
         exception = try {
             categoryRepository.insertCategory(category)
@@ -779,7 +793,7 @@ class GeneralConstraintsTest {
         var isCustom: Byte = FALSE_BYTE
         var name: String? = null
         var stringId: String? = "miscellaneous"
-        var category = CategoryPojo(null, profileId, stringId, isCustom, name, dateTime, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category")
+        var category = CategoryPojo(null, profileId, stringId, isCustom, name, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category", 1, 1_000, 1,dateTime)
 
         var exception: DataAccessException? = try {
             categoryRepository.insertCategory(category)
@@ -793,7 +807,7 @@ class GeneralConstraintsTest {
         isCustom = TRUE_BYTE
         name = "Name"
         stringId = null
-        category = CategoryPojo(null, profileId, stringId, isCustom, name, dateTime, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category")
+        category = CategoryPojo(null, profileId, stringId, isCustom, name, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category", 2, 2_000, 2,dateTime)
 
         exception = try {
             categoryRepository.insertCategory(category)
@@ -812,7 +826,7 @@ class GeneralConstraintsTest {
         val isCustom: Byte = TRUE_BYTE
         var invalidName = "${controlChar}Name"
         val stringId: String? = null
-        var category = CategoryPojo(null, profileId, stringId, isCustom, invalidName, dateTime, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category")
+        var category = CategoryPojo(null, profileId, stringId, isCustom, invalidName, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category", 1, 1_000, 1, dateTime)
 
         var exception: DataAccessException? = try {
             categoryRepository.insertCategory(category)
@@ -824,7 +838,7 @@ class GeneralConstraintsTest {
         assertSQLCheckConstraint(exception, CONSTRAINT_NAME_CATEGORY_NAME_VALID)
 
         invalidName = controlCharsWhitespace
-        category = CategoryPojo(null, profileId, stringId, isCustom, invalidName, dateTime, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category")
+        category = CategoryPojo(null, profileId, stringId, isCustom, invalidName, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category", 1, 1_000, 1, dateTime)
 
         exception = try {
             categoryRepository.insertCategory(category)
@@ -837,7 +851,7 @@ class GeneralConstraintsTest {
 
         val empty = ""
         invalidName = empty
-        category = CategoryPojo(null, profileId, stringId, isCustom, invalidName, dateTime, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category")
+        category = CategoryPojo(null, profileId, stringId, isCustom, invalidName, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category", 1, 1_000, 1, dateTime)
 
         exception = try {
             categoryRepository.insertCategory(category)
@@ -849,7 +863,7 @@ class GeneralConstraintsTest {
 
 
         invalidName = completeNonsenseString
-        category = CategoryPojo(null, profileId, stringId, isCustom, invalidName, dateTime, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category")
+        category = CategoryPojo(null, profileId, stringId, isCustom, invalidName, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category", 1, 1_000, 1, dateTime)
 
         exception = try {
             categoryRepository.insertCategory(category)
@@ -867,7 +881,7 @@ class GeneralConstraintsTest {
         val isCustom: Byte = TRUE_BYTE
         val validName = nameWithMark
         val stringId: String? = null
-        val category = CategoryPojo(null, profileId, stringId, isCustom, validName, dateTime, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category")
+        val category = CategoryPojo(null, profileId, stringId, isCustom, validName, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category", 1, 1_000, 1, dateTime)
 
         val exception: DataAccessException? = try {
             categoryRepository.insertCategory(category)
@@ -888,10 +902,11 @@ class GeneralConstraintsTest {
         var longitude: Double? = null
         var latitude: Double? = 80.0
 
-        val seller = SellerPojo(null, profileId, "Name", dateTime)
+        val sellerOrdinal = 1
+        val seller = SellerPojo(null, profileId, "Name", sellerOrdinal, 1_000, 1, dateTime)
         val sellerId = sellerRepository.insertSeller(seller)
 
-        var sellerLocation = SellerLocationPojo(null, sellerId, 1, "Name", longitude, latitude, null, dateTime)
+        var sellerLocation = SellerLocationPojo(null, profileId, sellerOrdinal, "Name", longitude, latitude, null, 1, 1_000, 1, dateTime)
 
         var exception: DataAccessException? = try {
             sellerLocationRepository.insertSellerLocation(sellerLocation)
@@ -906,7 +921,7 @@ class GeneralConstraintsTest {
         latitude = null
 
 
-        sellerLocation = SellerLocationPojo(null, sellerId, 1, "Name", longitude, latitude, null, dateTime)
+        sellerLocation = SellerLocationPojo(null, profileId, sellerOrdinal, "Name", longitude, latitude, null, 1, 1_000, 1, dateTime)
 
         exception = try {
             sellerLocationRepository.insertSellerLocation(sellerLocation)
@@ -926,10 +941,11 @@ class GeneralConstraintsTest {
         var longitude: Double? = 170.0
         var latitude: Double? = 80.0
 
-        val seller = SellerPojo(null, profileId, "Name", dateTime)
+        val sellerOrdinal = 1
+        val seller = SellerPojo(null, profileId, "Name", sellerOrdinal, 1_000, 1, dateTime)
         val sellerId = sellerRepository.insertSeller(seller)
 
-        var sellerLocation = SellerLocationPojo(null, sellerId, 1, "Name", longitude, latitude, null, dateTime)
+        var sellerLocation = SellerLocationPojo(null, profileId, sellerOrdinal, "Name", longitude, latitude, null, 1, 1_000, 1, dateTime)
 
         var exception: DataAccessException? = try {
             sellerLocationRepository.insertSellerLocation(sellerLocation)
@@ -944,7 +960,7 @@ class GeneralConstraintsTest {
         latitude = null
 
 
-        sellerLocation = SellerLocationPojo(null, sellerId, 2, "Name", longitude, latitude, null, dateTime)
+        sellerLocation = SellerLocationPojo(null, profileId, sellerOrdinal, "Name", longitude, latitude, null, 2, 2_000, 2, dateTime)
 
         exception = try {
             sellerLocationRepository.insertSellerLocation(sellerLocation)
@@ -961,11 +977,13 @@ class GeneralConstraintsTest {
     fun givenMimeTypeNotValidWhenSaveDocumentThenFailure() {
         val (profileId, dateTime) = createProfile()
 
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", dateTime)
+        val accountOrdinal = 1
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
         val accountId = accountRepository.insertAccount(account)
 
+        val transactionOrdinal = 1
         val transactionAmount = BigDecimal(100)
-        val transaction = TransactionPojo(null, accountId, transactionAmount, TRUE_BYTE, dateTime.toLocalDate(), null, 1_000, TransactionMode.Other)
+        val transaction = TransactionPojo(null, profileId, transactionAmount, TRUE_BYTE, dateTime.toLocalDate(), null, TransactionMode.Other,null, accountOrdinal, null, null, transactionOrdinal, 1_000, 1, dateTime)
         val transactionId = transactionRepository.insertTransaction(transaction)
 
         val noSlash = "imagejpeg"
@@ -998,11 +1016,13 @@ class GeneralConstraintsTest {
         val (profileId, dateTime) = createProfile()
         val validMimeType = "image/jpeg"
 
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", dateTime)
+        val accountOrdinal = 1
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
         val accountId = accountRepository.insertAccount(account)
 
+        val transactionOrdinal = 1
         val transactionAmount = BigDecimal(100)
-        val transaction = TransactionPojo(null, accountId, transactionAmount, TRUE_BYTE, dateTime.toLocalDate(), null, 1_000, TransactionMode.Other)
+        val transaction = TransactionPojo(null, profileId, transactionAmount, TRUE_BYTE, dateTime.toLocalDate(), null, TransactionMode.Other,null, accountOrdinal, null, null, transactionOrdinal, 1_000, 1, dateTime)
         val transactionId = transactionRepository.insertTransaction(transaction)
 
         val document = DocumentPojo(null, transactionId, DocumentType.Other, 1L, alrightHashBytes, validMimeType, "", "", 1_000, 1, dateTime)
@@ -1024,19 +1044,22 @@ class GeneralConstraintsTest {
 
 
 
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", dateTime)
+        val accountOrdinal = 1
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
         val accountId = accountRepository.insertAccount(account)
 
-        val seller = SellerPojo(null, profileId, "Name", dateTime)
+        val sellerOrdinal = 1
+        val seller = SellerPojo(null, profileId, "Name", sellerOrdinal, 1_000, 1, dateTime)
         val sellerId = sellerRepository.insertSeller(seller)
 
-        val sellerLocation = SellerLocationPojo(null, sellerId, 1, "Name", null, null, null, dateTime)
+        val sellerLocationOrdinal = 1
+        val sellerLocation = SellerLocationPojo(null, profileId, sellerOrdinal, "Name", null, null, null, sellerLocationOrdinal, 1_000, 1, dateTime)
         val locationId = sellerLocationRepository.insertSellerLocation(sellerLocation)
 
-        var transactionSeller: Long? = null
+        var transactionSellerOrdinal: Int? = null
         var transactionSellerLocationOrdinal: Int? = 1
-        var transaction = TransactionPojo(null, accountId, BigDecimal(100), TRUE_BYTE, dateTime.toLocalDate(), null, 1_000, TransactionMode.Other, null,
-            transactionSeller, transactionSellerLocationOrdinal, dateTime)
+        var transaction = TransactionPojo(null, profileId,  BigDecimal(100), TRUE_BYTE, dateTime.toLocalDate(), null, TransactionMode.Other, null,
+            accountOrdinal, transactionSellerOrdinal, transactionSellerLocationOrdinal, 1, 1_000, 1, dateTime)
 
         var exception: DataAccessException? = try {
             transactionRepository.insertTransaction(transaction)
@@ -1055,19 +1078,21 @@ class GeneralConstraintsTest {
 
 
 
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", dateTime)
+        val accountOrdinal = 1
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
         val accountId = accountRepository.insertAccount(account)
 
-        val seller = SellerPojo(null, profileId, "Name", dateTime)
+        val sellerOrdinal = 1
+        val seller = SellerPojo(null, profileId, "Name", sellerOrdinal, 1_000, 1, dateTime)
         val sellerId = sellerRepository.insertSeller(seller)
 
-        val sellerLocation = SellerLocationPojo(null, sellerId, 1, "Name", null, null, null, dateTime)
+        val sellerLocation = SellerLocationPojo(null, profileId, sellerOrdinal, "Name", null, null, null, 1, 1_000, 1, dateTime)
         val locationId = sellerLocationRepository.insertSellerLocation(sellerLocation)
 
-        var transactionSeller: Long? = sellerId
+        var transactionSellerOrdinal: Int? = sellerOrdinal
         var transactionSellerLocationOrdinal: Int? = 1
-        var transaction = TransactionPojo(null, accountId, BigDecimal(100), TRUE_BYTE, dateTime.toLocalDate(), null, 1_000, TransactionMode.Other, null,
-            transactionSeller, transactionSellerLocationOrdinal, dateTime)
+        var transaction = TransactionPojo(null, profileId, BigDecimal(100), TRUE_BYTE, dateTime.toLocalDate(), null, TransactionMode.Other, null,
+            accountOrdinal, transactionSellerOrdinal, transactionSellerLocationOrdinal, 1, 1_000, 1,  dateTime)
 
         var exception: DataAccessException? = try {
             transactionRepository.insertTransaction(transaction)
@@ -1077,10 +1102,10 @@ class GeneralConstraintsTest {
         }
         assertNull(exception)
 
-        transactionSeller = sellerId
+        transactionSellerOrdinal = sellerOrdinal
         transactionSellerLocationOrdinal = null
-        transaction = TransactionPojo(null, accountId, BigDecimal(100), TRUE_BYTE, dateTime.toLocalDate(), null, 2_000, TransactionMode.Other, null,
-            transactionSeller, transactionSellerLocationOrdinal, dateTime)
+        transaction = TransactionPojo(null, profileId, BigDecimal(100), TRUE_BYTE, dateTime.toLocalDate(), null, TransactionMode.Other, null,
+            accountOrdinal, transactionSellerOrdinal, transactionSellerLocationOrdinal, 2, 2_000, 2,  dateTime)
 
         exception = try {
             transactionRepository.insertTransaction(transaction)
@@ -1091,10 +1116,10 @@ class GeneralConstraintsTest {
         assertNull(exception)
 
 
-        transactionSeller = null
+        transactionSellerOrdinal = null
         transactionSellerLocationOrdinal = null
-        transaction = TransactionPojo(null, accountId, BigDecimal(100), TRUE_BYTE, dateTime.toLocalDate(), null, 3_000, TransactionMode.Other, null,
-            transactionSeller, transactionSellerLocationOrdinal, dateTime)
+        transaction = TransactionPojo(null, profileId, BigDecimal(100), TRUE_BYTE, dateTime.toLocalDate(), null, TransactionMode.Other, null,
+            accountOrdinal, transactionSellerOrdinal, transactionSellerLocationOrdinal, 3, 3_000, 3,  dateTime)
 
         exception = try {
             transactionRepository.insertTransaction(transaction)
@@ -1109,14 +1134,17 @@ class GeneralConstraintsTest {
     fun givenTransactionItemIsReductionIsInvalidWhenSaveThenFailure() {
         val (profileId, dateTime) = createProfile()
 
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", dateTime)
+        val accountOrdinal = 1
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
         val accountId = accountRepository.insertAccount(account)
 
+        val transactionOrdinal = 1
         val transactionAmount = BigDecimal(100)
-        val transaction = TransactionPojo(null, accountId, transactionAmount, TRUE_BYTE, dateTime.toLocalDate(), null, 1_000, TransactionMode.Other)
+        val transaction = TransactionPojo(null, profileId, transactionAmount, TRUE_BYTE, dateTime.toLocalDate(), null, TransactionMode.Other,null, accountOrdinal, null, null, transactionOrdinal, 1_000, 1, dateTime)
         val transactionId = transactionRepository.insertTransaction(transaction)
 
-        val category = CategoryPojo(null, profileId, "miscellaneous", FALSE_BYTE, null, dateTime, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category")
+        val categoryOrdinal = 1
+        val category = CategoryPojo(null, profileId, "miscellaneous", FALSE_BYTE, null, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category", categoryOrdinal, 1_000, 1, dateTime)
         val categoryId = categoryRepository.insertCategory(category)
 
         val isReduction = TRUE_BYTE
@@ -1128,7 +1156,7 @@ class GeneralConstraintsTest {
         var volume: BigDecimal? = null
         var volumeUnit: String? = null
 
-        var item = TransactionItemPojo(null, transactionId, "Description", transactionAmount, categoryId, 1_000, 1, quantity, brand, variation,
+        var item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal, "Description", transactionAmount, categoryOrdinal, 1, 1_000, 1, quantity, brand, variation,
             weight, weightUnit, volume, volumeUnit, isReduction, dateTime)
 
         var exception: DataAccessException? = try {
@@ -1143,7 +1171,7 @@ class GeneralConstraintsTest {
         quantity = 1
         brand = "Brand"
 
-        item = TransactionItemPojo(null, transactionId, "Description", transactionAmount, categoryId, 1_000, 1, quantity, brand, variation,
+        item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal, "Description", transactionAmount, categoryOrdinal, 1, 1_000, 1, quantity, brand, variation,
             weight, weightUnit, volume, volumeUnit, isReduction, dateTime)
 
         exception = try {
@@ -1158,7 +1186,7 @@ class GeneralConstraintsTest {
         brand = null
         variation = "Variation"
 
-        item = TransactionItemPojo(null, transactionId, "Description", transactionAmount, categoryId, 1_000, 1, quantity, brand, variation,
+        item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal, "Description", transactionAmount, categoryOrdinal, 1, 1_000, 1, quantity, brand, variation,
             weight, weightUnit, volume, volumeUnit, isReduction, dateTime)
 
         exception = try {
@@ -1175,7 +1203,7 @@ class GeneralConstraintsTest {
         weight = BigDecimal(100)
         weightUnit = "g"
 
-        item = TransactionItemPojo(null, transactionId, "Description", transactionAmount, categoryId, 1_000, 1, quantity, brand, variation,
+        item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal, "Description", transactionAmount, categoryOrdinal, 1, 1_000, 1, quantity, brand, variation,
             weight, weightUnit, volume, volumeUnit, isReduction, dateTime)
 
         exception = try {
@@ -1192,7 +1220,7 @@ class GeneralConstraintsTest {
         volume = BigDecimal(100)
         volumeUnit = "L"
 
-        item = TransactionItemPojo(null, transactionId, "Description", transactionAmount, categoryId, 1_000, 1, quantity, brand, variation,
+        item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal, "Description", transactionAmount, categoryOrdinal, 1, 1_000, 1, quantity, brand, variation,
             weight, weightUnit, volume, volumeUnit, isReduction, dateTime)
 
         exception = try {
@@ -1210,14 +1238,17 @@ class GeneralConstraintsTest {
 
         val (profileId, dateTime) = createProfile()
 
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", dateTime)
+        val accountOrdinal = 1
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
         val accountId = accountRepository.insertAccount(account)
 
+        val transactionOrdinal = 1
         val transactionAmount = BigDecimal(100)
-        val transaction = TransactionPojo(null, accountId, transactionAmount, TRUE_BYTE, dateTime.toLocalDate(), null, 1_000, TransactionMode.Other)
+        val transaction = TransactionPojo(null, profileId, transactionAmount, TRUE_BYTE, dateTime.toLocalDate(), null, TransactionMode.Other,null, accountOrdinal, null, null, transactionOrdinal, 1_000, 1, dateTime)
         val transactionId = transactionRepository.insertTransaction(transaction)
 
-        val category = CategoryPojo(null, profileId, "miscellaneous", FALSE_BYTE, null, dateTime, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category")
+        val categoryOrdinal = 1
+        val category = CategoryPojo(null, profileId, "miscellaneous", FALSE_BYTE, null, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category", categoryOrdinal, 1_000, 1, dateTime)
         val categoryId = categoryRepository.insertCategory(category)
 
         var quantity: Int = 2
@@ -1229,10 +1260,11 @@ class GeneralConstraintsTest {
         var volumeUnit: String? = null
         var sortKey = 1_000
         var occupancySlot = 1
+        var itemOrdinal = 1
 
         val isReduction = FALSE_BYTE
 
-        var item = TransactionItemPojo(null, transactionId, "Description", transactionAmount, categoryId, sortKey, occupancySlot, quantity, brand, variation,
+        var item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal, "Description", transactionAmount, categoryOrdinal, itemOrdinal, sortKey, occupancySlot, quantity, brand, variation,
             weight, weightUnit, volume, volumeUnit, isReduction, dateTime)
 
         var exception: DataAccessException? = try {
@@ -1248,8 +1280,9 @@ class GeneralConstraintsTest {
         brand = "Brand"
         sortKey += 1_000
         occupancySlot++
+        itemOrdinal++
 
-        item = TransactionItemPojo(null, transactionId, "Description", transactionAmount, categoryId, sortKey, occupancySlot, quantity, brand, variation,
+        item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal, "Description", transactionAmount, categoryOrdinal, itemOrdinal, sortKey, occupancySlot, quantity, brand, variation,
             weight, weightUnit, volume, volumeUnit, isReduction, dateTime)
 
         exception = try {
@@ -1265,8 +1298,9 @@ class GeneralConstraintsTest {
         variation = "Variation"
         sortKey += 1_000
         occupancySlot++
+        itemOrdinal++
 
-        item = TransactionItemPojo(null, transactionId, "Description", transactionAmount, categoryId, sortKey, occupancySlot, quantity, brand, variation,
+        item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal, "Description", transactionAmount, categoryOrdinal, itemOrdinal, sortKey, occupancySlot, quantity, brand, variation,
             weight, weightUnit, volume, volumeUnit, isReduction, dateTime)
 
         exception = try {
@@ -1283,8 +1317,9 @@ class GeneralConstraintsTest {
         weightUnit = "g"
         sortKey += 1_000
         occupancySlot++
+        itemOrdinal++
 
-        item = TransactionItemPojo(null, transactionId, "Description", transactionAmount, categoryId, sortKey, occupancySlot, quantity, brand, variation,
+        item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal, "Description", transactionAmount, categoryOrdinal, itemOrdinal, sortKey, occupancySlot, quantity, brand, variation,
             weight, weightUnit, volume, volumeUnit, isReduction, dateTime)
 
         exception = try {
@@ -1302,8 +1337,9 @@ class GeneralConstraintsTest {
         volumeUnit = "L"
         sortKey += 1_000
         occupancySlot++
+        itemOrdinal++
 
-        item = TransactionItemPojo(null, transactionId, "Description", transactionAmount, categoryId, sortKey, occupancySlot, quantity, brand, variation,
+        item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal, "Description", transactionAmount, categoryOrdinal, itemOrdinal, sortKey, occupancySlot, quantity, brand, variation,
             weight, weightUnit, volume, volumeUnit, isReduction, dateTime)
 
         exception = try {
@@ -1330,7 +1366,7 @@ class GeneralConstraintsTest {
         )
 
         for(invalidAccountName in invalidNames) {
-            var account = AccountPojo(null, profileId, "USD", null, "", invalidAccountName, dateTime)
+            var account = AccountPojo(null, profileId, "USD", null, "", invalidAccountName, 1, 1_000, 1, dateTime)
 
             var exception: DataAccessException? = try {
                 accountRepository.insertAccount(account)
@@ -1350,7 +1386,7 @@ class GeneralConstraintsTest {
         val (profileId, dateTime) = createProfile()
 
         val validAccountName = nameWithMark
-        val account = AccountPojo(null, profileId, "USD", null, "", validAccountName, dateTime)
+        val account = AccountPojo(null, profileId, "USD", null, "", validAccountName, 1, 1_000, 1, dateTime)
 
         val exception: DataAccessException? = try {
             accountRepository.insertAccount(account)
@@ -1374,7 +1410,7 @@ class GeneralConstraintsTest {
         )
 
         for(invalidSellerName in invalidNames) {
-            val seller = SellerPojo(null, profileId, invalidSellerName, dateTime)
+            val seller = SellerPojo(null, profileId, invalidSellerName, 1, 1_000, 1, dateTime)
 
             var exception: DataAccessException? = try {
                 sellerRepository.insertSeller(seller)
@@ -1392,7 +1428,7 @@ class GeneralConstraintsTest {
         val (profileId, dateTime) = createProfile()
 
         val validName = nameWithMark
-        val seller = SellerPojo(null, profileId, validName, dateTime)
+        val seller = SellerPojo(null, profileId, validName, 1, 1_000, 1, dateTime)
 
         var exception: DataAccessException? = try {
             sellerRepository.insertSeller(seller)
@@ -1409,7 +1445,8 @@ class GeneralConstraintsTest {
         val (profileId, dateTime) = createProfile()
 
 
-        val seller = SellerPojo(null, profileId, "Name", dateTime)
+        val sellerOrdinal = 1
+        val seller = SellerPojo(null, profileId, "Name", sellerOrdinal, 1_000, 1, dateTime)
         val sellerId = sellerRepository.insertSeller(seller)
 
         val invalidNames = arrayOf(
@@ -1420,7 +1457,7 @@ class GeneralConstraintsTest {
         )
 
         for(invalidSellerLocationName in invalidNames) {
-            var sellerLocation = SellerLocationPojo(null, sellerId, 1, invalidSellerLocationName, null, null, null, dateTime)
+            var sellerLocation = SellerLocationPojo(null, profileId, sellerOrdinal, invalidSellerLocationName, null, null, null, 1, 1_000, 1, dateTime)
 
             var exception: DataAccessException? = try {
                 sellerLocationRepository.insertSellerLocation(sellerLocation)
@@ -1438,11 +1475,12 @@ class GeneralConstraintsTest {
         val (profileId, dateTime) = createProfile()
 
 
-        val seller = SellerPojo(null, profileId, "Name", dateTime)
+        val sellerOrdinal = 1
+        val seller = SellerPojo(null, profileId, "Name", sellerOrdinal, 1_000, 1, dateTime)
         val sellerId = sellerRepository.insertSeller(seller)
 
         val validName = nameWithMark
-        var sellerLocation = SellerLocationPojo(null, sellerId, 1, validName, null, null, null, dateTime)
+        var sellerLocation = SellerLocationPojo(null, profileId, sellerOrdinal, validName, null, null, null, 1, 1_000, 1, dateTime)
 
         var exception: DataAccessException? = try {
             sellerLocationRepository.insertSellerLocation(sellerLocation)
@@ -1458,7 +1496,8 @@ class GeneralConstraintsTest {
         val (profileId, dateTime) = createProfile()
 
 
-        val seller = SellerPojo(null, profileId, "Name", dateTime)
+        val sellerOrdinal = 1
+        val seller = SellerPojo(null, profileId, "Name", sellerOrdinal, 1_000, 1, dateTime)
         val sellerId = sellerRepository.insertSeller(seller)
 
         val invalidAddresses = arrayOf(
@@ -1469,7 +1508,7 @@ class GeneralConstraintsTest {
         )
 
         for(invalidSellerLocationAddress in invalidAddresses) {
-            var sellerLocation = SellerLocationPojo(null, sellerId, 1, "Name", null, null, invalidSellerLocationAddress, dateTime)
+            var sellerLocation = SellerLocationPojo(null, profileId, sellerOrdinal, "Name", null, null, invalidSellerLocationAddress, 1, 1_000, 1, dateTime)
 
             var exception: DataAccessException? = try {
                 sellerLocationRepository.insertSellerLocation(sellerLocation)
@@ -1487,11 +1526,12 @@ class GeneralConstraintsTest {
         val (profileId, dateTime) = createProfile()
 
 
-        val seller = SellerPojo(null, profileId, "Name", dateTime)
+        val sellerOrdinal = 1
+        val seller = SellerPojo(null, profileId, "Name", sellerOrdinal, 1_000, 1, dateTime)
         val sellerId = sellerRepository.insertSeller(seller)
 
         val validName = nameWithMark
-        var sellerLocation = SellerLocationPojo(null, sellerId, 1, "Name", null, null, validName, dateTime)
+        var sellerLocation = SellerLocationPojo(null, profileId, sellerOrdinal, "Name", null, null, validName, 1, 1_000, 1, dateTime)
 
         var exception: DataAccessException? = try {
             sellerLocationRepository.insertSellerLocation(sellerLocation)
@@ -1506,14 +1546,17 @@ class GeneralConstraintsTest {
     fun givenTransactionItemDescriptionIsInvalidWhenSaveThenFailure() {
         val (profileId, dateTime) = createProfile()
 
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", dateTime)
+        val accountOrdinal = 1
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
         val accountId = accountRepository.insertAccount(account)
 
+        val transactionOrdinal = 1
         val transactionAmount = BigDecimal(100)
-        val transaction = TransactionPojo(null, accountId, transactionAmount, TRUE_BYTE, dateTime.toLocalDate(), null, 1_000, TransactionMode.Other)
+        val transaction = TransactionPojo(null, profileId, transactionAmount, TRUE_BYTE, dateTime.toLocalDate(), null, TransactionMode.Other,null, accountOrdinal, null, null, transactionOrdinal, 1_000, 1, dateTime)
         val transactionId = transactionRepository.insertTransaction(transaction)
 
-        val category = CategoryPojo(null, profileId, "miscellaneous", FALSE_BYTE, null, dateTime, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category")
+        val categoryOrdinal = 1
+        val category = CategoryPojo(null, profileId, "miscellaneous", FALSE_BYTE, null, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category", categoryOrdinal, 1_000, 1, dateTime)
         val categoryId = categoryRepository.insertCategory(category)
 
         val invalidDescriptions = arrayOf(
@@ -1525,7 +1568,7 @@ class GeneralConstraintsTest {
 
         for (invalidDescription in invalidDescriptions) {
 
-            var item = TransactionItemPojo(null, transactionId, invalidDescription, transactionAmount, categoryId, 1_000, 1, 1, null, null,
+            var item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal, invalidDescription, transactionAmount, categoryOrdinal, 1, 1_000, 1, 1, null, null,
                 null, null, null, null, FALSE_BYTE, dateTime)
 
             var exception: DataAccessException? = try {
@@ -1543,18 +1586,21 @@ class GeneralConstraintsTest {
     fun givenTransactionItemDescriptionIsValidWhenSaveThenSuccess() {
         val (profileId, dateTime) = createProfile()
 
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", dateTime)
+        val accountOrdinal = 1
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
         val accountId = accountRepository.insertAccount(account)
 
+        val transactionOrdinal = 1
         val transactionAmount = BigDecimal(100)
-        val transaction = TransactionPojo(null, accountId, transactionAmount, TRUE_BYTE, dateTime.toLocalDate(), null, 1_000, TransactionMode.Other)
+        val transaction = TransactionPojo(null, profileId, transactionAmount, TRUE_BYTE, dateTime.toLocalDate(), null, TransactionMode.Other,null, accountOrdinal, null, null, transactionOrdinal, 1_000, 1, dateTime)
         val transactionId = transactionRepository.insertTransaction(transaction)
 
-        val category = CategoryPojo(null, profileId, "miscellaneous", FALSE_BYTE, null, dateTime, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category")
+        val categoryOrdinal = 1
+        val category = CategoryPojo(null, profileId, "miscellaneous", FALSE_BYTE, null, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category", categoryOrdinal, 1_000, 1, dateTime)
         val categoryId = categoryRepository.insertCategory(category)
 
         val validDescription = nameWithMark
-        var item = TransactionItemPojo(null, transactionId, validDescription, transactionAmount, categoryId, 1_000, 1, 1, null, null,
+        var item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal, validDescription, transactionAmount, categoryOrdinal, 1, 1_000, 1, 1, null, null,
             null, null, null, null, FALSE_BYTE, dateTime)
 
         var exception: DataAccessException? = try {
@@ -1571,14 +1617,17 @@ class GeneralConstraintsTest {
     fun givenTransactionItemBrandIsInvalidWhenSaveThenFailure() {
         val (profileId, dateTime) = createProfile()
 
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", dateTime)
+        val accountOrdinal = 1
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
         val accountId = accountRepository.insertAccount(account)
 
+        val transactionOrdinal = 1
         val transactionAmount = BigDecimal(100)
-        val transaction = TransactionPojo(null, accountId, transactionAmount, TRUE_BYTE, dateTime.toLocalDate(), null, 1_000, TransactionMode.Other)
+        val transaction = TransactionPojo(null, profileId, transactionAmount, TRUE_BYTE, dateTime.toLocalDate(), null, TransactionMode.Other,null, accountOrdinal, null, null, transactionOrdinal, 1_000, 1, dateTime)
         val transactionId = transactionRepository.insertTransaction(transaction)
 
-        val category = CategoryPojo(null, profileId, "miscellaneous", FALSE_BYTE, null, dateTime, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category")
+        val categoryOrdinal = 1
+        val category = CategoryPojo(null, profileId, "miscellaneous", FALSE_BYTE, null, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category", categoryOrdinal, 1_000, 1, dateTime)
         val categoryId = categoryRepository.insertCategory(category)
 
         val invalidBrands = arrayOf(
@@ -1590,7 +1639,7 @@ class GeneralConstraintsTest {
 
         for (invalidBrand in invalidBrands) {
 
-            var item = TransactionItemPojo(null, transactionId, "Description", transactionAmount, categoryId, 1_000, 1, 1, invalidBrand, null,
+            var item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal, "Description", transactionAmount, categoryOrdinal, 1, 1_000, 1, 1, invalidBrand, null,
                 null, null, null, null, FALSE_BYTE, dateTime)
 
             var exception: DataAccessException? = try {
@@ -1608,18 +1657,21 @@ class GeneralConstraintsTest {
     fun givenTransactionItemBrandIsValidWhenSaveThenSuccess() {
         val (profileId, dateTime) = createProfile()
 
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", dateTime)
+        val accountOrdinal = 1
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
         val accountId = accountRepository.insertAccount(account)
 
+        val transactionOrdinal = 1
         val transactionAmount = BigDecimal(100)
-        val transaction = TransactionPojo(null, accountId, transactionAmount, TRUE_BYTE, dateTime.toLocalDate(), null, 1_000, TransactionMode.Other)
+        val transaction = TransactionPojo(null, profileId, transactionAmount, TRUE_BYTE, dateTime.toLocalDate(), null, TransactionMode.Other,null, accountOrdinal, null, null, transactionOrdinal, 1_000, 1, dateTime)
         val transactionId = transactionRepository.insertTransaction(transaction)
 
-        val category = CategoryPojo(null, profileId, "miscellaneous", FALSE_BYTE, null, dateTime, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category")
+        val categoryOrdinal = 1
+        val category = CategoryPojo(null, profileId, "miscellaneous", FALSE_BYTE, null, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category", categoryOrdinal, 1_000, 1, dateTime)
         val categoryId = categoryRepository.insertCategory(category)
 
         val validBrand = nameWithMark
-        var item = TransactionItemPojo(null, transactionId, "Description", transactionAmount, categoryId, 1_000, 1, 1, validBrand, null,
+        var item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal, "Description", transactionAmount, categoryOrdinal, 1, 1_000, 1, 1, validBrand, null,
             null, null, null, null, FALSE_BYTE, dateTime)
 
         var exception: DataAccessException? = try {
@@ -1636,14 +1688,17 @@ class GeneralConstraintsTest {
     fun givenTransactionItemVariationIsInvalidWhenSaveThenFailure() {
         val (profileId, dateTime) = createProfile()
 
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", dateTime)
+        val accountOrdinal = 1
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
         val accountId = accountRepository.insertAccount(account)
 
+        val transactionOrdinal = 1
         val transactionAmount = BigDecimal(100)
-        val transaction = TransactionPojo(null, accountId, transactionAmount, TRUE_BYTE, dateTime.toLocalDate(), null, 1_000, TransactionMode.Other)
+        val transaction = TransactionPojo(null, profileId, transactionAmount, TRUE_BYTE, dateTime.toLocalDate(), null, TransactionMode.Other,null, accountOrdinal, null, null, transactionOrdinal, 1_000, 1, dateTime)
         val transactionId = transactionRepository.insertTransaction(transaction)
 
-        val category = CategoryPojo(null, profileId, "miscellaneous", FALSE_BYTE, null, dateTime, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category")
+        val categoryOrdinal = 1
+        val category = CategoryPojo(null, profileId, "miscellaneous", FALSE_BYTE, null, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category", categoryOrdinal, 1_000, 1, dateTime)
         val categoryId = categoryRepository.insertCategory(category)
 
         val invalidVariations = arrayOf(
@@ -1655,7 +1710,7 @@ class GeneralConstraintsTest {
 
         for (invalidVariation in invalidVariations) {
 
-            var item = TransactionItemPojo(null, transactionId, "Description", transactionAmount, categoryId, 1_000, 1, 1, null, invalidVariation,
+            var item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal, "Description", transactionAmount, categoryOrdinal, 1, 1_000, 1, 1, null, invalidVariation,
                 null, null, null, null, FALSE_BYTE, dateTime)
 
             var exception: DataAccessException? = try {
@@ -1673,18 +1728,21 @@ class GeneralConstraintsTest {
     fun givenTransactionItemVariationIsValidWhenSaveThenSuccess() {
         val (profileId, dateTime) = createProfile()
 
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", dateTime)
+        val accountOrdinal = 1
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
         val accountId = accountRepository.insertAccount(account)
 
+        val transactionOrdinal = 1
         val transactionAmount = BigDecimal(100)
-        val transaction = TransactionPojo(null, accountId, transactionAmount, TRUE_BYTE, dateTime.toLocalDate(), null, 1_000, TransactionMode.Other)
+        val transaction = TransactionPojo(null, profileId, transactionAmount, TRUE_BYTE, dateTime.toLocalDate(), null, TransactionMode.Other,null, accountOrdinal, null, null, transactionOrdinal, 1_000, 1, dateTime)
         val transactionId = transactionRepository.insertTransaction(transaction)
 
-        val category = CategoryPojo(null, profileId, "miscellaneous", FALSE_BYTE, null, dateTime, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category")
+        val categoryOrdinal = 1
+        val category = CategoryPojo(null, profileId, "miscellaneous", FALSE_BYTE, null, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category", categoryOrdinal, 1_000, 1, dateTime)
         val categoryId = categoryRepository.insertCategory(category)
 
         val validVariation = nameWithMark
-        var item = TransactionItemPojo(null, transactionId, "Description", transactionAmount, categoryId, 1_000, 1, 1, null, validVariation,
+        var item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal, "Description", transactionAmount, categoryOrdinal, 1, 1_000, 1, 1, null, validVariation,
             null, null, null, null, FALSE_BYTE, dateTime)
 
         var exception: DataAccessException? = try {

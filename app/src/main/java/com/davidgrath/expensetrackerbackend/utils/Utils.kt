@@ -2,6 +2,8 @@ package com.davidgrath.expensetrackerbackend.utils
 
 import com.davidgrath.expensetrackerbackend.entities.StatisticsFilterDb
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.ACCOUNT
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.CATEGORY
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.SELLER
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.SELLER_LOCATION
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION_ITEM
@@ -273,7 +275,9 @@ fun findEarliestOccupancySlot(slots: IntArray, max: Int): Int? {
 //    return null
 }
 
-
+/**
+ * TODO move to StatisticsRepository once I've tested and reworked the other methods
+ */
 fun <T: Record> applyFilters(sStep: SelectConditionStep<T>, statisticsFilter: StatisticsFilterDb): SelectConditionStep<T> {
     var selectStep = sStep
     if(statisticsFilter.fromDate != null) {
@@ -283,7 +287,7 @@ fun <T: Record> applyFilters(sStep: SelectConditionStep<T>, statisticsFilter: St
         selectStep = selectStep.and(TRANSACTION.DATED_AT.lessOrEqual(statisticsFilter.toDate))
     }
     if(statisticsFilter.accountIds.isNotEmpty() && statisticsFilter.currencyCode == null) {
-        selectStep = selectStep.and(TRANSACTION.ACCOUNT_ID.`in`(statisticsFilter.accountIds))
+        selectStep = selectStep.and(ACCOUNT.ID.`in`(statisticsFilter.accountIds))
     }
     if(statisticsFilter.currencyCode != null) {
         selectStep = selectStep.and(ACCOUNT.CURRENCY_CODE.`eq`(statisticsFilter.currencyCode.toString()))
@@ -293,13 +297,13 @@ fun <T: Record> applyFilters(sStep: SelectConditionStep<T>, statisticsFilter: St
         selectStep = selectStep.and(DSL.isoDayOfWeek(TRANSACTION.DATED_AT).`in`(weekdaysInts))
     }
     if(statisticsFilter.categoryIds.isNotEmpty()) {
-        selectStep = selectStep.and(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.`in`(statisticsFilter.categoryIds))
+        selectStep = selectStep.and(CATEGORY.ID.`in`(statisticsFilter.categoryIds))
     }
     if(statisticsFilter.transactionModes.isNotEmpty()) {
         selectStep = selectStep.and(TRANSACTION.MODE.`in`(statisticsFilter.transactionModes))
     }
     if(statisticsFilter.sellerIds.isNotEmpty() || statisticsFilter.sellerLocationIds.isNotEmpty()) {
-        var condition = TRANSACTION.SELLER_ID.`in`(statisticsFilter.sellerIds)
+        var condition = SELLER.ID.`in`(statisticsFilter.sellerIds)
         if(statisticsFilter.sellerLocationIds.isNotEmpty()) {
             condition = condition.or(SELLER_LOCATION.ID.`in`(statisticsFilter.sellerLocationIds))
         }

@@ -300,7 +300,7 @@ class StatisticsController: StatisticsApi {
             } else {
                 emptyList()
             }*/
-            val images = imagePojos.map { ImagePojo(it.id, it.profileId, it.sizeBytes, it.sha_256, it.mimeType, it.uri, it.path, it.createdAt) }
+            val images = imagePojos
 
             items.add(transactionWithItemToTransactionItem(t, triple, images))
 

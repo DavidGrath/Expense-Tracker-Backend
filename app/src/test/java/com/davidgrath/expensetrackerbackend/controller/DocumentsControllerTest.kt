@@ -182,16 +182,18 @@ class DocumentsControllerTest {
         val amount = BigDecimal.TEN
         val account = accountRepository.findByProfileIdAndId(profileId, accountId)!!
 
-        val maxSortKey = transactionRepository.getMaxSortKeyInDayForAccount(profileId, accountId, MOCKED_DATE)?: 0
-        val transactionSortKey = maxSortKey + 1_000
 
-        val transaction = TransactionPojo(null, accountId, amount, true.toByte(), MOCKED_DATE, MOCKED_TIME, transactionSortKey,
-            TransactionMode.Other, null, null, null, MOCKED_DATE.atTime(MOCKED_TIME),)
+        val ordinalSortKeyOccupancy = transactionRepository.getMaxOrdinalSortKeyAndOccupancySlot(profileId, accountId, MOCKED_DATE)
+        val nextOrdinal = (ordinalSortKeyOccupancy.ordinal?: 0) + 1
+        val nextSortKey = (ordinalSortKeyOccupancy.sortKey?: 0) + 1_000
+        val nextOccupancy = (ordinalSortKeyOccupancy.occupancySlot?: 0) + 1
+        val transaction = TransactionPojo(null, profileId, amount, true.toByte(), MOCKED_DATE, MOCKED_TIME,
+            TransactionMode.Other, null, account.ordinal!!, null, null, nextOrdinal, nextSortKey, nextOccupancy, MOCKED_DATE.atTime(MOCKED_TIME),)
 
         val transactionId = transactionRepository.insertTransaction(transaction)
         val misc = categoryRepository.findByProfileIdAndStringId(profileId, "miscellaneous")!!
 
-        val item = TransactionItemPojo(null, transactionId, "Basic", amount, misc.id!!, 1_000, 1, 1, null,
+        val item = TransactionItemPojo(null, profileId, account.ordinal, nextOrdinal, "Basic", amount, misc.ordinal!!, 1, 1_000, 1, 1, null,
             null, null, null, null, null,false.toByte(),
             MOCKED_DATE.atTime(MOCKED_TIME))
         val itemId = transactionItemRepository.insertTransactionItem(item)

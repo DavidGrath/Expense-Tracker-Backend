@@ -59,19 +59,25 @@ open class ImageRepository {
         val selectStep = mainContext.select(
             IMAGE.ID, IMAGE.PROFILE_ID, IMAGE.SIZE_BYTES,
             IMAGE.SHA_256, IMAGE.MIME_TYPE, IMAGE.PATH,
-            mainContext.select(
+            mainContext.select(  //TODO Candidate for lateral join rework
                 DSL.countDistinct(TRANSACTION.ID)
             ).from(IMAGE)
-                .innerJoin(TRANSACTION_ITEM_IMAGES).on(TRANSACTION_ITEM_IMAGES.IMAGE_ID.eq(IMAGE.ID))
-                .innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.ID.eq(TRANSACTION_ITEM_IMAGES.TRANSACTION_ITEM_ID))
-                .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(TRANSACTION_ITEM.TRANSACTION_ID))
+                .innerJoin(TRANSACTION_ITEM_IMAGES).on(imageToItemImagesPath)
+                .innerJoin(TRANSACTION_ITEM).on(itemToItemImagesPath)
+                .innerJoin(TRANSACTION).on(itemToTransactionPath) //TODO Candidate for reworking into a single join clause
                 .where(IMAGE.PROFILE_ID.eq(profileId)).asField<Long>("transactionCount"),
             mainContext.select(
                 DSL.count(TRANSACTION_ITEM.ID)
             ).from(IMAGE)
-                .innerJoin(TRANSACTION_ITEM_IMAGES).on(TRANSACTION_ITEM_IMAGES.IMAGE_ID.eq(IMAGE.ID))
-                .innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.ID.eq(TRANSACTION_ITEM_IMAGES.TRANSACTION_ITEM_ID))
-                .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(TRANSACTION_ITEM.TRANSACTION_ID))
+                .innerJoin(TRANSACTION_ITEM_IMAGES).on(imageToItemImagesPath)
+                .innerJoin(TRANSACTION_ITEM)
+                .on(
+                    TRANSACTION_ITEM.ORDINAL.eq(TRANSACTION_ITEM_IMAGES.TRANSACTION_ITEM_ORDINAL)
+                        .and(TRANSACTION_ITEM.PROFILE_ID.eq(TRANSACTION_ITEM_IMAGES.PROFILE_ID))
+                )
+                .innerJoin(TRANSACTION)
+                .on(TRANSACTION.ORDINAL.eq(TRANSACTION_ITEM.TRANSACTION_ORDINAL)
+                    .and(TRANSACTION.PROFILE_ID.eq(TRANSACTION_ITEM_IMAGES.PROFILE_ID))) //TODO Candidate for reworking into a single join clause
                 .where(IMAGE.PROFILE_ID.eq(profileId)).asField<Long>("itemCount")
         )
             .from(IMAGE)
@@ -83,20 +89,20 @@ open class ImageRepository {
     fun findAll(profileId: Long): List<ImageWithStats> {
         val selectStep = mainContext.select(
             IMAGE.ID, IMAGE.PROFILE_ID, IMAGE.SIZE_BYTES,
-            IMAGE.SHA_256, IMAGE.MIME_TYPE, IMAGE.PATH,
+            IMAGE.SHA_256, IMAGE.MIME_TYPE, IMAGE.PATH, //TODO candidate for lateral
             mainContext.select(
                 DSL.countDistinct(TRANSACTION.ID)
             ).from(IMAGE)
-                .innerJoin(TRANSACTION_ITEM_IMAGES).on(TRANSACTION_ITEM_IMAGES.IMAGE_ID.eq(IMAGE.ID))
-                .innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.ID.eq(TRANSACTION_ITEM_IMAGES.TRANSACTION_ITEM_ID))
-                .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(TRANSACTION_ITEM.TRANSACTION_ID))
+                .innerJoin(TRANSACTION_ITEM_IMAGES).on(imageToItemImagesPath)
+                .innerJoin(TRANSACTION_ITEM).on(itemToItemImagesPath)
+                .innerJoin(TRANSACTION).on(itemToTransactionPath) //TODO Candidate for reworking into a single join clause
                 .where(IMAGE.PROFILE_ID.eq(profileId)).asField<Long>("transactionCount"),
             mainContext.select(
                 DSL.count(TRANSACTION_ITEM.ID)
             ).from(IMAGE)
-                .innerJoin(TRANSACTION_ITEM_IMAGES).on(TRANSACTION_ITEM_IMAGES.IMAGE_ID.eq(IMAGE.ID))
-                .innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.ID.eq(TRANSACTION_ITEM_IMAGES.TRANSACTION_ITEM_ID))
-                .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(TRANSACTION_ITEM.TRANSACTION_ID))
+                .innerJoin(TRANSACTION_ITEM_IMAGES).on(imageToItemImagesPath)
+                .innerJoin(TRANSACTION_ITEM).on(itemToItemImagesPath)
+                .innerJoin(TRANSACTION).on(itemToTransactionPath) //TODO Candidate for reworking into a single join clause
                 .where(IMAGE.PROFILE_ID.eq(profileId)).asField<Long>("itemCount")
         )
             .from(IMAGE)
@@ -123,14 +129,27 @@ open class ImageRepository {
             DSL.countDistinct(TRANSACTION.ID).`as`("transactionCount"),
             DSL.count(TRANSACTION_ITEM.ID).`as`("itemCount")
         ).from(IMAGE)
-            .innerJoin(TRANSACTION_ITEM_IMAGES).on(TRANSACTION_ITEM_IMAGES.IMAGE_ID.eq(IMAGE.ID))
-            .innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.ID.eq(TRANSACTION_ITEM_IMAGES.TRANSACTION_ITEM_ID))
-            .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(TRANSACTION_ITEM.TRANSACTION_ID))
+            .innerJoin(TRANSACTION_ITEM_IMAGES).on(imageToItemImagesPath)
+            .innerJoin(TRANSACTION_ITEM).on(itemToItemImagesPath)
+            .innerJoin(TRANSACTION).on(itemToTransactionPath) //TODO Candidate for reworking into a single join clause
             .where(IMAGE.ID.eq(id))
             .and(IMAGE.PROFILE_ID.eq(profileId))
-            .orderBy(TRANSACTION_ITEM_IMAGES.CREATED_AT.desc())
 
         return selectStep.fetchOne()?.into(TransactionAndItemCount::class.java)!!
+    }
+
+
+    fun getMaxOrdinal(profileId: Long): Int? {
+        return getMaxOrdinalTrx(mainContext, profileId)
+    }
+
+    fun getMaxOrdinalTrx(trxContext: DSLContext, profileId: Long): Int? {
+        val selectStep = trxContext.select(
+            DSL.max(IMAGE.ORDINAL)
+        ).from(IMAGE)
+            .where(IMAGE.PROFILE_ID.eq(profileId))
+
+        return selectStep.fetchOne()?.value1()
     }
 
 

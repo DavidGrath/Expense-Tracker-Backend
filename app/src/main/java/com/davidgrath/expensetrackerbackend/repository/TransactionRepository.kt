@@ -44,6 +44,7 @@ class TransactionRepository {
 
     //region Read
 
+    //TODO This method is basically useless
     fun getTransactionSumByDate(
         profileId: Long, debitOrCredit: Boolean,
         fromDate: LocalDate? = null, toDate: LocalDate? = null,
@@ -52,7 +53,10 @@ class TransactionRepository {
     ): List<DateAmountSummary> {
         val aggregateDate = TRANSACTION.DATED_AT.`as`("aggregateDate")
         var selectStep = mainContext.select(aggregateDate, DSL.sum(TRANSACTION.AMOUNT).`as`("sum")).from(TRANSACTION)
-            .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
+            .innerJoin(ACCOUNT).on(accountToTransactionPath)
+            .innerJoin(TRANSACTION_ITEM).on(itemToTransactionPath)
+            .innerJoin(CATEGORY).on(categoryToItemPath)
+            .leftJoin(SELLER).on(sellerToTransactionPath)
             .where(ACCOUNT.PROFILE_ID.eq(profileId))
             .and(TRANSACTION.DEBIT_OR_CREDIT.eq(debitOrCredit.toByte()))
         if(fromDate != null) {
@@ -62,21 +66,19 @@ class TransactionRepository {
             selectStep = selectStep.and(TRANSACTION.DATED_AT.lessOrEqual(toDate))
         }
         if(accountIds.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.ACCOUNT_ID.`in`(accountIds))
+            selectStep = selectStep.and(ACCOUNT.ID.`in`(accountIds))
         }
         if(dates.isNotEmpty()) {
             selectStep = selectStep.and(TRANSACTION.DATED_AT.`in`(dates))
         }
         if(categories.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.ID.`in`(
-                mainContext.select(TRANSACTION.ID).from(TRANSACTION).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.TRANSACTION_ID.eq(TRANSACTION.ID)).where(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.`in`(categories)) //TODO get rid of this from the whole codebase
-            ))
+            selectStep = selectStep.and(CATEGORY.ID.`in`(categories))
         }
         if(modes.isNotEmpty()) {
             selectStep = selectStep.and(TRANSACTION.MODE.`in`(modes))
         }
         if(sellers.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.SELLER_ID.`in`(sellers))
+            selectStep = selectStep.and(SELLER.ID.`in`(sellers))
         }
         val seekStep = selectStep.groupBy(aggregateDate).orderBy(aggregateDate)
             .limit(DEFAULT_FETCH_LIMIT)
@@ -92,18 +94,37 @@ class TransactionRepository {
     fun getMaxSortKeyInDayForAccountTrx(trxContext: DSLContext, profileId: Long, accountId: Long, date: LocalDate): Int? {
         val selectStep = trxContext.select(DSL.max(TRANSACTION.SORT_KEY))
             .from(TRANSACTION)
-            .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
-            .where(TRANSACTION.ACCOUNT_ID.eq(accountId))
+            .innerJoin(ACCOUNT).on(accountToTransactionPath)
+            .where(ACCOUNT.ID.eq(accountId))
             .and(TRANSACTION.DATED_AT.eq(date))
             .and(ACCOUNT.PROFILE_ID.eq(profileId))
         return selectStep.fetchOne()?.value1()
     }
 
 
+    fun getMaxOrdinalSortKeyAndOccupancySlot(profileId: Long, accountId: Long, date: LocalDate): OrdinalSortKeyOccupancySlot {
+        return getMaxOrdinalSortKeyAndOccupancySlotTrx(mainContext, profileId, accountId, date)
+    }
+
+    fun getMaxOrdinalSortKeyAndOccupancySlotTrx(trxContext: DSLContext, profileId: Long, accountId: Long, date: LocalDate): OrdinalSortKeyOccupancySlot {
+        val selectStep = trxContext.select(
+            DSL.max(TRANSACTION.ORDINAL).`as`("ordinal"),
+            DSL.max(TRANSACTION.SORT_KEY).`as`("sortKey"),
+            DSL.max(TRANSACTION.OCCUPANCY_SLOT).`as`("occupancySlot"),
+        ).from(TRANSACTION)
+            .innerJoin(ACCOUNT).on(accountToTransactionPath)
+            .where(ACCOUNT.ID.eq(accountId))
+            .and(TRANSACTION.DATED_AT.eq(date))
+            .and(ACCOUNT.PROFILE_ID.eq(profileId))
+
+        return selectStep.fetchOne()?.into(OrdinalSortKeyOccupancySlot::class.java)!!
+    }
+
+
     fun getByProfileIdAndId(profileId: Long, id: Long): TransactionPojo? {
         val selectStep = mainContext.select(TRANSACTION.asterisk())
             .from(TRANSACTION)
-            .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
+            .innerJoin(ACCOUNT).on(accountToTransactionPath)
             .where(ACCOUNT.PROFILE_ID.eq(profileId))
             .and(TRANSACTION.ID.eq(id))
 
@@ -120,8 +141,11 @@ class TransactionRepository {
 
         var selectStep = mainContext.select(TRANSACTION.asterisk())
             .from(TRANSACTION)
-            .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
-            .where(ACCOUNT.PROFILE_ID.eq(profileId))
+            .innerJoin(ACCOUNT).on(accountToTransactionPath)
+            .innerJoin(TRANSACTION_ITEM).on(itemToTransactionPath)
+            .innerJoin(CATEGORY).on(categoryToItemPath)
+            .leftJoin(SELLER).on(sellerToTransactionPath)
+            .where(ACCOUNT.PROFILE_ID.eq(profileId)) //TODO candidate for replacement
         if(fromDate != null) {
             selectStep = selectStep.and(TRANSACTION.DATED_AT.greaterOrEqual(fromDate))
         }
@@ -129,21 +153,19 @@ class TransactionRepository {
             selectStep = selectStep.and(TRANSACTION.DATED_AT.lessOrEqual(toDate))
         }
         if(accountIds.isNotEmpty()) { //TODO AccountIds should contain at least 1 account. Verify from the frontend
-            selectStep = selectStep.and(TRANSACTION.ACCOUNT_ID.`in`(accountIds))
+            selectStep = selectStep.and(ACCOUNT.ID.`in`(accountIds))
         }
         if(dates.isNotEmpty()) {
             selectStep = selectStep.and(TRANSACTION.DATED_AT.`in`(dates))
         }
         if(categories.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.ID.`in`(
-                mainContext.select(TRANSACTION.ID).from(TRANSACTION).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.TRANSACTION_ID.eq(TRANSACTION.ID)).where(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.`in`(categories))
-            ))
+            selectStep = selectStep.and(CATEGORY.ID.`in`(categories))
         }
         if(modes.isNotEmpty()) {
             selectStep = selectStep.and(TRANSACTION.MODE.`in`(modes))
         }
         if(sellers.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.SELLER_ID.`in`(sellers))
+            selectStep = selectStep.and(SELLER.ID.`in`(sellers))
         }
         val seekStep = selectStep.orderBy(TRANSACTION.DATED_AT)
             .limit(DEFAULT_FETCH_LIMIT)
@@ -169,27 +191,36 @@ class TransactionRepository {
             TRANSACTION.MODE.`as`("transactionMode"),
             TRANSACTION.NOTE.`as`("transactionNote"),
                 (mainContext.select(DSL.count(DOCUMENT.ID)).from(DOCUMENT).where(DOCUMENT.TRANSACTION_ID.eq(TRANSACTION.ID))).asField<Int>("documentCount"),
-            TRANSACTION.ACCOUNT_ID.`as`("accountId"),
+            ACCOUNT.ID.`as`("accountId"),
             ACCOUNT.PROFILE_ID.`as`("accountProfileId"),
             ACCOUNT.CURRENCY_CODE.`as`("accountCurrencyCode"),
             ACCOUNT.NAME.`as`("accountName"),
             transactionItemId,
-            (mainContext.select(DSL.count(IMAGE.ID)).from(IMAGE).innerJoin(TRANSACTION_ITEM_IMAGES).on(TRANSACTION_ITEM_IMAGES.IMAGE_ID.eq(IMAGE.ID)).where(TRANSACTION_ITEM_IMAGES.TRANSACTION_ITEM_ID.eq(TRANSACTION_ITEM.ID)).asField<Int>("itemImageCount")),
+            (
+                    mainContext.select(DSL.count(IMAGE.ID))
+                        .from(IMAGE)
+                        .innerJoin(TRANSACTION_ITEM_IMAGES)
+                        .on(TRANSACTION_ITEM_IMAGES.IMAGE_ORDINAL.eq(IMAGE.ORDINAL).and(TRANSACTION_ITEM_IMAGES.PROFILE_ID.eq(IMAGE.PROFILE_ID)))
+                        .where(TRANSACTION_ITEM_IMAGES.TRANSACTION_ITEM_ORDINAL.eq(TRANSACTION_ITEM.ORDINAL).and(TRANSACTION_ITEM_IMAGES.TRANSACTION_ORDINAL.eq(TRANSACTION_ITEM.TRANSACTION_ORDINAL)))
+                        .asField<Int>("itemImageCount")
+                    ),
             TRANSACTION_ITEM.DESCRIPTION.`as`("itemDescription"),
             TRANSACTION_ITEM.AMOUNT.`as`("itemAmount"),
             TRANSACTION_ITEM.QUANTITY.`as`("itemQuantity"),
             TRANSACTION_ITEM.BRAND.`as`("itemBrand"),
             TRANSACTION_ITEM.VARIATION.`as`("itemVariation"),
-            TRANSACTION_ITEM.IS_REDUCTION.`as`("itemIsReduction"),
-            (mainContext.select(CATEGORY.ID).from(CATEGORY).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.eq(CATEGORY.ID)).where(TRANSACTION_ITEM.ID.eq(transactionItemId)).asField<Long>("categoryId")),
-            (mainContext.select(CATEGORY.NAME).from(CATEGORY).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.eq(CATEGORY.ID)).where(TRANSACTION_ITEM.ID.eq(transactionItemId)).asField<String>("categoryName")),
-            (mainContext.select(CATEGORY.IS_CUSTOM).from(CATEGORY).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.eq(CATEGORY.ID)).where(TRANSACTION_ITEM.ID.eq(transactionItemId)).asField<Byte>("categoryIsCustom")),
-            (mainContext.select(CATEGORY.STRING_ID).from(CATEGORY).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.eq(CATEGORY.ID)).where(TRANSACTION_ITEM.ID.eq(transactionItemId)).asField<String>("categoryStringId")),
-            (mainContext.select(CATEGORY.ICON).from(CATEGORY).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.eq(CATEGORY.ID)).where(TRANSACTION_ITEM.ID.eq(transactionItemId)).asField<String>("categoryIcon")),
+            TRANSACTION_ITEM.IS_REDUCTION.`as`("itemIsReduction"), //TODO lateral join replacement
+            (mainContext.select(CATEGORY.ID).from(CATEGORY).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.PRIMARY_CATEGORY_ORDINAL.eq(CATEGORY.ORDINAL).and(TRANSACTION_ITEM.PROFILE_ID.eq(CATEGORY.PROFILE_ID))).where(TRANSACTION_ITEM.ID.eq(transactionItemId)).asField<Long>("categoryId")),
+            (mainContext.select(CATEGORY.NAME).from(CATEGORY).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.PRIMARY_CATEGORY_ORDINAL.eq(CATEGORY.ORDINAL).and(TRANSACTION_ITEM.PROFILE_ID.eq(CATEGORY.PROFILE_ID))).where(TRANSACTION_ITEM.ID.eq(transactionItemId)).asField<String>("categoryName")),
+            (mainContext.select(CATEGORY.IS_CUSTOM).from(CATEGORY).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.PRIMARY_CATEGORY_ORDINAL.eq(CATEGORY.ORDINAL).and(TRANSACTION_ITEM.PROFILE_ID.eq(CATEGORY.PROFILE_ID))).where(TRANSACTION_ITEM.ID.eq(transactionItemId)).asField<Byte>("categoryIsCustom")),
+            (mainContext.select(CATEGORY.STRING_ID).from(CATEGORY).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.PRIMARY_CATEGORY_ORDINAL.eq(CATEGORY.ORDINAL).and(TRANSACTION_ITEM.PROFILE_ID.eq(CATEGORY.PROFILE_ID))).where(TRANSACTION_ITEM.ID.eq(transactionItemId)).asField<String>("categoryStringId")),
+            (mainContext.select(CATEGORY.ICON).from(CATEGORY).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.PRIMARY_CATEGORY_ORDINAL.eq(CATEGORY.ORDINAL).and(TRANSACTION_ITEM.PROFILE_ID.eq(CATEGORY.PROFILE_ID))).where(TRANSACTION_ITEM.ID.eq(transactionItemId)).asField<String>("categoryIcon")),
         )
             .from(TRANSACTION)
-            .innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.TRANSACTION_ID.eq(TRANSACTION.ID))
-            .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
+            .innerJoin(ACCOUNT).on(accountToTransactionPath)
+            .innerJoin(TRANSACTION_ITEM).on(itemToTransactionPath)
+            .innerJoin(CATEGORY).on(categoryToItemPath)
+            .leftJoin(SELLER).on(sellerToTransactionPath)
             .where(ACCOUNT.PROFILE_ID.eq(profileId))
         if(fromDate != null) {
             selectStep = selectStep.and(TRANSACTION.DATED_AT.greaterOrEqual(fromDate))
@@ -198,21 +229,19 @@ class TransactionRepository {
             selectStep = selectStep.and(TRANSACTION.DATED_AT.lessOrEqual(toDate))
         }
         if(accountIds.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.ACCOUNT_ID.`in`(accountIds))
+            selectStep = selectStep.and(ACCOUNT.ID.`in`(accountIds))
         }
         if(dates.isNotEmpty()) {
             selectStep = selectStep.and(TRANSACTION.DATED_AT.`in`(dates))
         }
         if(categories.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.ID.`in`(
-                mainContext.select(TRANSACTION.ID).from(TRANSACTION).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.TRANSACTION_ID.eq(TRANSACTION.ID)).where(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.`in`(categories))
-            ))
+            selectStep = selectStep.and(CATEGORY.ID.`in`(categories))
         }
         if(modes.isNotEmpty()) {
             selectStep = selectStep.and(TRANSACTION.MODE.`in`(modes))
         }
         if(sellers.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.SELLER_ID.`in`(sellers))
+            selectStep = selectStep.and(SELLER.ID.`in`(sellers))
         }
         val seekStep = selectStep.orderBy(TRANSACTION.DATED_AT, TRANSACTION.ID)
             .limit(DEFAULT_FETCH_LIMIT)
@@ -231,11 +260,11 @@ class TransactionRepository {
             DSL.min(TRANSACTION.DATED_AT)
         )
             .from(TRANSACTION)
-            .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
+            .innerJoin(ACCOUNT).on(accountToTransactionPath)
             .where(ACCOUNT.PROFILE_ID.eq(profileId))
 
         if (accountIds.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.ACCOUNT_ID.`in`(accountIds))
+            selectStep = selectStep.and(ACCOUNT.ID.`in`(accountIds))
         }
         return selectStep.fetchOne()?.value1()
     }
@@ -254,7 +283,10 @@ class TransactionRepository {
             DSL.sum(TRANSACTION.AMOUNT).over(window)
                 .`as`("sum"))
             .from(TRANSACTION)
-            .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
+            .innerJoin(ACCOUNT).on(accountToTransactionPath)
+            .innerJoin(TRANSACTION_ITEM).on(itemToTransactionPath)
+            .innerJoin(CATEGORY).on(categoryToItemPath)
+            .leftJoin(SELLER).on(sellerToTransactionPath)
             .where(ACCOUNT.PROFILE_ID.eq(profileId))
             .and(TRANSACTION.DEBIT_OR_CREDIT.eq(debitOrCredit.toByte()))
         if(fromDate != null) {
@@ -264,21 +296,19 @@ class TransactionRepository {
             selectStep = selectStep.and(TRANSACTION.DATED_AT.lessOrEqual(toDate))
         }
         if(accountIds.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.ACCOUNT_ID.`in`(accountIds))
+            selectStep = selectStep.and(ACCOUNT.ID.`in`(accountIds))
         }
         if(dates.isNotEmpty()) {
             selectStep = selectStep.and(TRANSACTION.DATED_AT.`in`(dates))
         }
         if(categories.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.ID.`in`(
-                mainContext.select(TRANSACTION.ID).from(TRANSACTION).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.TRANSACTION_ID.eq(TRANSACTION.ID)).where(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.`in`(categories))
-            ))
+            selectStep = selectStep.and(CATEGORY.ID.`in`(categories))
         }
         if(modes.isNotEmpty()) {
             selectStep = selectStep.and(TRANSACTION.MODE.`in`(modes))
         }
         if(sellers.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.SELLER_ID.`in`(sellers))
+            selectStep = selectStep.and(SELLER.ID.`in`(sellers))
         }
         val alias = selectStep.asTable("x")
             val selectFrom = mainContext.select(
@@ -302,7 +332,7 @@ class TransactionRepository {
         dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>
     ): List<TopItemSumByCategory> {
 
-        val window = DSL.partitionBy(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID).orderBy(TRANSACTION_ITEM.AMOUNT.desc())
+        val window = DSL.partitionBy(TRANSACTION_ITEM.PRIMARY_CATEGORY_ORDINAL, TRANSACTION_ITEM.PROFILE_ID).orderBy(TRANSACTION_ITEM.AMOUNT.desc())
             .rowsBetweenUnboundedPreceding().andUnboundedFollowing()
         val sum = DSL.sum(TRANSACTION_ITEM.AMOUNT).over(window).`as`("sum")
 
@@ -316,10 +346,11 @@ class TransactionRepository {
             CATEGORY.ICON.`as`("categoryIcon")
         )
             .from(TRANSACTION_ITEM)
-            .innerJoin(CATEGORY).on(CATEGORY.ID.eq(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID))
-            .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(TRANSACTION_ITEM.TRANSACTION_ID))
-            .innerJoin(ACCOUNT).on(ACCOUNT.ID.eq(TRANSACTION.ACCOUNT_ID))
-            .where(ACCOUNT.PROFILE_ID.eq(profileId))
+            .innerJoin(CATEGORY).on(categoryToItemPath)
+            .innerJoin(TRANSACTION).on(itemToTransactionPath)
+            .innerJoin(ACCOUNT).on(accountToTransactionPath)
+            .leftJoin(SELLER).on(sellerToTransactionPath)
+            .where(ACCOUNT.PROFILE_ID.eq(profileId)) //TODO Try replacing this specific clause with noCondition, it should yield the same because of the rework
             .and(TRANSACTION.DEBIT_OR_CREDIT.eq(debitOrCredit.toByte()))
         if(fromDate != null) {
             selectStep = selectStep.and(TRANSACTION.DATED_AT.greaterOrEqual(fromDate))
@@ -328,20 +359,20 @@ class TransactionRepository {
             selectStep = selectStep.and(TRANSACTION.DATED_AT.lessOrEqual(toDate))
         }
         if(accountIds.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.ACCOUNT_ID.`in`(accountIds))
+            selectStep = selectStep.and(ACCOUNT.ID.`in`(accountIds))
         }
         if(dates.isNotEmpty()) {
             selectStep = selectStep.and(TRANSACTION.DATED_AT.`in`(dates))
         }
         if(categories.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION_ITEM.PRIMARY_CATEGORY_ID.`in`(categories))
+            selectStep = selectStep.and(CATEGORY.ID.`in`(categories))
 
         }
         if(modes.isNotEmpty()) {
             selectStep = selectStep.and(TRANSACTION.MODE.`in`(modes))
         }
         if(sellers.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.SELLER_ID.`in`(sellers))
+            selectStep = selectStep.and(SELLER.ID.`in`(sellers))
         }
 
         val seekStep = selectStep

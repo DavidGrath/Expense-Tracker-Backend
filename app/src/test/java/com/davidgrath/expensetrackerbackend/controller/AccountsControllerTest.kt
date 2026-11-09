@@ -217,7 +217,7 @@ class AccountsControllerTest {
         }
         for(acc in 0 until remaining) {
             accountRepository.insertAccount(AccountPojo(null, profile.id!!, "USD", null, null, "New Account $acc",
-                LocalDateTime.now(timeHandler.getClock())))
+                acc+1, (acc+1) * 1_000, acc+1,LocalDateTime.now(timeHandler.getClock())))
         }
         val createRequest = AccountCreateRequest("New account", "GBP")
         var json: String = objectWriter.writeValueAsString(createRequest)
