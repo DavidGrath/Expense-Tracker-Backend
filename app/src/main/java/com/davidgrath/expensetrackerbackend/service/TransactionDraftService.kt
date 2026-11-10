@@ -208,7 +208,7 @@ class TransactionDraftService {
                 }
 
                 val draftFile =
-                    File(timeHandler.getRoot(), Constants.FOLDER_NAME_USERS + "/${userUuidString}" + image.path)
+                    File(timeHandler.getRoot(), Constants.FOLDER_NAME_USERS + "/${userUuidString}/" + image.path)
 
                 val path = fileService.moveFileToMain( //TODO Do not move here: simply copy and then delete on completion, in case a rollback i.e. exception happens
                     timeHandler.getRoot(),
@@ -218,7 +218,7 @@ class TransactionDraftService {
                     Constants.SUBFOLDER_NAME_IMAGES,
                     null
                 )
-                val mainFile = File(timeHandler.getRoot(), Constants.FOLDER_NAME_USERS + "/${userUuidString}" + path)
+                val mainFile = File(timeHandler.getRoot(), Constants.FOLDER_NAME_USERS + "/${userUuidString}/" + path)
 
                 val length = mainFile.length()
 
@@ -316,7 +316,7 @@ class TransactionDraftService {
             draft.documents.mapIndexed { i, document ->
                 val occupancySlot = (i + 1).toShort()
                 val draftFile =
-                    File(timeHandler.getRoot(), Constants.FOLDER_NAME_USERS + "/${userUuidString}" + document.path)
+                    File(timeHandler.getRoot(), Constants.FOLDER_NAME_USERS + "/${userUuidString}/" + document.path)
                 val localDate = draft.customDate ?: LocalDate.now(timeHandler.getClock())
                 val path = fileService.moveFileToMain(
                     timeHandler.getRoot(),
@@ -326,10 +326,10 @@ class TransactionDraftService {
                     Constants.SUBFOLDER_NAME_DOCUMENTS,
                     localDate
                 ) //TODO Don't delete the files until after the transaction is successful. Maybe write a test for that
-                val mainFile = File(timeHandler.getRoot(), Constants.FOLDER_NAME_USERS + "/${userUuidString}" + path)
+                val mainFile = File(timeHandler.getRoot(), Constants.FOLDER_NAME_USERS + "/${userUuidString}/" + path)
 
                 val length = mainFile.length()
-                val sortKey = (i * 1000).toShort()
+                val sortKey = ((i+1) * 1000).toShort()
                 val document = DocumentPojo(
                     null,
                     transactionId,
@@ -353,7 +353,7 @@ class TransactionDraftService {
 
             draft.items.forEachIndexed { i, draftItem ->
                 val occupancySlot = (i + 1).toShort()
-                val sortKey = (i * 1_000).toShort()
+                val sortKey = ((i+1) * 1_000).toShort()
                 val itemOrdinal = (i + 1).toShort()
                 val category = categoryRepository.findByProfileIdAndIdTrx(trxContext, profileId, draftItem.category)!!
                 val item = if (draftItem.isReduction) {
@@ -405,7 +405,7 @@ class TransactionDraftService {
 
                 draftItem.images.forEachIndexed { i, image ->
                     val occupancySlot = (i + 1).toShort()
-                    val sortKey = (i * 1_000).toShort()
+                    val sortKey = ((i+1) * 1_000).toShort()
                     val imageOrdinal = imagesMap[image.sha256] ?: image.dbOrdinal!!
                     val itemImage = TransactionItemImagesPojo(
                         null,
@@ -701,7 +701,7 @@ class TransactionDraftService {
                         profileUuidString
                     )
                     val path =
-                        "/profiles/${profileUuidString}/${Constants.FOLDER_NAME_DRAFT}/${Constants.SUBFOLDER_NAME_IMAGES}/${filename}"
+                        "profiles/${profileUuidString}/${Constants.FOLDER_NAME_DRAFT}/${Constants.SUBFOLDER_NAME_IMAGES}/${filename}"
                     draftFile = TransactionDraftFile(null, null, path, mimeType, hash, tempFile.length(), null, false)
                 } else {
                     LOGGER.info("Image already exists in draft. Adding to item {}", uuid)
@@ -784,7 +784,7 @@ class TransactionDraftService {
                 val filename =
                     copyFileToDraft(tempFile, mimeType, Constants.SUBFOLDER_NAME_DOCUMENTS, userUuid, profileStringId)
                 path =
-                    "/profiles/${profileStringId}/${Constants.FOLDER_NAME_DRAFT}/${Constants.SUBFOLDER_NAME_DOCUMENTS}/${filename}"
+                    "profiles/${profileStringId}/${Constants.FOLDER_NAME_DRAFT}/${Constants.SUBFOLDER_NAME_DOCUMENTS}/${filename}"
                 draftFile = TransactionDraftFile(null, null, path, mimeType, hash, tempFile.length(), type, false)
 
                 newHashes[hash] = path

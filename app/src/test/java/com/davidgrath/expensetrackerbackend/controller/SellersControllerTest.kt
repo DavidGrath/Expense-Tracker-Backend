@@ -221,7 +221,8 @@ class SellersControllerTest {
         val createdAt = LocalDateTime.now(timeHandler.getClock())
         for(sel in 0 until remaining) {
             val ordinal = (sel+1+existing.size).toShort()
-            val sortKey = ((sel+1+existing.size) * 1_000).toShort()
+//            val sortKey = ((sel+1+existing.size) * 1_000).toShort() //TODO And I caught a 16-bit wraparound error ((50 * 1_000) > 32_767). I knew I'd have to tackle this eventually, but for now I'll change the increment to 500. In short, the main test case is if Short.MAX_VALUE - maxSortKey < SORT_KEY_INTERVAL, other edge cases include a difference of 1, a difference of 0, and if it's already taken. In general, rebalancing will be fun
+            val sortKey = ((sel+1+existing.size) * 500).toShort()
             val occupancySlot = (sel+1+existing.size).toShort()
             val sellerLocation = SellerLocationPojo(null, profile.id!!, sellerOrdinal, "Branch location", null, null, null,
                 ordinal, sortKey, occupancySlot, createdAt)
@@ -371,7 +372,7 @@ class SellersControllerTest {
         val seller = SellerPojo(null, profileId, "Restaurant", nextOrdinal, nextSortKey, nextOccupancy, createdAt)
         val sellerId = sellerRepository.insertSeller(seller)
         val locationOrdinal: Short = 1
-        val sellerLocation = SellerLocationPojo(null, profileId, nextOrdinal, "Branch location", null, null, null, locationOrdinal, 1_000, 1, createdAt)
+        val sellerLocation = SellerLocationPojo(null, profileId, nextOrdinal, "Branch location", null, null, null, locationOrdinal, 500, 1, createdAt) //TODO rework to interval when done
         val sellerLocationId = sellerLocationRepository.insertSellerLocation(sellerLocation)
         return Triple(sellerId, nextOrdinal, sellerLocationId)
     }

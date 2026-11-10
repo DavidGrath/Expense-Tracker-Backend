@@ -459,7 +459,7 @@ class TransactionDraftServiceTest {
         val draftImage = File(draftImagesFolder, "45402cd3-2452-4804-981a-7ea5515dec74.jpg")
         tempFile.copyTo(draftImage)
 
-        val path = "/${Constants.FOLDER_NAME_PROFILES}/${profileUuidString}/${Constants.FOLDER_NAME_DRAFT}/${Constants.SUBFOLDER_NAME_IMAGES}/${tempFile.name}"
+        val path = "${Constants.FOLDER_NAME_PROFILES}/${profileUuidString}/${Constants.FOLDER_NAME_DRAFT}/${Constants.SUBFOLDER_NAME_IMAGES}/${tempFile.name}" //TODO it's easy for me to create paths that have leading slashes where they aren't meant to, and have weird segments potentially. Consider a wrapper class
 
         // Populate hashmap with unused image
         val map = mapOf(resource.sha256 to path)
@@ -630,7 +630,7 @@ class TransactionDraftServiceTest {
         val profileUuidString = bytesToUUID(profile.uuid!!).toString()
 
 
-        val path = "/${Constants.FOLDER_NAME_PROFILES}/${profileUuidString}/${Constants.FOLDER_NAME_DRAFT}/${Constants.SUBFOLDER_NAME_IMAGES}/${tempFile.name}"
+        val path = "${Constants.FOLDER_NAME_PROFILES}/${profileUuidString}/${Constants.FOLDER_NAME_DRAFT}/${Constants.SUBFOLDER_NAME_IMAGES}/${tempFile.name}"
 
         testUtilComponent.createTransactionWithImage(profileId, user.uuid!!, profile.uuid!!, accountId, classLoader, resource)
 
@@ -688,7 +688,7 @@ class TransactionDraftServiceTest {
         val draftDocument = File(draftDocumentsFolder, "45402cd3-2452-4804-981a-7ea5515dec74.jpg")
         tempFile.copyTo(draftDocument)
 
-        val path = "/${Constants.FOLDER_NAME_PROFILES}/${profileUuidString}/${Constants.FOLDER_NAME_DRAFT}/${Constants.SUBFOLDER_NAME_DOCUMENTS}/2025/06/30/${tempFile.name}"
+        val path = "${Constants.FOLDER_NAME_PROFILES}/${profileUuidString}/${Constants.FOLDER_NAME_DRAFT}/${Constants.SUBFOLDER_NAME_DOCUMENTS}/2025/06/30/${tempFile.name}"
 
         // Populate hashmap with unused document
         val map = mapOf(resource.sha256 to path)

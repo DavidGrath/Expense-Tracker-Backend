@@ -30,6 +30,7 @@ import com.davidgrath.expensetrackerbackend.testutils.TestUtilComponent
 import com.davidgrath.expensetrackerbackend.utils.Constants
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.FALSE_BYTE
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.TRUE_BYTE
+import com.davidgrath.expensetrackerbackend.utils.getSha256
 import com.davidgrath.expensetrackerbackend.utils.uuidToBytes
 import org.jooq.exception.DataAccessException
 import org.junit.After
@@ -38,6 +39,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ContextConfiguration
@@ -53,6 +55,10 @@ import java.util.UUID
 
 /**
  * Meant to test nontrivial database-level `CHECK` constraints
+ * This class got rather big relatively quickly. I'm considering splitting it, but I'm not sure on what axis:
+ * general type (string, conditional validity); or
+ * table, which will divide it into a lotta smaller chunks; or
+ * sth else
  */
 @SpringBootTest
 @RunWith(SpringRunner::class)
@@ -66,6 +72,9 @@ import java.util.UUID
 class GeneralConstraintsTest {
 
     companion object {
+
+        private val LOGGER = LoggerFactory.getLogger(GeneralConstraintsTest::class.java)
+
         /**
          * TODO Maybe I should use the information_schema.check_constraints view to generate these names so I won't have to remember to update them manually whenever the schema changes
          *
@@ -99,8 +108,12 @@ class GeneralConstraintsTest {
         const val CONSTRAINT_NAME_IMAGE_MIME_TYPE_VALID = "chk_image_mime_type_valid"
 //        const val CONSTRAINT_NAME_DOCUMENT_SIZE_BYTES_VALID = "chk_document_size_bytes_valid"
         const val CONSTRAINT_NAME_DOCUMENT_MIME_TYPE_VALID = "chk_document_mime_type_valid"
-        //const val CONSTRAINT_NAME_DOCUMENT_OCCUPANCY_SLOT_VALID = "chk_document_occupancy_slot_valid"
         //const val CONSTRAINT_NAME_TRANSACTION_ITEM_IMAGE_SLOT_VALID = "chk_transaction_item_image_slot_valid"
+        //const val CONSTRAINT_NAME_DOCUMENT_OCCUPANCY_SLOT_VALID = "chk_document_occupancy_slot_valid"
+        const val CONSTRAINT_NAME_IMAGE_PATH_VALID = "chk_image_path_valid"
+        const val CONSTRAINT_NAME_DOCUMENT_PATH_VALID = "chk_document_path_valid"
+        const val CONSTRAINT_NAME_IMAGE_SHA_256_VALID = "chk_image_sha_256_valid"
+        const val CONSTRAINT_NAME_DOCUMENT_SHA_256_VALID = "chk_document_sha_256_valid"
     }
 
     @Autowired
@@ -185,7 +198,8 @@ class GeneralConstraintsTest {
         } catch (e: DataAccessException) {
             e
         }
-        CONSTRAINT_NAME_IMAGE_MIME_TYPE_VALID
+
+        assertSQLCheckConstraint(exception, CONSTRAINT_NAME_IMAGE_MIME_TYPE_VALID)
     }
 
     @Test
@@ -1000,7 +1014,7 @@ class GeneralConstraintsTest {
 
         val mixedCase = "iMAGe/JPEg"
         invalidMimeType = mixedCase
-        document = DocumentPojo(null, transactionId, DocumentType.Other, 1L, alrightHashBytes, invalidMimeType, "", "", 1_000, 1, dateTime)
+        document = DocumentPojo(null, transactionId, DocumentType.Other, 1L, alrightHashBytes, invalidMimeType, "", "files/user", 1_000, 1, dateTime)
         exception = try {
             documentRepository.insertDocument(document)
             null
@@ -1025,7 +1039,7 @@ class GeneralConstraintsTest {
         val transaction = TransactionPojo(null, profileId, transactionAmount, TRUE_BYTE, dateTime.toLocalDate(), null, TransactionMode.Other,null, accountOrdinal, null, null, transactionOrdinal, 1_000, 1, dateTime)
         val transactionId = transactionRepository.insertTransaction(transaction)
 
-        val document = DocumentPojo(null, transactionId, DocumentType.Other, 1L, alrightHashBytes, validMimeType, "", "", 1_000, 1, dateTime)
+        val document = DocumentPojo(null, transactionId, DocumentType.Other, 1L, alrightHashBytes, validMimeType, "", "files/user", 1_000, 1, dateTime)
 
         val exception: DataAccessException? = try {
             documentRepository.insertDocument(document)
@@ -1762,4 +1776,188 @@ class GeneralConstraintsTest {
                 .contains(name)
         )
     }
+
+    val windowsForbiddenChars = arrayOf('<', '>', ':', '"', '|', '?', '*')
+    val currentDirAlone = "."
+    val traverseUpAlone = ".."
+    val currentDirInPath = "files/user/./images"
+    val traverseUpInPath = "files/user/../images"
+    val currentDirAtEnd = "files/."
+    val traverseUpAtEnd = "files/users/.."
+    val leadingSlash = "/files/users/stuff"
+    val trailingSlash = "files/users/stuff/"
+    val reverseSolidus = "windows\\users"
+    val empty = ""
+    val consecutiveSolidus = "files//users//username"
+    val percentEncodedAt = "%40" //personal anecdote from work
+    val pathWithPercent = "files/user/user${percentEncodedAt}example.com"
+    val windowsForbiddenStrings = windowsForbiddenChars.map { "files/users-$it" }
+
+    val pathTestCases = listOf(
+        currentDirAlone, traverseUpAlone, currentDirInPath, traverseUpInPath, currentDirAtEnd, traverseUpAtEnd, empty, controlChar, leadingSlash, trailingSlash, reverseSolidus, consecutiveSolidus, pathWithPercent,
+    ) + windowsForbiddenStrings //A good reason to consider learning JUnit 5: parameterised tests
+
+
+    @Test
+    fun givenPathNotValidWhenSaveImageThenFailure() {
+        val (profileId, dateTime) = createProfile()
+
+        //Aw, man, now I'm considering the case of purely blank characters in segments (\p{Z},\p{M},\p{Cf}). here's the deal: I'll acknowledge it's a possibility, and gladly ignore it on the SQL side - my check clause is already lengthy;
+        // we'll still validate it in application code, though TODO
+        val baseAt = '@'
+
+
+        for (invalidPath in pathTestCases) {
+            LOGGER.info("Invalid path: {}", invalidPath)
+            var imageFile = ImagePojo(null, profileId, 1L, alrightHashBytes, "image/jpeg", "", invalidPath, 1, dateTime)
+            var exception: DataAccessException? = try {
+                imageRepository.insertImage(imageFile)
+                null
+            } catch (e: DataAccessException) {
+                e
+            }
+
+            assertSQLCheckConstraint(exception, CONSTRAINT_NAME_IMAGE_PATH_VALID)
+        }
+
+    }
+
+    @Test
+    fun givenPathIsValidWhenSaveImageThenSuccess() {
+
+        val (profileId, dateTime) = createProfile()
+        val list = listOf("files/user", "files/user..jpg", "files/..why-do-this", "files/.why-do-this", "files/why-do-this.", "files/why-do-this..")
+        list.forEachIndexed { i, validPath ->
+            val ordinal = (i+1).toShort()
+            val hash = alrightHashBytes.copyOf().also {
+                it[0] = i.toByte()
+            }
+            val imageFile = ImagePojo(null, profileId, 1L, hash, "image/jpeg", "", validPath, ordinal, dateTime)
+            val exception: DataAccessException? = try {
+                imageRepository.insertImage(imageFile)
+                null
+            } catch (e: DataAccessException) {
+                e
+            }
+            assertNull(exception)
+        }
+    }
+
+    @Test
+    fun givenPathNotValidWhenSaveDocumentThenFailure() {
+        val (profileId, dateTime) = createProfile()
+
+        val baseAt = '@'
+
+        val accountOrdinal: Short = 1
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
+        val accountId = accountRepository.insertAccount(account)
+
+        val transactionOrdinal: Short = 1
+        val transactionAmount = BigDecimal(100)
+        val transaction = TransactionPojo(null, profileId, transactionAmount, TRUE_BYTE, dateTime.toLocalDate(), null, TransactionMode.Other,null, accountOrdinal, null, null, transactionOrdinal, 1_000, 1, dateTime)
+        val transactionId = transactionRepository.insertTransaction(transaction)
+
+        for(invalidPath in pathTestCases) {
+            var document = DocumentPojo(null, transactionId, DocumentType.Other, 1L, alrightHashBytes, "image/jpeg", "", invalidPath, 1_000, 1, dateTime)
+
+            var exception: DataAccessException? = try {
+                documentRepository.insertDocument(document)
+                null
+            } catch (e: DataAccessException) {
+                e
+            }
+            assertSQLCheckConstraint(exception, CONSTRAINT_NAME_DOCUMENT_PATH_VALID)
+        }
+    }
+
+    @Test
+    fun givenPathIsValidWhenSaveDocumentThenSuccess() {
+
+        val (profileId, dateTime) = createProfile()
+
+        val accountOrdinal: Short = 1
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
+        val accountId = accountRepository.insertAccount(account)
+
+        val transactionOrdinal: Short = 1
+        val transactionAmount = BigDecimal(100)
+        val transaction = TransactionPojo(null, profileId, transactionAmount, TRUE_BYTE, dateTime.toLocalDate(), null, TransactionMode.Other,null, accountOrdinal, null, null, transactionOrdinal, 1_000, 1, dateTime)
+        val transactionId = transactionRepository.insertTransaction(transaction)
+
+        val list = listOf("files/user", "files/user..jpg", "files/..why-do-this", "files/.why-do-this", "files/why-do-this.", "files/why-do-this..")
+        list.forEachIndexed { i, validPath ->
+            val sortkey = ((i + 1)*1_000).toShort()
+            val occupancySlot = (i + 1).toShort()
+            val hash = alrightHashBytes.copyOf().also {
+                it[0] = i.toByte()
+            }
+            val document = DocumentPojo(
+                null, transactionId, DocumentType.Other, 1L, hash, "image/jpeg", "", validPath, sortkey, occupancySlot, dateTime
+            )
+
+            val exception: DataAccessException? = try {
+                documentRepository.insertDocument(document)
+                null
+            } catch (e: DataAccessException) {
+                e
+            }
+
+            assertNull(exception)
+        }
+
+    }
+
+    @Test
+    fun givenSha256IsInvalidWhenSaveImageThenFailure() {
+        val (profileId, dateTime) = createProfile()
+
+        val emptyHash = HexFormat.of().parseHex(getSha256(ByteArray(0)))
+        var imageFile = ImagePojo(null, profileId, 1L, emptyHash, "image/jpeg", "", "files/user", 1, dateTime)
+        var exception: DataAccessException? = try {
+            imageRepository.insertImage(imageFile)
+            null
+        } catch (e: DataAccessException) {
+            e
+        }
+
+        assertSQLCheckConstraint(exception, CONSTRAINT_NAME_IMAGE_SHA_256_VALID)
+
+
+    }
+
+    @Test
+    fun givenSha256IsInvalidWhenSaveDocumentThenFailure() {
+
+        val (profileId, dateTime) = createProfile()
+
+        val accountOrdinal: Short = 1
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
+        val accountId = accountRepository.insertAccount(account)
+
+        val transactionOrdinal: Short = 1
+        val transactionAmount = BigDecimal(100)
+        val transaction = TransactionPojo(null, profileId, transactionAmount, TRUE_BYTE, dateTime.toLocalDate(), null, TransactionMode.Other,null, accountOrdinal, null, null, transactionOrdinal, 1_000, 1, dateTime)
+        val transactionId = transactionRepository.insertTransaction(transaction)
+
+
+        val sortkey: Short = 1_000
+        val occupancySlot: Short = 1
+        val emptyHash = HexFormat.of().parseHex(getSha256(ByteArray(0)))
+        val document = DocumentPojo(
+            null, transactionId, DocumentType.Other, 1L, emptyHash, "image/jpeg", "", "files/user", sortkey, occupancySlot, dateTime
+        )
+
+        val exception: DataAccessException? = try {
+            documentRepository.insertDocument(document)
+            null
+        } catch (e: DataAccessException) {
+            e
+        }
+
+        assertSQLCheckConstraint(exception, CONSTRAINT_NAME_DOCUMENT_SHA_256_VALID)
+
+
+    }
+
 }

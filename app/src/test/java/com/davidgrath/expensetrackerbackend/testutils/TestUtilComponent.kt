@@ -112,7 +112,7 @@ class TestUtilComponent {
         val itemId = transactionItemRepository.insertTransactionItem(item)
         //TODO make this more convenient
         val newFileName = "${UUID.randomUUID()}.jpg"
-        val newPath = "/${Constants.FOLDER_NAME_PROFILES}/$profileUuidString/${Constants.FOLDER_NAME_DATA}/${Constants.SUBFOLDER_NAME_IMAGES}/${newFileName}"
+        val newPath = "${Constants.FOLDER_NAME_PROFILES}/$profileUuidString/${Constants.FOLDER_NAME_DATA}/${Constants.SUBFOLDER_NAME_IMAGES}/${newFileName}"
         val destinationFolder = file(
             timeHandler.getRoot(),
             Constants.FOLDER_NAME_USERS,

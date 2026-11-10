@@ -199,7 +199,7 @@ class DocumentsControllerTest {
         val itemId = transactionItemRepository.insertTransactionItem(item)
         //TODO make this more convenient
         val newFileName = "${UUID.randomUUID()}.jpg"
-        val newPath = "/${Constants.FOLDER_NAME_PROFILES}/$profileUuidString/${Constants.FOLDER_NAME_DATA}/${Constants.SUBFOLDER_NAME_DOCUMENTS}/${newFileName}"
+        val newPath = "${Constants.FOLDER_NAME_PROFILES}/$profileUuidString/${Constants.FOLDER_NAME_DATA}/${Constants.SUBFOLDER_NAME_DOCUMENTS}/${newFileName}"
         val destination = file(timeHandler.getRoot(), Constants.FOLDER_NAME_USERS, userUuidString, Constants.FOLDER_NAME_PROFILES, profileUuidString, Constants.FOLDER_NAME_DATA, Constants.SUBFOLDER_NAME_DOCUMENTS, newFileName)
 
         val tempFile = File(tempFolder, resource.fileName)

@@ -2,12 +2,19 @@ CREATE TABLE `user` (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `uuid` BINARY(16) NOT NULL COMMENT "A UUIDv7",
     `uuid_display` CHAR(36) GENERATED ALWAYS AS (bin_to_uuid(`uuid`)) VIRTUAL COMMENT 'Display value for UUID column',
-    username VARCHAR(50) NOT NULL UNIQUE, #--TODO Email and OTP table where the token is stored in AES form and cleared every minute. The email regex will be very fun (not). Username will be nullable and there'll be a new status column with a check constraint to ensure the username isn't null once the account is in certain states. Also, an FSM with a transition matrix will need to be drawn
+    #--email VARCHAR(250) NOT NULL,
+    username VARCHAR(50) NOT NULL,
+    #--username VARCHAR(50), #--TODO Email and OTP table where the token is stored in AES form and cleared every minute. The email regex will be very fun (not). Username will be nullable and there'll be a new status column with a check constraint to ensure the username isn't null once the account is in certain states. Also, an FSM with a transition matrix will need to be drawn
+    #--status VARCHAR(10) NOT NULL,
     password VARCHAR(255) NOT NULL,
     password_salt VARCHAR(255) NOT NULL,
     created_at DATETIME NOT NULL DEFAULT(NOW(3)),
+    UNIQUE KEY uq_user_username (username),
     UNIQUE KEY uq_user_uuid (`uuid`),
     CONSTRAINT chk_user_username_valid CHECK (REGEXP_LIKE(`username`, '^[a-z][a-z0-9_]*[a-z0-9]$', 'c'))
+    #--CONSTRAINT chk_user_email_valid CHECK (email REGEXP '^[a-zA-Z_\.0-9]+@[a-zA-Z_\.0-9]+\.[a-zA-Z_\.0-9]+'), #--TODO Test
+    #--CONSTRAINT chk_user_status_enum CHECK (status in ('new', 'email_verified', 'active')), #--TODO jooq enum. I won't touch MySQL enums. There's no plan to use them
+    #--CONSTRAINT chk_user_username_status CHECK ((status = 'active' AND username IS NOT NULL) or (status != 'active' AND username IS NULL)) #--TODO test
 );
 
 CREATE TABLE profile (
@@ -63,10 +70,12 @@ CREATE TABLE financial_institution (
 CREATE TABLE `account` (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     profile_id BIGINT NOT NULL,
-    currency_code CHAR(3) NOT NULL COMMENT "An ISO 4217 currency code",  #--TODO collation ascii case sensitive, default_column, generated stored unique nullable column always as profile_id
+    currency_code CHAR(3) NOT NULL COMMENT "An ISO 4217 currency code",  #--TODO collation ascii case sensitive,
     financial_institution_id BIGINT,
     reference_number VARCHAR(50),
     `name` VARCHAR(50) NOT NULL,
+    #--is_default BOOLEAN NOT NULL,
+    #--default_indicator BIGINT GENERATED ALWAYS AS (IF (is_default, NULL, profile_id)) STORED NULL, #--TODO test, error 1062, duplicate entry
     `ordinal` SMALLINT NOT NULL COMMENT 'For use with composite foreign keys. This ought to be more stable than sort_key or occupancy_slot',
     sort_key SMALLINT NOT NULL COMMENT 'To allow for custom reordering of accounts within a profile. WARNING: Not to be relied on as a stable secondary identifier',
     occupancy_slot SMALLINT NOT NULL COMMENT 'To ensure a maximum number of accounts can exist per profile. WARNING: Not to be relied on as a stable secondary identifier',
@@ -76,11 +85,12 @@ CREATE TABLE `account` (
     UNIQUE KEY uq_account_ordinal (profile_id, ordinal),
     UNIQUE KEY uq_account_occupancy_slot (profile_id, occupancy_slot),
     UNIQUE KEY uq_account_sort_key (profile_id, sort_key),
+    #--UNIQUE KEY uq_account_default_indicator (profile_id, default_indicator),
     CONSTRAINT chk_account_currency_code_valid CHECK (REGEXP_LIKE(currency_code, '[A-Z]{3}', 'c')),
     CONSTRAINT chk_account_name_valid CHECK (`name` NOT REGEXP '[\\p{Cc}\\p{Zl}\\p{Zp}]' AND NOT `name` REGEXP '^[\\p{Zs}\\p{M}\\p{Cf}]+$' AND char_length(`name`) > 0),
     CONSTRAINT chk_account_ordinal_valid CHECK (ordinal > 0),
     CONSTRAINT chk_account_sort_key_valid CHECK (sort_key > 0),
-    CONSTRAINT chk_account_occupancy_slot_valid CHECK (1 <= occupancy_slot AND occupancy_slot <= 5)
+    CONSTRAINT chk_account_occupancy_slot_valid CHECK (1 <= occupancy_slot AND occupancy_slot <= 10)
 );
 
 CREATE TABLE seller (
@@ -114,9 +124,9 @@ CREATE TABLE seller_location (
     occupancy_slot SMALLINT NOT NULL COMMENT 'To ensure a maximum number of locations can exist per seller. WARNING: Not to be relied on as a stable secondary identifier',
     created_at DATETIME NOT NULL DEFAULT(NOW(3)),
     CONSTRAINT fk_seller_location_seller FOREIGN KEY (profile_id, seller_ordinal) REFERENCES seller (profile_id, ordinal),
-    UNIQUE KEY seller_location_seller_ordinal (profile_id, seller_ordinal, `ordinal`),
-    UNIQUE KEY seller_location_seller_sort_key (profile_id, seller_ordinal, `sort_key`),
-    UNIQUE KEY seller_location_seller_occupancy_slot (profile_id, seller_ordinal, `occupancy_slot`),
+    UNIQUE KEY uq_seller_location_seller_ordinal (profile_id, seller_ordinal, `ordinal`),
+    UNIQUE KEY uq_seller_location_seller_sort_key (profile_id, seller_ordinal, `sort_key`),
+    UNIQUE KEY uq_seller_location_seller_occupancy_slot (profile_id, seller_ordinal, `occupancy_slot`),
     CONSTRAINT chk_seller_location_name_valid CHECK (NOT `name` REGEXP '[\\p{Cc}\\p{Zl}\\p{Zp}]' AND NOT `name` REGEXP '^[\\p{Zs}\\p{M}\\p{Cf}]+$' AND char_length(`name`) > 0),
     CONSTRAINT chk_seller_location_longitude_valid CHECK (longitude IS NULL OR (-180 <= longitude AND longitude <= 180)),
     CONSTRAINT chk_seller_location_latitude_valid CHECK (latitude IS NULL OR (-90 <= latitude AND latitude <= 90)),
@@ -180,9 +190,11 @@ CREATE TABLE transaction_item (
     brand VARCHAR(50),
     variation VARCHAR(20) COMMENT "Like 'XL size', or 'Chocolate flavor'",
     weight DECIMAL(12,6),
-    weight_unit VARCHAR(20), #--TODO UCUM enumeration
+    #--weight_prefix VARCHAR(8),
+    weight_unit VARCHAR(20),
     volume DECIMAL(12,6),
-    volume_unit VARCHAR(20), #--TODO UCUM enumeration
+    #--volume_prefix VARCHAR (6),
+    volume_unit VARCHAR(20),
     is_reduction BOOLEAN NOT NULL COMMENT "Basically discounts for expenses and deductions for income",
     created_at DATETIME NOT NULL DEFAULT(NOW(3)),
     CONSTRAINT fk_transaction_item_transaction FOREIGN KEY (profile_id, account_ordinal, transaction_ordinal) REFERENCES transaction (profile_id, account_ordinal, ordinal),
@@ -198,6 +210,10 @@ CREATE TABLE transaction_item (
     CONSTRAINT chk_transaction_item_is_reduction_valid CHECK (NOT is_reduction OR (is_reduction AND brand IS NULL and variation IS NULL AND weight IS NULL AND weight_unit IS NULL AND volume IS NULL AND volume_unit IS NULL AND quantity=1)),
     CONSTRAINT chk_transaction_item_weight_valid CHECK ((weight IS NULL and weight_unit IS NULL) or (weight IS NOT NULL AND weight_unit IS NOT NULL AND weight > 0)),
     CONSTRAINT chk_transaction_item_volume_valid CHECK ((volume IS NULL and volume_unit IS NULL) or (volume IS NOT NULL AND volume_unit IS NOT NULL AND volume > 0)),
+    CONSTRAINT chk_transaction_item_weight_unit_valid CHECK (weight_unit IS NULL OR weight_unit IN ('g', 'lb')), #--TODO Actually check UCUM, test
+    CONSTRAINT chk_transaction_item_volume_unit_valid CHECK (volume_unit IS NULL OR volume_unit IN ('l', 'fl-oz')), #--TODO Actually check UCUM, test
+    #--CONSTRAINT chk_transaction_item_weight_prefix_valid CHECK (weight_prefix IS NULL OR (weight_unit = 'g' AND weight_prefix IN ('k', 'M', 'milli')) OR (weight_unit != 'g' AND weight_prefix IS NULL)), #--TODO Actually check UCUM, test
+    #--CONSTRAINT chk_transaction_item_volume_prefix_valid CHECK (volume_prefix IS NULL OR (volume_unit = 'l' AND volume_prefix IN ('k', 'M', 'milli')) OR (volume_unit != 'l' AND volume_prefix IS NULL)), #--TODO Actually check UCUM, test
     CONSTRAINT chk_transaction_item_ordinal_valid CHECK (ordinal > 0),
     CONSTRAINT chk_transaction_item_sort_key_valid CHECK (sort_key > 0),
     CONSTRAINT chk_transaction_item_occupancy_slot_valid CHECK (1 <= occupancy_slot AND occupancy_slot <= 30)
@@ -207,11 +223,11 @@ CREATE TABLE `image` (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     profile_id BIGINT NOT NULL,
     size_bytes BIGINT NOT NULL,
-    sha_256 BINARY(32) NOT NULL COMMENT 'Primarily to prevent unnecessary duplication during uploads', #--TODO Consider a check constraint to forbid the null hash: e3b0c44..., as its presence would clearly be a bug
+    sha_256 BINARY(32) NOT NULL COMMENT 'Primarily to prevent unnecessary duplication during uploads',
     `sha_256_display` CHAR(64) GENERATED ALWAYS AS (hex(`sha_256`)) VIRTUAL COMMENT 'Display value for SHA 256 column',
     mime_type VARCHAR(50) NOT NULL, #--TODO collation ascii
-    uri VARCHAR(500) NOT NULL, #--TODO if a regex is feasible then use it, otherwise at least ensure it starts with http(s)?, also, introduce isLocal and make this conditionally nullable
-    `path` VARCHAR(500) NOT NULL COMMENT 'Relative path from filesystem root. Ideally it shouldnt change between storage provicers', #--TODO regex to start with leading slash and valid characters if pragmatic, also, no traversal (..), curDir (.), or consecutive slashes (//), or backslash(\\, or is it \\\\?), also forbid @1a2b3c4d (Java default toString, it means a bug let something slip through), also \\p{Cc}, maybe \\p{Cf} as well, also <>|:\"|?*
+    uri VARCHAR(500) NOT NULL, #--TODO delete: the uri should always be derivable from the path and so this column is redundant
+    `path` VARCHAR(500) NOT NULL COMMENT 'Relative path from filesystem root. Ideally it shouldnt change between storage provicers',
     `ordinal` SMALLINT NOT NULL COMMENT 'For use with composite foreign keys', #--Wouldn't make sense to have a sort key here since images are primarily attached to items through the junction table. That one actually has a sort key
     created_at DATETIME NOT NULL DEFAULT(NOW(3)),
     CONSTRAINT fk_image_profile FOREIGN KEY (profile_id) REFERENCES profile (id),
@@ -219,6 +235,8 @@ CREATE TABLE `image` (
     UNIQUE KEY uq_image_profile_sha_256 (profile_id, sha_256),
     CONSTRAINT chk_image_size_bytes_valid CHECK (size_bytes > 0),
     CONSTRAINT chk_image_mime_type_valid CHECK (REGEXP_LIKE(`mime_type`, '^[a-z]+/[a-z]+$', 'c')),
+    CONSTRAINT chk_image_sha_256_valid CHECK (sha_256 != x'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'),
+    CONSTRAINT chk_image_path_valid CHECK (`path` NOT REGEXP '[\\p{Cc}\\\\<>\\|\\:\\"\\?\\*]' AND `path` NOT REGEXP '%[a-f0-9]{2}' AND `path` NOT REGEXP '(^/|/$)' AND `path` NOT REGEXP '^\\.\\.?' AND `path` NOT REGEXP '/\\.\\.?$' AND `path` NOT REGEXP '/\\.\\.?/' AND NOT `path` REGEXP '//' AND `path` NOT REGEXP '^\\.\\.?$' AND char_length(`path`) > 0),
     CONSTRAINT chk_image_ordinal_valid CHECK (ordinal > 0)
 );
 
@@ -227,11 +245,11 @@ CREATE TABLE document (
     transaction_id BIGINT NOT NULL,
     `type` VARCHAR(50) NOT NULL DEFAULT "other",
     size_bytes BIGINT NOT NULL,
-    sha_256 BINARY(32) NOT NULL COMMENT 'Primarily to prevent unnecessary duplication during uploads', #--TODO Consider a check constraint to forbid the null hash: e3b0c44..., as its presence would clearly be a bug
+    sha_256 BINARY(32) NOT NULL COMMENT 'Primarily to prevent unnecessary duplication during uploads',
     `sha_256_display` CHAR(64) GENERATED ALWAYS AS (hex(`sha_256`)) VIRTUAL COMMENT 'Display value for SHA 256 column',
     mime_type VARCHAR(50) NOT NULL,
     uri VARCHAR(500) NOT NULL, #--TODO same as above
-    `path` VARCHAR(500) NOT NULL COMMENT 'Relative path from filesystem root. Ideally it shouldnt change between storage provicers',#--TODO Same as above
+    `path` VARCHAR(500) NOT NULL COMMENT 'Relative path from filesystem root. Ideally it shouldnt change between storage providers',
     sort_key SMALLINT NOT NULL COMMENT 'To allow for custom reordering of documents within transactions. WARNING: Not to be relied on as a stable secondary identifier',
     occupancy_slot SMALLINT NOT NULL COMMENT 'To ensure a maximum number of documents can exist per transaction. WARNING: Not to be relied on as a stable secondary identifier',
     created_at DATETIME NOT NULL DEFAULT(NOW(3)),
@@ -250,6 +268,8 @@ CREATE TABLE document (
     CONSTRAINT chk_document_size_bytes_valid CHECK (size_bytes > 0),
     CONSTRAINT chk_document_mime_type_valid CHECK (REGEXP_LIKE(`mime_type`, '^[a-z]+/[a-z]+$', 'c')),
     CONSTRAINT chk_document_sort_key_valid CHECK (sort_key > 0),
+    CONSTRAINT chk_document_sha_256_valid CHECK (sha_256 != x'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'),
+    CONSTRAINT chk_document_path_valid CHECK (`path` NOT REGEXP '[\\p{Cc}\\\\<>\\|\\:\\"\\?\\*]' AND `path` NOT REGEXP '%[a-f0-9]{2}' AND `path` NOT REGEXP '(^/|/$)' AND `path` NOT REGEXP '^\\.\\.?' AND `path` NOT REGEXP '/\\.\\.?$' AND `path` NOT REGEXP '/\\.\\.?/' AND NOT `path` REGEXP '//' AND `path` NOT REGEXP '^\\.\\.?$' AND char_length(`path`) > 0),
     CONSTRAINT chk_document_occupancy_slot_valid CHECK (1 <= occupancy_slot AND occupancy_slot <= 10)
 ) COMMENT 'Distinct from image in that documents are tied to individual transactions, while images are reusable across items';
 
