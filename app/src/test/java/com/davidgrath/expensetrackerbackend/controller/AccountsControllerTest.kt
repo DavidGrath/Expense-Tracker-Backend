@@ -7,22 +7,29 @@ import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.controller.exception.ExceptionResponseHandler
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.AccountPojo
 import com.davidgrath.expensetrackerbackend.generatedapi.model.AccountCreateRequest
+import com.davidgrath.expensetrackerbackend.generatedapi.model.AccountCurrencyUpdateRequest
+import com.davidgrath.expensetrackerbackend.generatedapi.model.AccountNameUpdateRequest
 import com.davidgrath.expensetrackerbackend.generatedapi.model.AccountUpdateRequest
 import com.davidgrath.expensetrackerbackend.repository.AccountRepository
 import com.davidgrath.expensetrackerbackend.repository.ProfileRepository
 import com.davidgrath.expensetrackerbackend.repository.UserRepository
 import com.davidgrath.expensetrackerbackend.testutils.TestConstants
+import com.davidgrath.expensetrackerbackend.testutils.TestConstants.Companion.DEFAULT_ACCOUNT_NAME
+import com.davidgrath.expensetrackerbackend.testutils.TestConstants.Companion.DEFAULT_CURRENCY_CODE
 import com.davidgrath.expensetrackerbackend.testutils.TestUtilComponent
 import com.davidgrath.expensetrackerbackend.testutils.createBearerToken
 import com.davidgrath.expensetrackerbackend.testutils.tempInit
 import com.davidgrath.expensetrackerbackend.utils.Constants
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.FALSE_BYTE
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.JWT_ALG
 import com.davidgrath.expensetrackerbackend.utils.bytesToUUID
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.ObjectWriter
+import junit.framework.Assert.assertTrue
 import org.hamcrest.Matchers
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
@@ -62,6 +69,9 @@ class AccountsControllerTest {
     @Autowired
     lateinit var timeHandler: TimeHandler
 
+    val objectMapper = ObjectMapper()
+    val objectWriter = objectMapper.writer()
+
     @Before
     fun setUp() {
         tempInit(testUtilComponent, timeHandler)
@@ -92,6 +102,19 @@ class AccountsControllerTest {
             .andExpectAll(
                 MockMvcResultMatchers.status().is2xxSuccessful
             )
+    }
+
+
+    @Test
+    @Ignore("Later")
+    fun givenAccountNotExistOrNotForUserWhenGetByIdThenNotFound() {
+        assertTrue(false)
+    }
+
+    @Test
+    @Ignore("Later")
+    fun givenAccountNotForProfileWhenGetByIdThenNotFound() {
+        assertTrue(false)
     }
 
     /**
@@ -125,9 +148,6 @@ class AccountsControllerTest {
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
         val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 
-
-        val objectWriter: ObjectWriter = ObjectMapper().writer()
-
         val createRequest = AccountCreateRequest(" \t\n", "GBP")
         var json: String = objectWriter.writeValueAsString(createRequest)
         var response = mockMvc
@@ -153,9 +173,6 @@ class AccountsControllerTest {
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
         val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 
-
-        val objectWriter: ObjectWriter = ObjectMapper().writer()
-
         val createRequest = AccountCreateRequest("New Account", "XYZ")
         var json: String = objectWriter.writeValueAsString(createRequest)
         var response = mockMvc
@@ -169,38 +186,10 @@ class AccountsControllerTest {
             .andExpectAll(
                 MockMvcResultMatchers.status().isBadRequest,
                 MockMvcResultMatchers.jsonPath(
-                    "$.${Constants.CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE}", Matchers.equalTo(ErrorCode.INVALID_INPUT.code)
+                    "$.${Constants.CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE}", Matchers.equalTo(ErrorCode.INVALID_CURRENCY_CODE.code)
                 )
             ).andReturn()
 
-    }
-    @Test
-    fun givenNameBlankWhenUpdateAccountThenBadRequest() {
-        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
-
-        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
-
-
-        val objectWriter: ObjectWriter = ObjectMapper().writer()
-
-        val defaultAccountId = accountRepository.getAllByProfileId(profile.id!!).firstOrNull()!!.id!!
-        val updateRequest = AccountUpdateRequest(" \t\n")
-        var json: String = objectWriter.writeValueAsString(updateRequest)
-        var response = mockMvc
-            .perform(
-                MockMvcRequestBuilders.put("/accounts/{id}", defaultAccountId)
-                    .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(json)
-            )
-            .andExpectAll(
-                MockMvcResultMatchers.status().isBadRequest,
-                MockMvcResultMatchers.jsonPath(
-                    "$.${Constants.CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE}", Matchers.equalTo(ErrorCode.INVALID_INPUT.code)
-                )
-            ).andReturn()
     }
 
     @Test
@@ -209,7 +198,7 @@ class AccountsControllerTest {
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
         val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
-        val objectWriter: ObjectWriter = ObjectMapper().writer()
+
         val existing = accountRepository.getAllByProfileId(profile.id!!)
         val remaining = Constants.Constraints.MAX_ACCOUNTS_PER_PROFILE - existing.size
         if(remaining <= 0) {
@@ -220,7 +209,7 @@ class AccountsControllerTest {
             val nextSortKey = (((acc+1)+existing.size)*1_000).toShort()
             val nextOccupancy = ((acc+1)+existing.size).toShort()
             accountRepository.insertAccount(AccountPojo(null, profile.id!!, "USD", null, null, "New Account $acc",
-                nextOrdinal, nextSortKey, nextOccupancy,LocalDateTime.now(timeHandler.getClock())))
+                FALSE_BYTE, nextOrdinal, nextSortKey, nextOccupancy,LocalDateTime.now(timeHandler.getClock())))
         }
         val createRequest = AccountCreateRequest("New account", "GBP")
         var json: String = objectWriter.writeValueAsString(createRequest)
@@ -281,5 +270,59 @@ class AccountsControllerTest {
                 )
             ).andReturn()
     }
+
+
+
+    @Test
+    fun givenNoChangesWhenChangeDefaultAccountThenNoContentAndNoBody() {
+        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
+
+        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+
+        val defaultAccountId = accountRepository.findDefaultAccountId(profile.id!!)!!
+
+        var response = mockMvc
+            .perform(
+                MockMvcRequestBuilders.post("/accounts/{id}/default", defaultAccountId)
+                    .header("Authorization", "Bearer ${jws}")
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
+                    .contentType(MediaType.APPLICATION_JSON)
+            )
+            .andExpectAll(
+                MockMvcResultMatchers.status().isNoContent,
+                MockMvcResultMatchers.content().string("")
+            ).andReturn()
+    }
+
+    @Test
+    fun accountDefaultChangeOkTest() {
+
+        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
+
+        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+
+        val defaultAccountId = accountRepository.findDefaultAccountId(profile.id!!)!!
+
+        val newAccountId = accountRepository.insertAccount(AccountPojo(null, profile.id!!, "USD", null, null, "New Account",
+            FALSE_BYTE, 2, 2_000, 2,LocalDateTime.now(timeHandler.getClock())))
+
+
+        var response = mockMvc
+            .perform(
+                MockMvcRequestBuilders.post("/accounts/{id}/default", newAccountId)
+                    .header("Authorization", "Bearer ${jws}")
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
+                    .contentType(MediaType.APPLICATION_JSON)
+            )
+            .andExpectAll(
+                MockMvcResultMatchers.status().isOk,
+                MockMvcResultMatchers.jsonPath("$.oldDefaultId", Matchers.equalTo(defaultAccountId.toInt())),
+                MockMvcResultMatchers.jsonPath("$.newDefaultId", Matchers.equalTo(newAccountId.toInt()))
+            ).andReturn()
+    }
+
+    //TODO I'll start creating dedicated subclasses per endpoint. Region marker comments feel much weaker, and also, it feels like another reason for upgrading to JUnit 5
 
 }

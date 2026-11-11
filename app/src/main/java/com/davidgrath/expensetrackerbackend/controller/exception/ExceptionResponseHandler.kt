@@ -1,7 +1,9 @@
 package com.davidgrath.expensetrackerbackend.controller.exception
 
-import com.davidgrath.expensetrackerbackend.service.exceptions.CountLimitExceeded
+import com.davidgrath.expensetrackerbackend.service.exceptions.CountLimitExceededException
 import com.davidgrath.expensetrackerbackend.service.exceptions.EntityNotFoundException
+import com.davidgrath.expensetrackerbackend.service.exceptions.InvalidDraftException
+import com.davidgrath.expensetrackerbackend.service.exceptions.NoExplicitDefaultAccountException
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE
 import org.springframework.http.HttpStatus
 import org.springframework.http.ProblemDetail
@@ -26,10 +28,24 @@ class ExceptionResponseHandler {
         return problemDetail
     }
 
-    @ExceptionHandler(CountLimitExceeded::class)
-    fun handleCountLimitExceededException(e: CountLimitExceeded): ProblemDetail {
+    @ExceptionHandler(CountLimitExceededException::class)
+    fun handleCountLimitExceededException(e: CountLimitExceededException): ProblemDetail {
         val problemDetail: ProblemDetail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST)
         problemDetail.setProperty(CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE, ErrorCode.LIMITS_EXCEEDED.code)
+        return problemDetail
+    }
+
+    @ExceptionHandler(NoExplicitDefaultAccountException::class)
+    fun handleNoExplicitDefaultAccountException(e: NoExplicitDefaultAccountException): ProblemDetail {
+        val problemDetail: ProblemDetail = ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+        problemDetail.setProperty(CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE, ErrorCode.SERVER_ERROR.code)
+        return problemDetail
+    }
+
+    @ExceptionHandler(InvalidDraftException::class)
+    fun handleInvalidDraftException(e: InvalidDraftException): ProblemDetail {
+        val problemDetail: ProblemDetail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST)
+        problemDetail.setProperty(CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE, ErrorCode.INVALID_INPUT.code)
         return problemDetail
     }
 }

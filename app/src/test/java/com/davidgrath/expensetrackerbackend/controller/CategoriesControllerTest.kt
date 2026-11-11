@@ -158,6 +158,8 @@ class CategoriesControllerTest {
             ).andReturn()
     }
 
+    //TODO Not found tests for update. Also new patch endpoints.
+    //TODO Also also, I'm considering deleting the concept of a "core category" altogether, the main purposes I had in mind for those were i8n strings and receipt scanning inference, so take note and contemplate
     @Test
     fun givenIconFormatIncorrectWhenUpdateCategoryThenBadRequest() {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)

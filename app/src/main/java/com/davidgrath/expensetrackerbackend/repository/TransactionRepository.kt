@@ -194,6 +194,7 @@ class TransactionRepository {
             ACCOUNT.PROFILE_ID.`as`("accountProfileId"),
             ACCOUNT.CURRENCY_CODE.`as`("accountCurrencyCode"),
             ACCOUNT.NAME.`as`("accountName"),
+            ACCOUNT.IS_DEFAULT.`as`("accountIsDefault"),
             transactionItemId,
             (
                     mainContext.select(DSL.count(IMAGE.ID))

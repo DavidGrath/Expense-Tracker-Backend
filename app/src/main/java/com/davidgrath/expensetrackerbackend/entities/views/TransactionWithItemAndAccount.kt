@@ -18,6 +18,7 @@ data class TransactionWithItemAndAccount(
     val accountProfileId: Long,
     val accountCurrencyCode: String,
     val accountName: String,
+    val accountIsDefault: Boolean,
     val itemId: Long,
     val itemImageCount: Int,
     val itemDescription: String,

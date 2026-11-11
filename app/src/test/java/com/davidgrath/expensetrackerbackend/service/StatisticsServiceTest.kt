@@ -126,7 +126,7 @@ class StatisticsServiceTest {
         val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
 
         val profileId = getDefaultProfileId(userRepository, profileRepository)
-        val account = AccountPojo(null, profileId, "GBP", null, null, "Account name", 2, 2_000, 2, utcDate)
+        val account = AccountPojo(null, profileId, "GBP", null, null, "Account name", FALSE_BYTE, 2, 2_000, 2, utcDate)
         val newAccountId = accountRepository.insertAccount(account)
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
 
@@ -146,7 +146,7 @@ class StatisticsServiceTest {
         val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
 
         val profileId = getDefaultProfileId(userRepository, profileRepository)
-        val account = AccountPojo(null, profileId, "GBP", null, null, "Account name", 2, 2_000, 2, utcDate)
+        val account = AccountPojo(null, profileId, "GBP", null, null, "Account name", FALSE_BYTE, 2, 2_000, 2, utcDate)
         val newAccountId = accountRepository.insertAccount(account)
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
         val statisticsFilter = StatisticsFilter().accounts(listOf(accountId, newAccountId))
@@ -176,7 +176,7 @@ class StatisticsServiceTest {
      * ACR-6
      */
     @Test
-    fun givenAccountListIsEmptyAndAccountListDoesNotHaveHeterogeneousCurrenciesAndCurrencyIsNullWhenValidateThenFalse() {
+    fun givenAccountListIsEmptyAndAccountListDoesNotHaveHeterogeneousCurrenciesAndCurrencyIsNullWhenValidateThenTrue() {
         val clock = timeHandler.getClock()
         val date = ZonedDateTime.now(clock)
         val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
@@ -186,7 +186,7 @@ class StatisticsServiceTest {
 
         val statisticsFilter = StatisticsFilter()
 
-        assertEquals(ValidateStatisticsFilterResult.CurrencyOrAccountIssue, statisticsService.validateFilter(profileId, statisticsFilter))
+        assertEquals(ValidateStatisticsFilterResult.Valid, statisticsService.validateFilter(profileId, statisticsFilter))
     }
 
     @Test
@@ -213,7 +213,7 @@ class StatisticsServiceTest {
             .commit()
 
         val user2DataBuilder = DataBuilder(folder, timeHandler, user2Uuid.toString(), Constants.DEFAULT_PROFILE_ID, testUtilComponent)
-        val account = AccountPojo(null, user2ProfileId, "USD", null, null, "Default Account", 1, 1_000, 1, utcDate)
+        val account = AccountPojo(null, user2ProfileId, "USD", null, null, "Default Account", FALSE_BYTE, 1, 1_000, 1, utcDate)
         accountRepository.insertAccount(account)
         categoryRepository.insertCategory(CategoryPojo(null, user2ProfileId, "miscellaneous", FALSE_BYTE, null, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category", 1, 1_000, 1, utcDate))
         user2DataBuilder.createTransaction()
@@ -254,7 +254,7 @@ class StatisticsServiceTest {
             .commit()
 
         val user2DataBuilder = DataBuilder(folder, timeHandler, user2Uuid.toString(), Constants.DEFAULT_PROFILE_ID, testUtilComponent)
-        val account = AccountPojo(null, user2ProfileId, "USD", null, null, "Default Account", 1, 1_000, 1,utcDate)
+        val account = AccountPojo(null, user2ProfileId, "USD", null, null, "Default Account", FALSE_BYTE, 1, 1_000, 1,utcDate)
         val user2AccountId = accountRepository.insertAccount(account)
         categoryRepository.insertCategory(CategoryPojo(null, user2ProfileId, "miscellaneous", FALSE_BYTE, null, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category", 1, 1_000, 1, utcDate, ))
         user2DataBuilder.createTransaction()
@@ -294,7 +294,7 @@ class StatisticsServiceTest {
             .commit()
 
         val user2DataBuilder = DataBuilder(folder, timeHandler, user2Uuid.toString(), Constants.DEFAULT_PROFILE_ID, testUtilComponent)
-        val account = AccountPojo(null, user2ProfileId, "USD", null, null, "Default Account", 1, 1_000, 1, utcDate)
+        val account = AccountPojo(null, user2ProfileId, "USD", null, null, "Default Account", FALSE_BYTE, 1, 1_000, 1, utcDate)
         val user2AccountId = accountRepository.insertAccount(account)
         val user2CategoryId = categoryRepository.insertCategory(CategoryPojo(null, user2ProfileId, "miscellaneous", FALSE_BYTE, null, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category", 1, 1_000, 1, utcDate, ))
         user2DataBuilder.createTransaction()
@@ -334,7 +334,7 @@ class StatisticsServiceTest {
             .commit()
 
         val user2DataBuilder = DataBuilder(folder, timeHandler, user2Uuid.toString(), Constants.DEFAULT_PROFILE_ID, testUtilComponent)
-        val account = AccountPojo(null, user2ProfileId, "USD", null, null, "Default Account", 1, 1_000, 1, utcDate)
+        val account = AccountPojo(null, user2ProfileId, "USD", null, null, "Default Account", FALSE_BYTE, 1, 1_000, 1, utcDate)
         accountRepository.insertAccount(account)
         categoryRepository.insertCategory(CategoryPojo(null, user2ProfileId, "miscellaneous", FALSE_BYTE, null, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category", 1, 1_000, 1, utcDate, ))
         user2DataBuilder.createTransaction()

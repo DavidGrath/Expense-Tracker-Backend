@@ -21,6 +21,8 @@ import org.springframework.stereotype.Service
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.util.*
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.FALSE_BYTE
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.TRUE_BYTE
 
 @Service
 class UserService {
@@ -71,7 +73,7 @@ class UserService {
             val nextAccountOrdinal: Short = 1
             val nextAccountSortKey: Short = 1_000
             val nextAccountOccupancySlot: Short = 1
-            val account = AccountPojo(null, profileId, currency, null, null, "Default Account", nextAccountOrdinal, nextAccountSortKey, nextAccountOccupancySlot,utcDate)
+            val account = AccountPojo(null, profileId, currency, null, null, "Default Account", TRUE_BYTE, nextAccountOrdinal, nextAccountSortKey, nextAccountOccupancySlot,utcDate)
 
             accountRepository.insertAccountTrx(trxContext, account) //TODO I made a mistake here where I didn't use the transaction context and it caused a lock wait timeout in 11 of my tests. I need to find a better way to make it more consistent
             LOGGER.info("Created default account with currency code {}", currency)

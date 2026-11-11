@@ -6,6 +6,7 @@ import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.*
 import com.davidgrath.expensetrackerbackend.repository.*
 import com.davidgrath.expensetrackerbackend.utils.Constants
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.FALSE_BYTE
 import com.davidgrath.expensetrackerbackend.utils.file
 import com.davidgrath.expensetrackerbackend.utils.toByte
 import com.davidgrath.expensetrackerbackend.utils.uuidToBytes
@@ -98,9 +99,9 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
             val nextOrdinal = ((ordinalSortKeyOccupancy.ordinal?: 0) + 1).toShort()
             val nextSortKey = ((ordinalSortKeyOccupancy.sortKey?: 0) + 1_000).toShort()
             val nextOccupancy = ((ordinalSortKeyOccupancy.occupancySlot?: 0) + 1).toShort()
-            val xAccount = AccountPojo(null, profile.id!!, currencyCode, null, "", accountName, nextOrdinal, nextSortKey, nextOccupancy, dateTime)
+            val xAccount = AccountPojo(null, profile.id!!, currencyCode, null, "", accountName, FALSE_BYTE, nextOrdinal, nextSortKey, nextOccupancy, dateTime)
             val accountId = accountRepository.insertAccount(xAccount)
-            newAccount = AccountPojo(accountId, profile.id!!, currencyCode, null, "", accountName, nextOrdinal, nextSortKey, nextOccupancy, dateTime)
+            newAccount = AccountPojo(accountId, profile.id!!, currencyCode, null, "", accountName, FALSE_BYTE, nextOrdinal, nextSortKey, nextOccupancy, dateTime)
             return this
         }
 

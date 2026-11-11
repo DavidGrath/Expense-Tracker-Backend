@@ -1,7 +1,6 @@
 package com.davidgrath.expensetrackerbackend.service
 
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
-import com.davidgrath.expensetrackerbackend.controller.AccountsController
 import com.davidgrath.expensetrackerbackend.controller.exception.CustomHttpException
 import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.entities.views.AccountWithStats
@@ -9,13 +8,17 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.AccountP
 import com.davidgrath.expensetrackerbackend.repository.AccountRepository
 import com.davidgrath.expensetrackerbackend.repository.GenericRepository
 import com.davidgrath.expensetrackerbackend.repository.ProfileRepository
+import com.davidgrath.expensetrackerbackend.service.exceptions.EntityNotFoundException
+import com.davidgrath.expensetrackerbackend.service.exceptions.NoExplicitDefaultAccountException
 import com.davidgrath.expensetrackerbackend.utils.Constants
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.FALSE_BYTE
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import java.time.ZoneId
 import java.time.ZonedDateTime
+import java.util.Currency
 
 @Service
 class AccountService {
@@ -80,7 +83,7 @@ class AccountService {
             //TODO This is an oversimplified way of getting the max values, handle the case of slots or sort keys being taken
             val date = ZonedDateTime.now(timeHandler.getClock())
             val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
-            val accountPojo = AccountPojo(null, profileId, currencyCode, null, null, name, nextOrdinal, nextSortKey, nextOccupancySlot, utcDate)
+            val accountPojo = AccountPojo(null, profileId, currencyCode, null, null, name, FALSE_BYTE, nextOrdinal, nextSortKey, nextOccupancySlot, utcDate)
             val id = accountRepository.insertAccountTrx(trxContext, accountPojo)
             LOGGER.info("ID: {}", id)
             retId = id
@@ -88,8 +91,27 @@ class AccountService {
         return retId
     }
 
-    fun updateAccount(profileId: Long, id: Long, name: String): Int {
-        val count = accountRepository.updateAccount(profileId, id, name)
+    fun updateAccount(profileId: Long, id: Long, name: String, currency: Currency): Int {
+        var ret = -1
+        genericRepository.transactionContext { trx ->
+            val trxContext = trx.dsl()
+
+            val count = accountRepository.updateAccountTrx(trxContext, profileId, id, name, currency.toString())
+            //I tried getting the affected instead of matched row count, but it didn't help. Just leave this here
+            val affectedCount = genericRepository.affectedCount(trxContext)
+            ret = affectedCount
+        }
+        return ret
+    }
+
+    fun updateAccountName(profileId: Long, id: Long, name: String): Int {
+        val count = accountRepository.updateAccountName(profileId, id, name)
+        return count
+    }
+
+
+    fun updateAccountCurrencyCode(profileId: Long, id: Long, currency: Currency): Int {
+        val count = accountRepository.updateAccountCurrencyCode(profileId, id, currency.toString())
         return count
     }
 
@@ -122,6 +144,44 @@ class AccountService {
         }
         LOGGER.info("All accounts belong to profile {}", profileId)
         return true
+    }
+
+    fun getDefaultAccountId(profileId: Long): Long {
+        val defaultAccount = accountRepository.findDefaultAccountId(profileId)
+        if(defaultAccount == null) {
+            LOGGER.error("No account found")
+            throw NoExplicitDefaultAccountException()
+        }
+        return defaultAccount
+    }
+
+
+    fun changeDefaultAccount(profileId: Long, accountId: Long): Pair<Long?, Long> {
+        var pair: Pair<Long?, Long> = null to -1L
+        genericRepository.transactionContext { trx ->
+            val trxContext = trx.dsl()
+            val currentDefaultAccount = accountRepository.getDefaultAccountForUpdateTrx(trxContext, profileId)
+            if(currentDefaultAccount == null) {
+                LOGGER.error("Account not found")
+                throw EntityNotFoundException()
+            }
+            LOGGER.info("Acquired lock for default account {}", currentDefaultAccount.id)
+            val newAccount = accountRepository.findByProfileIdAndIdForUpdateTrx(trxContext, profileId, accountId)
+            if(newAccount == null) {
+                LOGGER.error("New account not found")
+                throw EntityNotFoundException()
+            }
+            LOGGER.info("Acquired lock for new account {}", newAccount.id)
+            if(newAccount.id == currentDefaultAccount.id) {
+                LOGGER.info("New account is the same as the old account")
+                pair = newAccount.id!! to newAccount.id!!
+                return@transactionContext
+            }
+            accountRepository.setAccountIsDefaultTrx(trxContext, profileId, currentDefaultAccount.id!!, false)
+            accountRepository.setAccountIsDefaultTrx(trxContext, profileId, newAccount.id!!, true)
+            pair = currentDefaultAccount.id to newAccount.id!!
+        }
+        return pair
     }
 
     companion object {

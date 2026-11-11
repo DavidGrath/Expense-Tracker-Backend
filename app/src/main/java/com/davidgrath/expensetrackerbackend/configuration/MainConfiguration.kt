@@ -51,6 +51,7 @@ class MainConfiguration {
         hikariConfig.username = username
         hikariConfig.password = password
         hikariConfig.addDataSourceProperty("connectionTimeZone", ZoneId.systemDefault())
+//        hikariConfig.addDataSourceProperty("useAffectedRows", "true") //failed attempt to make JDBC return 0 instead of 1 for idempotent single row updates
         hikariConfig.maxLifetime = Duration.ofMinutes(10).toMillis()
         return HikariDataSource(hikariConfig)
     }

@@ -6,6 +6,7 @@ import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.configuration.WebMvcConfiguration
 import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.controller.exception.ExceptionResponseHandler
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.AccountPojo
 import com.davidgrath.expensetrackerbackend.generatedapi.api.StatisticsApi
 import com.davidgrath.expensetrackerbackend.generatedapi.model.StatisticsFilter
 import com.davidgrath.expensetrackerbackend.repository.AccountRepository
@@ -22,6 +23,7 @@ import com.davidgrath.expensetrackerbackend.testutils.createBearerToken
 import com.davidgrath.expensetrackerbackend.testutils.getDefaultAccountId
 import com.davidgrath.expensetrackerbackend.testutils.tempInit
 import com.davidgrath.expensetrackerbackend.utils.Constants
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.FALSE_BYTE
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.JWT_ALG
 import com.davidgrath.expensetrackerbackend.utils.bytesToUUID
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -44,6 +46,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers
 import java.math.BigDecimal
 import java.nio.file.Files
+import java.time.LocalDateTime
 import java.util.Locale
 
 @RunWith(SpringRunner::class)
@@ -108,6 +111,7 @@ class StatisticsControllerTest {
         StatisticsApi.PATH_STATISTICS_CUM_SUM_INCOME_BY_DATE_POST,
     )
 
+    //TODO I'm considering creating a db entity to represent a StatisticsFilter. Though that's a lotta work. Later
     /**
      * The precise details for what forms an "invalid" StatisticsFilter are covered in [com.davidgrath.expensetrackerbackend.service.StatisticsServiceTest],
      * so I'll use a simple trivial case here to assert the controller does its job of mapping correctly
@@ -121,7 +125,11 @@ class StatisticsControllerTest {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
-        val invalidAccountList = emptyList<Long>()
+        val newAccountId = accountRepository.insertAccount(
+            AccountPojo(null, profile.id!!, "GBP", null, null, "British", FALSE_BYTE, 2, 2_000, 2, LocalDateTime.now(timeHandler.getClock()))
+        )
+        val heterogeneousCurrencyAccountIds = listOf(accountId, newAccountId)
+        val invalidAccountList = heterogeneousCurrencyAccountIds
         val invalidFilter = StatisticsFilter().accounts(invalidAccountList)
         var json: String = objectWriter.writeValueAsString(invalidFilter)
 

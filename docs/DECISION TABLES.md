@@ -43,7 +43,7 @@ for explicitness
 | 31     | TRUE           | TRUE         | TRUE                            | TRUE                          | FALSE                                                     | Impossible                                                    | (From Date Null) and (From Date is After Current Date) |                                                            |
 | 32     | TRUE           | TRUE         | TRUE                            | TRUE                          | TRUE                                                      | Impossible                                                    | (From Date Null) and (From Date is After Current Date) |                                                            |
 
-## Transaction Filter validation
+## Transaction Statistics Filter validation
 ### ID: ACR
 
 | Row ID | Account List Empty | Accounts List Has heterogeneous currencies | Currency null | Action             | Impossible because...                                                | Notes                                                                     |
@@ -53,6 +53,6 @@ for explicitness
 | 3      | FALSE              | TRUE                                       | FALSE         | Currency overrides |                                                                      |                                                                           |
 | 4      | FALSE              | TRUE                                       | TRUE          | Bad request        |                                                                      |                                                                           |
 | 5      | TRUE               | FALSE                                      | FALSE         | Currency overrides |                                                                      |                                                                           |
-| 6      | TRUE               | FALSE                                      | TRUE          | Bad request        |                                                                      |                                                                           |
+| 6      | TRUE               | FALSE                                      | TRUE          | Use default act    |                                                                      |                                                                           |
 | 7      | TRUE               | TRUE                                       | FALSE         | <Impossible>       | (Account List Empty) and (Account List Has heterogeneous currencies) | Currency overrides also happens, but I'll let impossible take priority    |
 | 8      | TRUE               | TRUE                                       | TRUE          | <Impossible>       | (Account List Empty) and (Account List Has heterogeneous currencies) |                                                                           |

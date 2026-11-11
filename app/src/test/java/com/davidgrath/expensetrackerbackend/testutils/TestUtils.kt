@@ -6,7 +6,10 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.Category
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ProfilePojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.UserPojo
 import com.davidgrath.expensetrackerbackend.repository.*
+import com.davidgrath.expensetrackerbackend.testutils.TestConstants.Companion.DEFAULT_ACCOUNT_NAME
+import com.davidgrath.expensetrackerbackend.testutils.TestConstants.Companion.DEFAULT_CURRENCY_CODE
 import com.davidgrath.expensetrackerbackend.utils.*
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.TRUE_BYTE
 import io.jsonwebtoken.Jwts
 import org.junit.Assert
 import org.slf4j.LoggerFactory
@@ -32,6 +35,7 @@ fun file(vararg segments: String): File {
     return File(fullPath)
 }
 
+//TODO This should search for the is_default and then fallback to the first
 fun getDefaultAccountId(userRepository: UserRepository, profileRepository: ProfileRepository, accountRepository: AccountRepository): Long {
 
     val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
@@ -106,7 +110,7 @@ fun tempInitProfile(profile: ProfilePojo, accountRepository: AccountRepository, 
         val accounts = accountRepository.getAllByProfileId(profile.id!!)
         var defaultAccount = accounts.firstOrNull()
         val locale = Locale.US
-        val currency = Currency.getInstance(locale)?.currencyCode ?: "USD"
+        val currency = Currency.getInstance(locale)?.currencyCode ?: DEFAULT_CURRENCY_CODE
 
         LOGGER.info("Picked default locale and currency: {}, {}", locale, currency)
         val clock = timeHandler.getClock()
@@ -121,7 +125,8 @@ fun tempInitProfile(profile: ProfilePojo, accountRepository: AccountRepository, 
                 currency,
                 null,
                 null,
-                "Default Account",
+                DEFAULT_ACCOUNT_NAME,
+                TRUE_BYTE,
                 1,
                 1_000,
                 1,

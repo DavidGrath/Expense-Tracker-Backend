@@ -278,6 +278,10 @@
           },
           "name": {
             "type": "string"
+          },
+          "isDefault": {
+            "description": "There can be a maximum of 1 default account per profile. A default account is used for the statistics endpoints if no account was provided. It should also be used for the add transaction screens",
+            "type": "boolean"
           }
         }
       },
@@ -878,6 +882,50 @@
         "properties": {
           "name": {
             "type": "string"
+          },
+          "currencyCode": {
+            "type": "string",
+            "description": "An ISO 4217 Currency Code",
+            "maxLength": 3
+          }
+        }
+      },
+      "AccountDefaultUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "isDefault": {
+            "type": "boolean"
+          }
+        }
+      },
+      "AccountNameUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "AccountCurrencyUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "currencyCode": {
+            "type": "string",
+            "description": "An ISO 4217 Currency Code",
+            "maxLength": 3
+          }
+        }
+      },
+      "AccountDefaultUpdateResponse": {
+        "type": "object",
+        "properties": {
+          "oldDefaultId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "newDefaultId": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },

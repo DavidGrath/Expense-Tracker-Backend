@@ -18,7 +18,8 @@
       "name": "profiles"
     },
     {
-      "name": "accounts"
+      "name": "accounts",
+      "description": "Each profile can have at most 1 default account."
     },
     {
       "name": "statistics"
@@ -999,25 +1000,15 @@
             }
           }
         },
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/profileId"
-          }
-        ],
         "responses": {
           "200": {
-            "description": "Any changes to the currency code will update all transactions for the account"
+            "description": ""
           }
         }
       },
       "get": {
         "tags": [
           "accounts"
-        ],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/profileId"
-          }
         ],
         "responses": {
           "200": {
@@ -1032,6 +1023,125 @@
           }
         }
       }
+
+    },
+    "/accounts/{id}/default": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": false
+          }
+        },
+        {
+          "$ref": "#/components/parameters/profileId"
+        }
+      ],
+      "post": {
+        "tags": [
+          "account"
+        ],
+        "description": "No response body if the account was already the default",
+        "responses": {
+          "200": {
+            "description": "A new default account has been set",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas.json#/components/schemas/AccountDefaultUpdateResponse"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No changes made to the profile"
+          }
+        }
+      }
+    },
+    "/accounts/{id}/name": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": false
+          }
+        },
+        {
+          "$ref": "#/components/parameters/profileId"
+        }
+      ],
+      "patch": {
+        "tags": [
+          "accounts"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "./schemas.json#/components/schemas/AccountNameUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "204": {
+            "description": "If no changes were made. TODO test this"
+          }
+        }
+      }
+    },
+    "/accounts/{id}/currencyCode": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": false
+          }
+        },
+        {
+          "$ref": "#/components/parameters/profileId"
+        }
+      ],
+      "patch": {
+        "tags": [
+          "accounts"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "./schemas.json#/components/schemas/AccountCurrencyUpdateRequest"
+              }
+            }
+          }
+        },
+
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "204": {
+            "description": "If no changes were made. TODO test this"
+          }
+        }
+      }
+
     },
     "/statistics/totalIncome": {
       "post": {

@@ -67,6 +67,7 @@ class TransactionDraftService {
     lateinit var timeHandler: TimeHandler
 
     fun createDraft(profileId: Long, accountId: Long) { //TODO Default account
+        //TODO 0001; In general, I wont to rework draft from a JSON object into its own set of tables: it will handle referential integrity better for images and categories and accounts, but that's a lot of work, so maybe not soon at all
         if (!doesDraftExistForProfile(profileId)) {
             val misc = categoryRepository.findByProfileIdAndStringId(profileId, "miscellaneous")!!
             val item = TransactionDraftItem(

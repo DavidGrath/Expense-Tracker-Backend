@@ -277,6 +277,7 @@ class SellersControllerTest {
     }
 
     @Test
+    //TODO Not found/404 tests for update. No need for patch since Seller only has name
     fun givenNameBlankWhenUpdateSellerThenBadRequest() {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
@@ -305,6 +306,7 @@ class SellersControllerTest {
     }
 
     @Test
+    //TODO Expand API to include coordinates and address
     fun givenNameBlankWhenCreateLocationThenBadRequest() {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
@@ -333,6 +335,7 @@ class SellersControllerTest {
     }
 
     @Test
+    //TODO 404/Not found tests - don't bother making a test like "location not for seller", in case you need to remember that. Also, patch endpoints
     fun givenNameBlankWhenUpdateLocationThenBadRequest() {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 

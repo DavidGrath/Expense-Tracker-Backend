@@ -5,6 +5,7 @@ import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.AccountPojo
 import com.davidgrath.expensetrackerbackend.testutils.*
 import com.davidgrath.expensetrackerbackend.utils.Constants
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.FALSE_BYTE
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -141,9 +142,9 @@ class TransactionRepositoryTest {
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
         val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)
         val newAccountId = accountRepository.insertAccount(AccountPojo(null, profile!!.id!!, "GBP",  null, null, "British",
-            2, 2_000, 2,LocalDateTime.now(timeHandler.getClock())))
+            FALSE_BYTE, 2, 2_000, 2,LocalDateTime.now(timeHandler.getClock())))
         val emptyAccountId = accountRepository.insertAccount(AccountPojo(null, profile!!.id!!, "GBP",  null, null, "Empty",
-            3, 3_000, 3, LocalDateTime.now(timeHandler.getClock())))
+            FALSE_BYTE, 3, 3_000, 3, LocalDateTime.now(timeHandler.getClock())))
         val dataBuilder = DataBuilder(folder, timeHandler, null, Constants.DEFAULT_PROFILE_ID, testUtilComponent)
         dataBuilder.createTransaction()
             .withItem("Description", "miscellaneous", BigDecimal(110.00))

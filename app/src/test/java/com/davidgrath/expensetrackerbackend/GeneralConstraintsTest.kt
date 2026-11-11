@@ -370,7 +370,7 @@ class GeneralConstraintsTest {
         val (profileId, dateTime) = createProfile()
 
         val accountOrdinal: Short = 1
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", FALSE_BYTE, accountOrdinal, 1_000, 1, dateTime)
         val accountId = accountRepository.insertAccount(account)
 
 
@@ -435,7 +435,7 @@ class GeneralConstraintsTest {
         val (profileId, dateTime) = createProfile()
 
         val accountOrdinal: Short = 1
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", 1, 1_000, 1, dateTime)
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", FALSE_BYTE,1, 1_000, 1, dateTime)
         val accountId = accountRepository.insertAccount(account)
 
 
@@ -459,7 +459,7 @@ class GeneralConstraintsTest {
 
         val tooLong = "USDD"
         var invalidCurrencyCode = tooLong
-        var account = AccountPojo(null, profileId, invalidCurrencyCode, null, "", "Basic Account", 1, 1_000, 1,dateTime)
+        var account = AccountPojo(null, profileId, invalidCurrencyCode, null, "", "Basic Account", FALSE_BYTE,1, 1_000, 1,dateTime)
 
         var exception: DataAccessException? = try {
             accountRepository.insertAccount(account)
@@ -479,7 +479,7 @@ class GeneralConstraintsTest {
         val lowerCase = "usd"
         invalidCurrencyCode = lowerCase
 
-        account = AccountPojo(null, profileId, invalidCurrencyCode, null, "", "Basic Account", 1, 1_000, 1, dateTime)
+        account = AccountPojo(null, profileId, invalidCurrencyCode, null, "", "Basic Account", FALSE_BYTE,1, 1_000, 1, dateTime)
 
         exception = try {
             accountRepository.insertAccount(account)
@@ -498,7 +498,7 @@ class GeneralConstraintsTest {
         val notAlphabets = "123"
         invalidCurrencyCode = notAlphabets
 
-        account = AccountPojo(null, profileId, invalidCurrencyCode, null, "", "Basic Account", 1, 1_000, 1,dateTime)
+        account = AccountPojo(null, profileId, invalidCurrencyCode, null, "", "Basic Account",  FALSE_BYTE, 1, 1_000, 1,dateTime)
 
         exception = try {
             accountRepository.insertAccount(account)
@@ -517,7 +517,7 @@ class GeneralConstraintsTest {
         val tooShort = "US"
         invalidCurrencyCode = tooShort
 
-        account = AccountPojo(null, profileId, invalidCurrencyCode, null, "", "Basic Account", 1, 1_000, 1,dateTime)
+        account = AccountPojo(null, profileId, invalidCurrencyCode, null, "", "Basic Account",  FALSE_BYTE,1, 1_000, 1,dateTime)
 
         exception = try {
             accountRepository.insertAccount(account)
@@ -539,7 +539,7 @@ class GeneralConstraintsTest {
         val (profileId, dateTime) = createProfile()
 
         val validCurrencyCode = "USD"
-        val account = AccountPojo(null, profileId, validCurrencyCode, null, "", "Basic Account", 1, 1_000, 1,dateTime)
+        val account = AccountPojo(null, profileId, validCurrencyCode, null, "", "Basic Account", FALSE_BYTE,1, 1_000, 1,dateTime)
 
         val exception: DataAccessException? = try {
             accountRepository.insertAccount(account)
@@ -556,7 +556,7 @@ class GeneralConstraintsTest {
         val (profileId, dateTime) = createProfile()
 
         val accountOrdinal: Short = 1
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1,dateTime)
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", FALSE_BYTE, accountOrdinal, 1_000, 1,dateTime)
         val accountId = accountRepository.insertAccount(account)
 
         val transactionOrdinal: Short = 1
@@ -615,7 +615,7 @@ class GeneralConstraintsTest {
         val (profileId, dateTime) = createProfile()
 
         val accountOrdinal: Short = 1
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", FALSE_BYTE, accountOrdinal, 1_000, 1, dateTime)
         val accountId = accountRepository.insertAccount(account)
 
         val transactionOrdinal: Short = 1
@@ -660,7 +660,7 @@ class GeneralConstraintsTest {
         val (profileId, dateTime) = createProfile()
 
         val accountOrdinal: Short = 1
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", FALSE_BYTE, accountOrdinal, 1_000, 1, dateTime)
         val accountId = accountRepository.insertAccount(account)
 
         val transactionOrdinal: Short = 1
@@ -719,7 +719,7 @@ class GeneralConstraintsTest {
         val (profileId, dateTime) = createProfile()
 
         val accountOrdinal: Short = 1
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", FALSE_BYTE, accountOrdinal, 1_000, 1, dateTime)
         val accountId = accountRepository.insertAccount(account)
 
         val transactionOrdinal: Short = 1
@@ -992,7 +992,7 @@ class GeneralConstraintsTest {
         val (profileId, dateTime) = createProfile()
 
         val accountOrdinal: Short = 1
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", FALSE_BYTE, accountOrdinal, 1_000, 1, dateTime)
         val accountId = accountRepository.insertAccount(account)
 
         val transactionOrdinal: Short = 1
@@ -1031,7 +1031,7 @@ class GeneralConstraintsTest {
         val validMimeType = "image/jpeg"
 
         val accountOrdinal: Short = 1
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", FALSE_BYTE, accountOrdinal, 1_000, 1, dateTime)
         val accountId = accountRepository.insertAccount(account)
 
         val transactionOrdinal: Short = 1
@@ -1059,7 +1059,7 @@ class GeneralConstraintsTest {
 
 
         val accountOrdinal: Short = 1
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", FALSE_BYTE, accountOrdinal, 1_000, 1, dateTime)
         val accountId = accountRepository.insertAccount(account)
 
         val sellerOrdinal: Short = 1
@@ -1093,7 +1093,7 @@ class GeneralConstraintsTest {
 
 
         val accountOrdinal: Short = 1
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", FALSE_BYTE, accountOrdinal, 1_000, 1, dateTime)
         val accountId = accountRepository.insertAccount(account)
 
         val sellerOrdinal: Short = 1
@@ -1149,7 +1149,7 @@ class GeneralConstraintsTest {
         val (profileId, dateTime) = createProfile()
 
         val accountOrdinal: Short = 1
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", FALSE_BYTE, accountOrdinal, 1_000, 1, dateTime)
         val accountId = accountRepository.insertAccount(account)
 
         val transactionOrdinal: Short = 1
@@ -1253,7 +1253,7 @@ class GeneralConstraintsTest {
         val (profileId, dateTime) = createProfile()
 
         val accountOrdinal: Short = 1
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", FALSE_BYTE, accountOrdinal, 1_000, 1, dateTime)
         val accountId = accountRepository.insertAccount(account)
 
         val transactionOrdinal: Short = 1
@@ -1380,7 +1380,7 @@ class GeneralConstraintsTest {
         )
 
         for(invalidAccountName in invalidNames) {
-            var account = AccountPojo(null, profileId, "USD", null, "", invalidAccountName, 1, 1_000, 1, dateTime)
+            var account = AccountPojo(null, profileId, "USD", null, "", invalidAccountName, FALSE_BYTE,1, 1_000, 1, dateTime)
 
             var exception: DataAccessException? = try {
                 accountRepository.insertAccount(account)
@@ -1400,7 +1400,7 @@ class GeneralConstraintsTest {
         val (profileId, dateTime) = createProfile()
 
         val validAccountName = nameWithMark
-        val account = AccountPojo(null, profileId, "USD", null, "", validAccountName, 1, 1_000, 1, dateTime)
+        val account = AccountPojo(null, profileId, "USD", null, "", validAccountName, FALSE_BYTE,1, 1_000, 1, dateTime)
 
         val exception: DataAccessException? = try {
             accountRepository.insertAccount(account)
@@ -1561,7 +1561,7 @@ class GeneralConstraintsTest {
         val (profileId, dateTime) = createProfile()
 
         val accountOrdinal: Short = 1
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", FALSE_BYTE, accountOrdinal, 1_000, 1, dateTime)
         val accountId = accountRepository.insertAccount(account)
 
         val transactionOrdinal: Short = 1
@@ -1601,7 +1601,7 @@ class GeneralConstraintsTest {
         val (profileId, dateTime) = createProfile()
 
         val accountOrdinal: Short = 1
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", FALSE_BYTE, accountOrdinal, 1_000, 1, dateTime)
         val accountId = accountRepository.insertAccount(account)
 
         val transactionOrdinal: Short = 1
@@ -1632,7 +1632,7 @@ class GeneralConstraintsTest {
         val (profileId, dateTime) = createProfile()
 
         val accountOrdinal: Short = 1
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", FALSE_BYTE, accountOrdinal, 1_000, 1, dateTime)
         val accountId = accountRepository.insertAccount(account)
 
         val transactionOrdinal: Short = 1
@@ -1672,7 +1672,7 @@ class GeneralConstraintsTest {
         val (profileId, dateTime) = createProfile()
 
         val accountOrdinal: Short = 1
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", FALSE_BYTE, accountOrdinal, 1_000, 1, dateTime)
         val accountId = accountRepository.insertAccount(account)
 
         val transactionOrdinal: Short = 1
@@ -1703,7 +1703,7 @@ class GeneralConstraintsTest {
         val (profileId, dateTime) = createProfile()
 
         val accountOrdinal: Short = 1
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", FALSE_BYTE, accountOrdinal, 1_000, 1, dateTime)
         val accountId = accountRepository.insertAccount(account)
 
         val transactionOrdinal: Short = 1
@@ -1743,7 +1743,7 @@ class GeneralConstraintsTest {
         val (profileId, dateTime) = createProfile()
 
         val accountOrdinal: Short = 1
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", FALSE_BYTE, accountOrdinal, 1_000, 1, dateTime)
         val accountId = accountRepository.insertAccount(account)
 
         val transactionOrdinal: Short = 1
@@ -1850,7 +1850,7 @@ class GeneralConstraintsTest {
         val baseAt = '@'
 
         val accountOrdinal: Short = 1
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", FALSE_BYTE, accountOrdinal, 1_000, 1, dateTime)
         val accountId = accountRepository.insertAccount(account)
 
         val transactionOrdinal: Short = 1
@@ -1877,7 +1877,7 @@ class GeneralConstraintsTest {
         val (profileId, dateTime) = createProfile()
 
         val accountOrdinal: Short = 1
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", FALSE_BYTE, accountOrdinal, 1_000, 1, dateTime)
         val accountId = accountRepository.insertAccount(account)
 
         val transactionOrdinal: Short = 1
@@ -1932,7 +1932,7 @@ class GeneralConstraintsTest {
         val (profileId, dateTime) = createProfile()
 
         val accountOrdinal: Short = 1
-        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", accountOrdinal, 1_000, 1, dateTime)
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", FALSE_BYTE, accountOrdinal, 1_000, 1, dateTime)
         val accountId = accountRepository.insertAccount(account)
 
         val transactionOrdinal: Short = 1
@@ -1959,5 +1959,54 @@ class GeneralConstraintsTest {
 
 
     }
+
+
+    @Test
+    fun givenDefaultAccountExistsWhenAddThenFailure() {
+
+        val (profileId, dateTime) = createProfile()
+
+
+        val isDefault = TRUE_BYTE
+        var account = AccountPojo(null, profileId, "USD", null, "", "Default", isDefault, 1, 1_000, 1, dateTime)
+        accountRepository.insertAccount(account)
+        account = AccountPojo(null, profileId, "USD", null, "", "Extra Default", isDefault,2, 2_000, 2, dateTime)
+
+        var exception: DataAccessException? = try {
+            accountRepository.insertAccount(account)
+            null
+        } catch (e: DataAccessException) {
+            e
+        }
+        val mySQLDuplicateEntry = 1062
+        assertTrue(
+            (exception!!.cause!! as SQLException).errorCode == mySQLDuplicateEntry
+        )
+        assertSQLCheckConstraint(exception, "uq_account_default_indicator")
+
+
+    }
+
+    @Test
+    fun givenDefaultAccountDoesNotExistsWhenSaveThenSuccess() {
+
+        val (profileId, dateTime) = createProfile()
+
+        var isDefault = FALSE_BYTE
+        var account = AccountPojo(null, profileId, "USD", null, "", "Non Default", isDefault, 1, 1_000, 1, dateTime)
+
+        isDefault = TRUE_BYTE
+        accountRepository.insertAccount(account)
+        account = AccountPojo(null, profileId, "USD", null, "", "Default", isDefault, 2, 2_000, 2, dateTime)
+
+        val exception: DataAccessException? = try {
+            accountRepository.insertAccount(account)
+            null
+        } catch (e: DataAccessException) {
+            e
+        }
+        assertNull(exception)
+    }
+
 
 }

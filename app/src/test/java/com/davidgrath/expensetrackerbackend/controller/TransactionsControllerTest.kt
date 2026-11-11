@@ -53,6 +53,7 @@ import java.util.*
         TestUtilComponent::class, WebMvcConfiguration::class
     ])
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
+//TODO Edit mode for transactions
 class TransactionsControllerTest {
 
     @Autowired

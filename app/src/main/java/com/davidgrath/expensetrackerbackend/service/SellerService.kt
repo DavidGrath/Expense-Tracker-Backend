@@ -1,19 +1,16 @@
 package com.davidgrath.expensetrackerbackend.service
 
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
-import com.davidgrath.expensetrackerbackend.controller.exception.CustomHttpException
-import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.SellerLocationPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.SellerPojo
 import com.davidgrath.expensetrackerbackend.repository.GenericRepository
 import com.davidgrath.expensetrackerbackend.repository.ProfileRepository
 import com.davidgrath.expensetrackerbackend.repository.SellerLocationRepository
 import com.davidgrath.expensetrackerbackend.repository.SellerRepository
-import com.davidgrath.expensetrackerbackend.service.exceptions.CountLimitExceeded
+import com.davidgrath.expensetrackerbackend.service.exceptions.CountLimitExceededException
 import com.davidgrath.expensetrackerbackend.utils.Constants
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -104,7 +101,7 @@ class SellerService {
 
             val sellerCount = sellerRepository.countAllTrx(trxContext, profile.id!!)
             if(sellerCount >= Constants.Constraints.MAX_SELLERS_PER_PROFILE) {
-                val exception = CountLimitExceeded(Constants.Constraints.MAX_SELLERS_PER_PROFILE)
+                val exception = CountLimitExceededException(Constants.Constraints.MAX_SELLERS_PER_PROFILE)
                 LOGGER.error("Max sellers reached", exception)
                 throw exception
             }
@@ -132,7 +129,7 @@ class SellerService {
 
             val sellerCount = sellerLocationRepository.countByProfileIdAndSellerIdTrx(trxContext, profileId, sellerId)
             if(sellerCount >= Constants.Constraints.MAX_LOCATIONS_PER_SELLER) {
-                val exception = CountLimitExceeded(Constants.Constraints.MAX_LOCATIONS_PER_SELLER)
+                val exception = CountLimitExceededException(Constants.Constraints.MAX_LOCATIONS_PER_SELLER)
                 LOGGER.error("Max sellers reached", exception)
                 throw exception
             }

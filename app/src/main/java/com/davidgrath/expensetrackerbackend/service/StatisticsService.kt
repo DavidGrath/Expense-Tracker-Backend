@@ -70,8 +70,8 @@ class StatisticsService {
         } else {
             LOGGER.info("Currency code is null")
             if(statisticsFilter.accounts.isEmpty()) {
-                LOGGER.info("Account list is empty")
-                ValidateStatisticsFilterResult.CurrencyOrAccountIssue
+                LOGGER.info("Account list is empty. Still valid because default will be picked")
+                ValidateStatisticsFilterResult.Valid
             } else {
                 val countDistinct = accountRepository.countDistinctCurrencyCodes(profileId, statisticsFilter.accounts)
                 if (countDistinct > 1) {

@@ -8,6 +8,8 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.PRO
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION_ITEM
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.DEFAULT_FETCH_LIMIT
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.TRUE_BYTE
+import com.davidgrath.expensetrackerbackend.utils.toByte
 import org.jooq.DSLContext
 import org.jooq.impl.DSL
 import org.slf4j.LoggerFactory
@@ -35,11 +37,6 @@ open class AccountRepository {
     //endregion
 
     //region Read
-    /*fun findById(id: Long): AccountPojo? {
-        val selectStep = dslContext.selectFrom(ACCOUNT)
-            .where(ACCOUNT.ID.eq(id))
-        return selectStep.fetchOne()?.into(AccountPojo::class.java)
-    }*/
 
     fun findByProfileIdAndId(profileId: Long, id: Long): AccountPojo? {
         val selectStep = mainContext.selectFrom(ACCOUNT)
@@ -47,7 +44,13 @@ open class AccountRepository {
             .and(ACCOUNT.ID.eq(id))
         return selectStep.fetchOne()?.into(AccountPojo::class.java)
     }
-
+    fun findByProfileIdAndIdForUpdateTrx(trxContext: DSLContext, profileId: Long, id: Long): AccountPojo? {
+        val selectStep = trxContext.selectFrom(ACCOUNT)
+            .where(ACCOUNT.PROFILE_ID.eq(profileId))
+            .and(ACCOUNT.ID.eq(id))
+            .forUpdate()
+        return selectStep.fetchOne()?.into(AccountPojo::class.java)
+    }
 
 
     fun getAllByProfileId(profileId: Long): List<AccountPojo> {
@@ -83,7 +86,7 @@ open class AccountRepository {
     }
 
     fun getByUserIdAndId(userId: Long, id: Long): AccountPojo? {
-        val selectStep = mainContext.select(ACCOUNT.asterisk())
+        val selectStep = mainContext.select(ACCOUNT.fields().toList()) //To workaround the generated column
             .from(ACCOUNT)
             .innerJoin(PROFILE).on(PROFILE.ID.eq(ACCOUNT.PROFILE_ID))
             .where(PROFILE.USER_ID.eq(userId))
@@ -92,7 +95,7 @@ open class AccountRepository {
     }
 
     fun getAllByUserId(userId: Long): List<AccountPojo> {
-        val selectStep = mainContext.select(ACCOUNT.asterisk())
+        val selectStep = mainContext.select(ACCOUNT.fields().toList()) //To workaround the generated column
             .from(ACCOUNT)
             .innerJoin(PROFILE).on(PROFILE.ID.eq(ACCOUNT.PROFILE_ID))
             .where(PROFILE.USER_ID.eq(userId))
@@ -160,14 +163,79 @@ open class AccountRepository {
         return selectStep.fetchOne()?.into(OrdinalSortKeyOccupancySlot::class.java)!!
     }
 
+    fun findDefaultAccountId(profileId: Long): Long? {
+        val selectStep = mainContext.select(ACCOUNT.ID)
+            .from(ACCOUNT)
+            .where(ACCOUNT.PROFILE_ID.eq(profileId))
+            .and(ACCOUNT.IS_DEFAULT.eq(TRUE_BYTE))
+
+        return selectStep.fetchOne()?.value1()
+    }
+
+    fun getDefaultAccountForUpdateTrx(trxContext: DSLContext, profileId: Long): AccountPojo? {
+        val selectStep = trxContext.select(ACCOUNT.fields().toList())
+            .from(ACCOUNT)
+            .where(ACCOUNT.PROFILE_ID.eq(profileId))
+            .and(ACCOUNT.IS_DEFAULT.eq(TRUE_BYTE))
+            .forUpdate()
+        return selectStep.fetchOne()?.into(AccountPojo::class.java)
+    }
+
+
     // endregion
 
     // region Update
 
-    fun updateAccount(profileId: Long, id: Long, name: String): Int {
+
+    fun updateAccount(profileId: Long, id: Long, name: String, currencyCode: String): Int {
+        return updateAccountTrx(mainContext, profileId, id, name, currencyCode)
+    }
+
+    fun updateAccountTrx(trxContext: DSLContext, profileId: Long, id: Long, name: String, currencyCode: String): Int {
+        val updateStep = trxContext.update(ACCOUNT)
+            .set(ACCOUNT.NAME, name)
+            .set(ACCOUNT.CURRENCY_CODE, currencyCode)
+            .where(ACCOUNT.ID.eq(id))
+            .and(ACCOUNT.PROFILE_ID.eq(profileId))
+        val updatedCount = updateStep.execute()
+        LOGGER.info("Updated rows: {}", updatedCount)
+        if(updatedCount != 1) {
+            LOGGER.warn("Not exactly 1 row updated")
+        }
+        return updatedCount
+    }
+
+    fun updateAccountName(profileId: Long, id: Long, name: String): Int {
         val updateStep = mainContext.update(ACCOUNT)
             .set(ACCOUNT.NAME, name)
             .where(ACCOUNT.ID.eq(id))
+            .and(ACCOUNT.PROFILE_ID.eq(profileId))
+        val updatedCount = updateStep.execute()
+        LOGGER.info("Updated rows: {}", updatedCount)
+        if(updatedCount != 1) {
+            LOGGER.warn("Not exactly 1 row updated")
+        }
+        return updatedCount
+    }
+
+    fun updateAccountCurrencyCode(profileId: Long, id: Long, currencyCode: String): Int {
+        val updateStep = mainContext.update(ACCOUNT)
+            .set(ACCOUNT.CURRENCY_CODE, currencyCode)
+            .where(ACCOUNT.ID.eq(id))
+            .and(ACCOUNT.PROFILE_ID.eq(profileId))
+        val updatedCount = updateStep.execute()
+        LOGGER.info("Updated rows: {}", updatedCount)
+        if(updatedCount != 1) {
+            LOGGER.warn("Not exactly 1 row updated")
+        }
+        return updatedCount
+    }
+
+
+    fun setAccountIsDefaultTrx(trxContext: DSLContext, profileId: Long, accountId: Long, isDefault: Boolean): Int {
+        val updateStep = trxContext.update(ACCOUNT)
+            .set(ACCOUNT.IS_DEFAULT, isDefault.toByte())
+            .where(ACCOUNT.ID.eq(accountId))
             .and(ACCOUNT.PROFILE_ID.eq(profileId))
         val updatedCount = updateStep.execute()
         LOGGER.info("Updated rows: {}", updatedCount)

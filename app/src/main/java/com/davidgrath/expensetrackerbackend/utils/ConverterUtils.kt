@@ -73,10 +73,10 @@ fun accountWithStatsToAccountDetails(accountWithStats: AccountWithStats): Accoun
 }
 
 fun accountPojoToAccount(accountPojo: AccountPojo): Account {
-    return Account(accountPojo.id, accountPojo.profileId, accountPojo.currencyCode, accountPojo.name)
+    return Account(accountPojo.id, accountPojo.profileId, accountPojo.currencyCode, accountPojo.name, accountPojo.isDefault?.toBoolean())
 }
 fun accountPojoToAccount(accountPojo: TransactionWithItemAndAccount): Account {
-    return Account(accountPojo.accountId, accountPojo.accountProfileId, accountPojo.accountCurrencyCode, accountPojo.accountName)
+    return Account(accountPojo.accountId, accountPojo.accountProfileId, accountPojo.accountCurrencyCode, accountPojo.accountName, accountPojo.accountIsDefault)
 }
 
 

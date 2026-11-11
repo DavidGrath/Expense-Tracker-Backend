@@ -1,0 +1,34 @@
+= TODO
+
+Attempts to accumulate the high-level TODOs
+
+== Priorities
+Technically speaking, the pro
+
+* High
+* Medium
+* Low
+* Very low: only tackle if everything higher has been cleared
+
+== List
+* (Very low) All post/patch requests should return 204 if no change was made and the behaviour should be tested
+** Update: it seems JDBC returns the number of rows matched instead of updated, I'll need to decide how to handle that later
+* (Medium) General patch endpoint additions where applicable
+* (Low) I use "supposed" in the link:../README.adoc[README] because these haven't been implemented just yet
+* (Low) Fail any pushes if the version remains the same
+* (Low) Alternatively, or combined - increment the version number automatically in the pipeline
+* (Low) https://xkcd.com/838/ Log all attempts to access unauthorized entities along with the target entity IDs to the console. INFO level
+* (Low) Generate SchemaSpy to static webpage
+* (Medium) Coroutines with MDCContext
+* (Medium) JaCoCo
+* (Medium) detekt
+* (Low) Consider using Hibernate validators
+* (Low) Time zone consistency
+** JVM (`-Duser.timezone`)
+** JDBC Connection Properties (`connectionTimeZone`, `serverTimeZone`)
+** MySQL itself (`--default-time-zone`)
+* (Very low) Transaction isolation readcommitted
+* (Very low) sessionVariables cte_max_recursion_depth=36524
+* (Low) Custom controller method to toggle log levels in production
+* (Medium) Implement the functions to make occupancy slots and sort keys work
+* 0001: (Low): Rework transaction draft from JSON to independent tables

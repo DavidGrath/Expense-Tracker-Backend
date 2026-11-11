@@ -15,7 +15,7 @@
             <name>org.jooq.meta.mysql.MySQLDatabase</name>
             <inputSchema>expense_tracker_database_devlocal</inputSchema>
             <outputSchemaToDefault>true</outputSchemaToDefault>
-            <excludes>user\.uuid_display|profile\.uuid_display|image\.sha_256_display|document\.sha_256_display</excludes>
+            <excludes>user\.uuid_display|profile\.uuid_display|image\.sha_256_display|document\.sha_256_display|account\.default_indicator</excludes>
             <includeExcludeColumns>true</includeExcludeColumns>
             <forcedTypes>
                 <forcedType>

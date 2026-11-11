@@ -5,6 +5,7 @@ import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.AccountPojo
 import com.davidgrath.expensetrackerbackend.testutils.*
 import com.davidgrath.expensetrackerbackend.utils.Constants
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.FALSE_BYTE
 import com.davidgrath.expensetrackerbackend.utils.uuidToBytes
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -92,7 +93,7 @@ class AccountRepositoryTest {
         assertEquals(totalItems, accountStats.itemCount)
 
         val newAccountId = accountRepository.insertAccount(AccountPojo(null, profile.id!!, "GBP",  null, null, "British",
-            2, 2_000, 2, LocalDateTime.now(timeHandler.getClock())))
+            FALSE_BYTE, 2, 2_000, 2, LocalDateTime.now(timeHandler.getClock())))
 
 
         val newAccountStats = accountRepository.getAccountSummary(profile.id!!, newAccountId)!!
@@ -133,7 +134,7 @@ class AccountRepositoryTest {
 
 
         val newAccountId = accountRepository.insertAccount(AccountPojo(null, profile.id!!, "GBP",  null, null, "British",
-            2, 2_000, 2, LocalDateTime.now(timeHandler.getClock())))
+            FALSE_BYTE, 2, 2_000, 2, LocalDateTime.now(timeHandler.getClock())))
 
         val accountStatsList = accountRepository.getAccountSummariesForProfile(profile.id!!)
 
