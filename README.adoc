@@ -133,6 +133,7 @@ GRANT CREATE,SELECT,ALTER,INDEX,INSERT,UPDATE,REFERENCES ON expense_tracker_data
 
 == General Test Checklist
 Not exhaustive, mainly a guideline so I don't forget
+
 * ID Not for user
 * ID Not for profile
 * ID Not exist

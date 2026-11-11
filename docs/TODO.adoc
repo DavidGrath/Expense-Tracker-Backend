@@ -3,7 +3,6 @@
 Attempts to accumulate the high-level TODOs
 
 == Priorities
-Technically speaking, the pro
 
 * High
 * Medium
