@@ -1,5 +1,29 @@
 = Expense Tracker Backend
 
+== Tech Stack
+
+=== Core aspects
+* jOOQ, Spring Boot, Java 17, OpenAPI, JUnit 4
+
+=== Observability
+Mostly the Grafana Stack:
+
+* Grafana 11
+* Grafana Tempo 2.6 - Traces
+* Grafana Loki 3.2 - Logs
+* Prometheus 3.0 - Metrics
+* Grafana Alloy
+* Grafana Pyroscope - Profiling
+* OpenTelemetry Java Agent
+
+=== Infra
+* NGINX 1.28
+* Ansible
+* MySQL 8.0
+* Apache JMeter
+* Jenkins
+* Flyway
+
 == Environments/Profiles
 * devlocal - Developer's machine
 * testlocal - Automated tests on developer's machine
@@ -28,10 +52,31 @@ flyway migrate -environment=devlocal
 gradlew.bat :app:jooqCodeGenDevLocal
 ----
 
+== Setting up the Staging user
+
+[source,mysql-sql]
+----
+create user 'expense_tracker'@'localhost' IDENTIFIED BY 'xxxxxxxx';
+create user 'flyway'@'localhost' IDENTIFIED BY 'xxxxxxxx';
+GRANT INSERT,SELECT,UPDATE,DELETE ON expense_tracker_database.* TO 'expense_tracker'@'localhost';
+GRANT CREATE,SELECT,ALTER,INDEX,INSERT,UPDATE,REFERENCES ON expense_tracker_database.* TO 'flyway'@'localhost';
+----
+
 == Authentication/Authorization
 * Login and Sign up return a short-lived access and long-lived refresh token
 * Refresh also returns the same pair of tokens
 
+== Error Handling
+* Uses https://www.rfc-editor.org/rfc/rfc9457.html[RFC Problem Details] with a custom error code
+
+== Logging guidelines
+* Repository
+** The sizes of all List/Iterable results from Repository classes
+** The number returned for `UPDATE` and `DELETE` operations
+* Controller
+** Custom error codes along with brief explanation before throwing it back to the client
+
+[#versioning]
 == Versioning
 For now, it's not fully fleshed out yet, because I have 3 separate things to consider:
 
@@ -62,7 +107,8 @@ Also, Java version is 17
 For the sake of integration tests, some APIs will be exposed only within the `development`, `ci`, and
 `staging` profiles to enable easier handling of database state
 
-== Notes
+== Things to Note
+
 * The project uses an API-first approach, so the endpoints are derived from the link:openapi/openapi.json[OpenAPI specification]
 * Generation is done using the codegen plugin with the `openApiGenerate` task
 * Any changes to the openapi files should also increment the version number. How exactly to increment it is based on [.line-through]#vibes# discretion
@@ -70,10 +116,8 @@ For the sake of integration tests, some APIs will be exposed only within the `de
 ** Anytime a change is made to `schemas.json`, but not the root `openapi.json`, the Gradle task remains UP-TO-DATE
 ** Validation doesn't work, likely also because of the file splitting. TODO  I'll try adding a task that does merging and validation before the actual generation
 * Concerning repositories:
-** Most of the methods should include a parameter that links back to the user: userId or profileId and the queries should include them, too. Basically https://developer.mozilla.org/en-US/docs/Web/Security/Attacks/IDOR[IDOR] mitigation
-* Log the sizes of all List/Iterable results from Repository classes, maybe use AspectJ
+** Most of the methods should include a parameter that links back to the user: `userId` or `profileId` and the queries should include them, too. Basically https://developer.mozilla.org/en-US/docs/Web/Security/Attacks/IDOR[IDOR] mitigation
 
-== Staging user
 
 [source,mysql-sql]
 ----
