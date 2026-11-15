@@ -6,7 +6,7 @@ import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.controller.exception.ExceptionResponseHandler
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.CategoryPojo
-import com.davidgrath.expensetrackerbackend.generatedapi.model.CategoryCreateRequest
+import com.davidgrath.expensetrackerbackend.generatedapi.api.CategoriesApi
 import com.davidgrath.expensetrackerbackend.generatedapi.model.CategoryUpdateRequest
 import com.davidgrath.expensetrackerbackend.repository.CategoryRepository
 import com.davidgrath.expensetrackerbackend.repository.ProfileRepository
@@ -30,6 +30,7 @@ import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ContextConfiguration
@@ -46,8 +47,8 @@ import java.time.LocalDateTime
         CategoriesController::class, SecurityConfiguration::class, TestRunControllerConfiguration::class, TestAuthController::class, ExceptionResponseHandler::class, TestUtilComponent::class
     ])
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
+class CategoriesControllerPutIdTest {
 
-class CategoriesControllerTest {
 
     @Autowired
     lateinit var mockMvc: MockMvc
@@ -76,92 +77,13 @@ class CategoriesControllerTest {
         testUtilComponent.deleteAll()
     }
 
-    @Test
-    fun getAllOkTest() {
-        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
+    val endpoint = CategoriesApi.PATH_CATEGORIES_ID_PUT
+    val verb = HttpMethod.PUT
 
-        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
-
-
-        mockMvc
-            .perform(
-                MockMvcRequestBuilders.get("/categories")
-                    .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
-            )
-            .andExpectAll(
-                MockMvcResultMatchers.status().is2xxSuccessful
-            )
-    }
+    //TODO IdorTest, Not found tests
 
     @Test
-    fun givenCategoryCountIsMaxWhenCreateThenBadRequest() {
-        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
-
-        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
-        val objectWriter: ObjectWriter = ObjectMapper().writer()
-        val existing = categoryRepository.getAllByProfileId(profile.id!!)
-        val remaining = Constants.Constraints.MAX_CATEGORIES_PER_PROFILE - existing.size
-        if(remaining <= 0) {
-            throw RuntimeException("Existing categories too many")
-        }
-        for(cat in 0 until remaining) {
-            val nextOrdinal = ((cat+1)+existing.size).toShort()
-            val nextSortKey = (((cat+1)+existing.size)*1_000).toShort()
-            val nextOccupancy = ((cat+1)+existing.size).toShort()
-            categoryRepository.insertCategory(CategoryPojo(null, profile.id!!, null, TRUE_BYTE, "Custom",
-                null, nextOrdinal, nextSortKey, nextOccupancy, LocalDateTime.now(timeHandler.getClock())))
-        }
-        val createRequest = CategoryCreateRequest("new category", "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category")
-        var json: String = objectWriter.writeValueAsString(createRequest)
-        var response = mockMvc
-            .perform(
-                MockMvcRequestBuilders.post("/categories")
-                    .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(json)
-            )
-            .andExpectAll(
-                MockMvcResultMatchers.status().isBadRequest,
-                MockMvcResultMatchers.jsonPath(
-                    "$.${Constants.CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE}", Matchers.equalTo(ErrorCode.LIMITS_EXCEEDED.code)
-                )
-            ).andReturn()
-    }
-
-    @Test
-    fun givenIconFormatIncorrectWhenCreateCategoryThenBadRequest() {
-        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
-
-        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
-        val objectWriter: ObjectWriter = ObjectMapper().writer()
-
-        val createRequest = CategoryCreateRequest("new category", "category")
-        var json: String = objectWriter.writeValueAsString(createRequest)
-        var response = mockMvc
-            .perform(
-                MockMvcRequestBuilders.post("/categories")
-                    .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(json)
-            )
-            .andExpectAll(
-                MockMvcResultMatchers.status().isBadRequest,
-                MockMvcResultMatchers.jsonPath(
-                    "$.${Constants.CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE}", Matchers.equalTo(ErrorCode.CATEGORY_ICON_FORMAT_INCORRECT.code)
-                )
-            ).andReturn()
-    }
-
-    //TODO Not found tests for update. Also new patch endpoints.
-    //TODO Also also, I'm considering deleting the concept of a "core category" altogether, the main purposes I had in mind for those were i8n strings and receipt scanning inference, so take note and contemplate
-    @Test
-    fun givenIconFormatIncorrectWhenUpdateCategoryThenBadRequest() {
+    fun categoryUpdateOkTest() {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
@@ -171,42 +93,49 @@ class CategoriesControllerTest {
         val nextOrdinal = ((ordinalSortKeyOccupancy.ordinal?: 0) + 1).toShort()
         val nextSortKey = ((ordinalSortKeyOccupancy.sortKey?: 0) + 1_000).toShort()
         val nextOccupancy = ((ordinalSortKeyOccupancy.occupancySlot?: 0) + 1).toShort()
-        val customCategoryId = categoryRepository.insertCategory(CategoryPojo(null, profile.id!!, null, TRUE_BYTE, "Shopping",
-            null, nextOrdinal, nextSortKey, nextOccupancy, LocalDateTime.now(timeHandler.getClock())))
+        val customCategoryId = categoryRepository.insertCategory(CategoryPojo(null, profile.id!!, null, true.toByte(), "Shopping",
+            null, nextOrdinal, nextSortKey, nextOccupancy,LocalDateTime.now(timeHandler.getClock())))
 
         val objectWriter: ObjectWriter = ObjectMapper().writer()
 
-        val updateRequest = CategoryUpdateRequest("new category", "shopping_cart")
+        val updateRequest = CategoryUpdateRequest("New name", "materialsymbols:shopping_cart")
         var json: String = objectWriter.writeValueAsString(updateRequest)
         var response = mockMvc
             .perform(
-                MockMvcRequestBuilders.put("/categories/{id}", customCategoryId)
+                MockMvcRequestBuilders.request(verb, endpoint, customCategoryId)
                     .header("Authorization", "Bearer ${jws}")
                     .header("Profile-Id", bytesToUUID(profile.uuid!!))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(json)
             )
             .andExpectAll(
-                MockMvcResultMatchers.status().isBadRequest,
-                MockMvcResultMatchers.jsonPath(
-                    "$.${Constants.CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE}", Matchers.equalTo(ErrorCode.CATEGORY_ICON_FORMAT_INCORRECT.code)
-                )
+                MockMvcResultMatchers.status().isOk
             ).andReturn()
+        //TODO Side effects
     }
 
+
     @Test
-    fun givenIconNotInRecognizedSetWhenCreateThenBadRequest() {
+    fun givenNameIsBlankWhenUpdateCategoryThenBadRequest() {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
         val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+
+        val ordinalSortKeyOccupancy = categoryRepository.getMaxOrdinalSortKeyAndOccupancySlot(profile.id!!)
+        val nextOrdinal = ((ordinalSortKeyOccupancy.ordinal?: 0) + 1).toShort()
+        val nextSortKey = ((ordinalSortKeyOccupancy.sortKey?: 0) + 1_000).toShort()
+        val nextOccupancy = ((ordinalSortKeyOccupancy.occupancySlot?: 0) + 1).toShort()
+        val customCategoryId = categoryRepository.insertCategory(CategoryPojo(null, profile.id!!, null, true.toByte(), "Shopping",
+            null, nextOrdinal, nextSortKey, nextOccupancy,LocalDateTime.now(timeHandler.getClock())))
+
         val objectWriter: ObjectWriter = ObjectMapper().writer()
 
-        val createRequest = CategoryCreateRequest("new category", "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category_x")
-        var json: String = objectWriter.writeValueAsString(createRequest)
+        val updateRequest = CategoryUpdateRequest(" \t\n", "materialsymbols:shopping_cart")
+        var json: String = objectWriter.writeValueAsString(updateRequest)
         var response = mockMvc
             .perform(
-                MockMvcRequestBuilders.post("/categories")
+                MockMvcRequestBuilders.request(verb, endpoint, customCategoryId)
                     .header("Authorization", "Bearer ${jws}")
                     .header("Profile-Id", bytesToUUID(profile.uuid!!))
                     .contentType(MediaType.APPLICATION_JSON)
@@ -215,10 +144,12 @@ class CategoriesControllerTest {
             .andExpectAll(
                 MockMvcResultMatchers.status().isBadRequest,
                 MockMvcResultMatchers.jsonPath(
-                    "$.${Constants.CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE}", Matchers.equalTo(ErrorCode.CATEGORY_ICON_NAME_INCORRECT.code)
+                    "$.${Constants.CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE}", Matchers.equalTo(ErrorCode.INVALID_INPUT.code)
                 )
             ).andReturn()
     }
+
+
     @Test
     fun givenIconNotInRecognizedSetWhenUpdateThenBadRequest() {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
@@ -239,7 +170,7 @@ class CategoriesControllerTest {
         var json: String = objectWriter.writeValueAsString(updateRequest)
         var response = mockMvc
             .perform(
-                MockMvcRequestBuilders.put("/categories/{id}", customCategoryId)
+                MockMvcRequestBuilders.request(verb, endpoint, customCategoryId)
                     .header("Authorization", "Bearer ${jws}")
                     .header("Profile-Id", bytesToUUID(profile.uuid!!))
                     .contentType(MediaType.APPLICATION_JSON)
@@ -271,7 +202,7 @@ class CategoriesControllerTest {
         var json: String = objectWriter.writeValueAsString(updateRequest)
         var response = mockMvc
             .perform(
-                MockMvcRequestBuilders.put("/categories/{id}", categoryId)
+                MockMvcRequestBuilders.request(verb, endpoint, categoryId)
                     .header("Authorization", "Bearer ${jws}")
                     .header("Profile-Id", bytesToUUID(profile.uuid!!))
                     .contentType(MediaType.APPLICATION_JSON)
@@ -285,40 +216,12 @@ class CategoriesControllerTest {
             ).andReturn()
     }
 
-    /*
-    //I could probably use a Regex in the OpenAPI spec so that this is handled automatically by bean validation, but I'm not sure how negative lookahead:
-    (?!^\s+$)^.+$
-    would translate back and forth. Also, I'm going to assume that PCRE isn't universal for now
 
-     */
+
+    //TODO Not found tests for update. Also new patch endpoints.
+    //TODO Also also, I'm considering deleting the concept of a "core category" altogether, the main purposes I had in mind for those were i8n strings and receipt scanning inference, so take note and contemplate
     @Test
-    fun givenNameIsBlankWhenCreateCategoryThenBadRequest() {
-        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
-
-        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
-        val objectWriter: ObjectWriter = ObjectMapper().writer()
-
-        val createRequest = CategoryCreateRequest("  \t\r", "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category")
-        var json: String = objectWriter.writeValueAsString(createRequest)
-        var response = mockMvc
-            .perform(
-                MockMvcRequestBuilders.post("/categories")
-                    .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(json)
-            )
-            .andExpectAll(
-                MockMvcResultMatchers.status().isBadRequest,
-                MockMvcResultMatchers.jsonPath(
-                    "$.${Constants.CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE}", Matchers.equalTo(ErrorCode.INVALID_INPUT.code)
-                )
-            ).andReturn()
-    }
-
-    @Test
-    fun givenNameIsBlankWhenUpdateCategoryThenBadRequest() {
+    fun givenIconFormatIncorrectWhenUpdateCategoryThenBadRequest() {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
@@ -328,16 +231,16 @@ class CategoriesControllerTest {
         val nextOrdinal = ((ordinalSortKeyOccupancy.ordinal?: 0) + 1).toShort()
         val nextSortKey = ((ordinalSortKeyOccupancy.sortKey?: 0) + 1_000).toShort()
         val nextOccupancy = ((ordinalSortKeyOccupancy.occupancySlot?: 0) + 1).toShort()
-        val customCategoryId = categoryRepository.insertCategory(CategoryPojo(null, profile.id!!, null, true.toByte(), "Shopping",
-            null, nextOrdinal, nextSortKey, nextOccupancy,LocalDateTime.now(timeHandler.getClock())))
+        val customCategoryId = categoryRepository.insertCategory(CategoryPojo(null, profile.id!!, null, TRUE_BYTE, "Shopping",
+            null, nextOrdinal, nextSortKey, nextOccupancy, LocalDateTime.now(timeHandler.getClock())))
 
         val objectWriter: ObjectWriter = ObjectMapper().writer()
 
-        val updateRequest = CategoryUpdateRequest(" \t\n", "materialsymbols:shopping_cart")
+        val updateRequest = CategoryUpdateRequest("new category", "shopping_cart")
         var json: String = objectWriter.writeValueAsString(updateRequest)
         var response = mockMvc
             .perform(
-                MockMvcRequestBuilders.put("/categories/{id}", customCategoryId)
+                MockMvcRequestBuilders.request(verb, endpoint, customCategoryId)
                     .header("Authorization", "Bearer ${jws}")
                     .header("Profile-Id", bytesToUUID(profile.uuid!!))
                     .contentType(MediaType.APPLICATION_JSON)
@@ -346,8 +249,9 @@ class CategoriesControllerTest {
             .andExpectAll(
                 MockMvcResultMatchers.status().isBadRequest,
                 MockMvcResultMatchers.jsonPath(
-                    "$.${Constants.CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE}", Matchers.equalTo(ErrorCode.INVALID_INPUT.code)
+                    "$.${Constants.CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE}", Matchers.equalTo(ErrorCode.CATEGORY_ICON_FORMAT_INCORRECT.code)
                 )
             ).andReturn()
     }
+
 }
