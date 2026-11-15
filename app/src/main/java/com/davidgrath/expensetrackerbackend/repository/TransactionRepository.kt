@@ -3,6 +3,7 @@ package com.davidgrath.expensetrackerbackend.repository
 import com.davidgrath.expensetrackerbackend.entities.StatisticsFilterDb
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import com.davidgrath.expensetrackerbackend.entities.views.*
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.CategoryPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.*
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.DEFAULT_FETCH_LIMIT
@@ -106,6 +107,7 @@ class TransactionRepository {
         return getMaxOrdinalSortKeyAndOccupancySlotTrx(mainContext, profileId, accountId)
     }
 
+
     fun getMaxOrdinalSortKeyAndOccupancySlotTrx(trxContext: DSLContext, profileId: Long, accountId: Long): OrdinalSortKeyOccupancySlot {
         val selectStep = trxContext.select(
             DSL.max(TRANSACTION.ORDINAL).`as`("ordinal"),
@@ -117,6 +119,48 @@ class TransactionRepository {
             .and(ACCOUNT.PROFILE_ID.eq(profileId))
 
         return selectStep.fetchOne()?.into(OrdinalSortKeyOccupancySlot::class.java)!!
+    }
+
+    fun getAllOccupancySlotsTrx(trxContext: DSLContext, profileId: Long, accountId: Long): List<Short> {
+        val selectStep = trxContext.select(
+            TRANSACTION.OCCUPANCY_SLOT
+        ).from(TRANSACTION)
+            .innerJoin(ACCOUNT).on(accountToTransactionPath)
+            .where(ACCOUNT.ID.eq(accountId))
+            .and(ACCOUNT.PROFILE_ID.eq(profileId))
+
+        return selectStep.fetch().map { it.value1() }
+    }
+
+
+    fun getIdsAndSortKeysByProfileIdAndAccountIdAndDateTrx(trxContext: DSLContext, profileId: Long, accountId: Long, date: LocalDate): List<IdAndSortKey> {
+        val selectStep = trxContext.select(TRANSACTION.ID, TRANSACTION.SORT_KEY)
+            .from(TRANSACTION)
+            .innerJoin(ACCOUNT).on(accountToTransactionPath)
+            .where(ACCOUNT.ID.eq(accountId))
+            .and(TRANSACTION.DATED_AT.eq(date))
+            .and(ACCOUNT.PROFILE_ID.eq(profileId))
+        val result = selectStep.fetch().into(IdAndSortKey::class.java)
+        LOGGER.info("Result size: {}", result.size)
+        return result
+    }
+
+
+    fun moveSortKeyTrx(trxContext: DSLContext, profileId: Long, categoryId: Long, accountId: Long, date: LocalDate, sortKey: Short): Int {
+
+        val updateStep = trxContext.update(TRANSACTION.innerJoin(ACCOUNT).on(accountToTransactionPath))
+            .set(TRANSACTION.SORT_KEY, sortKey)
+            .where(TRANSACTION.ID.eq(categoryId))
+            .and(TRANSACTION.PROFILE_ID.eq(profileId))
+            .and(TRANSACTION.DATED_AT.eq(date))
+            .and(ACCOUNT.ID.eq(accountId))
+
+        val updatedCount = updateStep.execute()
+        LOGGER.info("Updated rows: {}", updatedCount)
+        if(updatedCount != 1) {
+            LOGGER.warn("Not exactly 1 row updated")
+        }
+        return updatedCount
     }
 
 
@@ -382,9 +426,6 @@ class TransactionRepository {
         return finalSelect.fetch().into(TopItemSumByCategory::class.java)
     }
 
-    fun transactionContext(runnable: TransactionalRunnable) {
-        mainContext.transaction(runnable)
-    }
     //endregion
 
     //region Delete

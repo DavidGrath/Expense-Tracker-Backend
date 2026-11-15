@@ -9,7 +9,11 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.Category
 import com.davidgrath.expensetrackerbackend.repository.CategoryRepository
 import com.davidgrath.expensetrackerbackend.repository.GenericRepository
 import com.davidgrath.expensetrackerbackend.repository.ProfileRepository
+import com.davidgrath.expensetrackerbackend.service.exceptions.CountLimitExceededException
 import com.davidgrath.expensetrackerbackend.utils.Constants
+import com.davidgrath.expensetrackerbackend.utils.Mover
+import com.davidgrath.expensetrackerbackend.utils.findEarliestOccupancySlot
+import com.davidgrath.expensetrackerbackend.utils.getNextSortKey
 import com.davidgrath.expensetrackerbackend.utils.toByte
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -63,7 +67,6 @@ class CategoryService {
         return categories
     }
 
-    //I'll eventually introduce occupancy slots to make violating the capacity constraint virtually impossible at the database layer, but for now this should work
     fun createCategory(profileId: Long, name: String, icon: String): Long {
         var retId = -1L
         genericRepository.transactionContext { trx ->
@@ -73,15 +76,30 @@ class CategoryService {
 
             val existing = categoryRepository.getAllByProfileIdTrx(trxContext,profile.id!!)
             if(existing.size >= Constants.Constraints.MAX_CATEGORIES_PER_PROFILE) {
-                val exception = CustomHttpException(ErrorCode.LIMITS_EXCEEDED, HttpStatus.BAD_REQUEST)
+                val exception = CountLimitExceededException(Constants.Constraints.MAX_CATEGORIES_PER_PROFILE)
                 LOGGER.error("Too many categories", exception)
                 throw exception
             }
             val ordinalSortKeyOccupancySlot = categoryRepository.getMaxOrdinalSortKeyAndOccupancySlotTrx(trxContext, profileId)
             val nextOrdinal = ((ordinalSortKeyOccupancySlot.ordinal?: 0) + 1).toShort()
-            val nextSortKey = ((ordinalSortKeyOccupancySlot.sortKey?: 0) + 1_000).toShort()
-            val nextOccupancySlot = ((ordinalSortKeyOccupancySlot.occupancySlot?: 0) + 1).toShort()
-            //TODO This is an oversimplified way of getting the max values, handle the case of slots or sort keys being taken
+
+            val allSlots = categoryRepository.getAllOccupancySlotsTrx(trxContext, profileId)
+//            val nextOccupancySlot = ((ordinalSortKeyOccupancySlot.occupancySlot?: 0) + 1).toShort()
+            val nextOccupancySlot = findEarliestOccupancySlot(allSlots.toShortArray(), Constants.Constraints.MAX_CATEGORIES_PER_PROFILE)
+            if(nextOccupancySlot == null) {
+                throw CountLimitExceededException(Constants.Constraints.MAX_CATEGORIES_PER_PROFILE)
+            }
+
+
+            val idToSortKeyMap = existing.associate { it.id!! to it.sortKey!! }
+            val mover = object: Mover<Long> {
+                override fun moveSortKey(id: Long, sortKey: Short) {
+                    categoryRepository.moveSortKeyTrx(trxContext, profileId, id, sortKey)
+                }
+            }
+
+            val nextSortKey = getNextSortKey(ordinalSortKeyOccupancySlot.sortKey?:0, idToSortKeyMap, mover)
+
             val date = ZonedDateTime.now(timeHandler.getClock())
             val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
             val category = CategoryPojo(null, profileId, null, true.toByte(), name, icon, nextOrdinal, nextSortKey, nextOccupancySlot,utcDate)

@@ -9,6 +9,9 @@ import com.davidgrath.expensetrackerbackend.repository.SellerLocationRepository
 import com.davidgrath.expensetrackerbackend.repository.SellerRepository
 import com.davidgrath.expensetrackerbackend.service.exceptions.CountLimitExceededException
 import com.davidgrath.expensetrackerbackend.utils.Constants
+import com.davidgrath.expensetrackerbackend.utils.Mover
+import com.davidgrath.expensetrackerbackend.utils.findEarliestOccupancySlot
+import com.davidgrath.expensetrackerbackend.utils.getNextSortKey
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
@@ -99,17 +102,32 @@ class SellerService {
             val profile = profileRepository.getByIdForUpdateTrx(trxContext, profileId)
             LOGGER.info("Acquired lock for profile {}", profile.id)
 
-            val sellerCount = sellerRepository.countAllTrx(trxContext, profile.id!!)
-            if(sellerCount >= Constants.Constraints.MAX_SELLERS_PER_PROFILE) {
+            val existing = sellerRepository.getAllByProfileIdTrx(trxContext, profile.id!!)
+            if(existing.size >= Constants.Constraints.MAX_SELLERS_PER_PROFILE) {
                 val exception = CountLimitExceededException(Constants.Constraints.MAX_SELLERS_PER_PROFILE)
                 LOGGER.error("Max sellers reached", exception)
                 throw exception
             }
             val ordinalSortKeyOccupancySlot = sellerRepository.getMaxOrdinalSortKeyAndOccupancySlotTrx(trxContext, profileId)
             val nextOrdinal = ((ordinalSortKeyOccupancySlot.ordinal?: 0) + 1).toShort()
-            val nextSortKey = ((ordinalSortKeyOccupancySlot.sortKey?: 0) + 1_000).toShort()
-            val nextOccupancySlot = ((ordinalSortKeyOccupancySlot.occupancySlot?: 0) + 1).toShort()
-            //TODO This is an oversimplified way of getting the max values, handle the case of slots or sort keys being taken
+
+            val allSlots = sellerRepository.getAllOccupancySlotsTrx(trxContext, profileId)
+//            val nextOccupancySlot = ((ordinalSortKeyOccupancySlot.occupancySlot?: 0) + 1).toShort()
+            val nextOccupancySlot = findEarliestOccupancySlot(allSlots.toShortArray(), Constants.Constraints.MAX_SELLERS_PER_PROFILE)
+            if(nextOccupancySlot == null) {
+                throw CountLimitExceededException(Constants.Constraints.MAX_SELLERS_PER_PROFILE)
+            }
+
+
+            val idToSortKeyMap = existing.associate { it.id!! to it.sortKey!! }
+            val mover = object: Mover<Long> {
+                override fun moveSortKey(id: Long, sortKey: Short) {
+                    sellerRepository.moveSortKeyTrx(trxContext, profileId, id, sortKey)
+                }
+            }
+
+            val nextSortKey = getNextSortKey(ordinalSortKeyOccupancySlot.sortKey?:0, idToSortKeyMap, mover)
+
             val date = ZonedDateTime.now(timeHandler.getClock())
             val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
             val sellerPojo = SellerPojo(null, profileId, name, nextOrdinal, nextSortKey, nextOccupancySlot, utcDate)
@@ -127,10 +145,10 @@ class SellerService {
             val seller = sellerRepository.getByIdForUpdateTrx(trxContext, profileId, sellerId)
             LOGGER.info("Acquired lock for seller {}", seller.id)
 
-            val sellerCount = sellerLocationRepository.countByProfileIdAndSellerIdTrx(trxContext, profileId, sellerId)
-            if(sellerCount >= Constants.Constraints.MAX_LOCATIONS_PER_SELLER) {
+            val existing = sellerLocationRepository.getByProfileIdAndSellerIdTrx(trxContext, profileId, sellerId)
+            if(existing.size >= Constants.Constraints.MAX_LOCATIONS_PER_SELLER) {
                 val exception = CountLimitExceededException(Constants.Constraints.MAX_LOCATIONS_PER_SELLER)
-                LOGGER.error("Max sellers reached", exception)
+                LOGGER.error("Max seller locations reached", exception)
                 throw exception
             }
             val date = ZonedDateTime.now(timeHandler.getClock())
@@ -139,9 +157,22 @@ class SellerService {
 
             val ordinalSortKeyOccupancySlot = sellerLocationRepository.getMaxOrdinalSortKeyAndOccupancySlotTrx(trxContext, profileId, sellerId)
             val nextOrdinal = ((ordinalSortKeyOccupancySlot.ordinal?: 0) + 1).toShort()
-            val nextSortKey = ((ordinalSortKeyOccupancySlot.sortKey?: 0) + 1_000).toShort() //TODO I should eventually rework all of my fetch queries to actually sort by sort key. Was sort key actually necessary for every table? Not really, but I decided I might as well go all out since I've started this massive rework
-            val nextOccupancySlot = ((ordinalSortKeyOccupancySlot.occupancySlot?: 0) + 1).toShort()
-            //TODO This is an oversimplified way of getting the max values, handle the case of slots or sort keys being taken
+
+            val allSlots = sellerLocationRepository.getAllOccupancySlotsTrx(trxContext, profileId)
+            val nextOccupancySlot = findEarliestOccupancySlot(allSlots.toShortArray(), Constants.Constraints.MAX_LOCATIONS_PER_SELLER)
+            if(nextOccupancySlot == null) {
+                throw CountLimitExceededException(Constants.Constraints.MAX_LOCATIONS_PER_SELLER)
+            }
+
+
+            val idToSortKeyMap = existing.associate { it.id!! to it.sortKey!! }
+            val mover = object: Mover<Long> {
+                override fun moveSortKey(id: Long, sortKey: Short) {
+                    sellerLocationRepository.moveSortKeyTrx(trxContext, profileId, id, sortKey)
+                }
+            }
+
+            val nextSortKey = getNextSortKey(ordinalSortKeyOccupancySlot.sortKey?:0, idToSortKeyMap, mover) //TODO I should eventually rework all of my fetch queries to actually sort by sort key. Was sort key actually necessary for every table? Not really, but I decided I might as well go all out since I've started this massive rework
 
             val sellerLocationPojo = SellerLocationPojo(null, sellerId, seller.ordinal!!, name, null, null, null, nextOrdinal, nextSortKey, nextOccupancySlot, utcDate)
             val id = sellerLocationRepository.insertSellerLocation(sellerLocationPojo)

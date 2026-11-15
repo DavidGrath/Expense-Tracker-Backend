@@ -134,6 +134,32 @@ open class CategoryRepository {
         return updatedCount
     }
 
+    fun moveSortKeyTrx(trxContext: DSLContext, profileId: Long, categoryId: Long, sortKey: Short): Int {
+
+        val updateStep = trxContext.update(CATEGORY)
+            .set(CATEGORY.SORT_KEY, sortKey)
+            .where(CATEGORY.ID.eq(categoryId))
+            .and(CATEGORY.PROFILE_ID.eq(profileId))
+
+        val updatedCount = updateStep.execute()
+        LOGGER.info("Updated rows: {}", updatedCount)
+        if(updatedCount != 1) {
+            LOGGER.warn("Not exactly 1 row updated")
+        }
+        return updatedCount
+    }
+
+
+    fun getAllOccupancySlotsTrx(trxContext: DSLContext, profileId: Long): List<Short> {
+        val selectStep = trxContext.select(
+            CATEGORY.OCCUPANCY_SLOT
+        ).from(CATEGORY)
+            .where(CATEGORY.PROFILE_ID.eq(profileId))
+
+        return selectStep.fetch().map { it.value1() }
+    }
+
+
 
     companion object {
         private val LOGGER = LoggerFactory.getLogger(CategoryRepository::class.java)

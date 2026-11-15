@@ -345,7 +345,6 @@ class StatisticsControllerTest {
     @Test
     @Ignore("Not ready yet")
     fun givenCurrencyCodeIsInvalidWhenStatisticsEndpointThenBadRequest() {
-        //TODO new code: invalid_currency_code
         //TODO Hibernate validations
     }
 }

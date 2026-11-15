@@ -2,6 +2,7 @@ package com.davidgrath.expensetrackerbackend.controller.exception
 
 import com.davidgrath.expensetrackerbackend.service.exceptions.CountLimitExceededException
 import com.davidgrath.expensetrackerbackend.service.exceptions.EntityNotFoundException
+import com.davidgrath.expensetrackerbackend.service.exceptions.InvalidCurrencyCodeException
 import com.davidgrath.expensetrackerbackend.service.exceptions.InvalidDraftException
 import com.davidgrath.expensetrackerbackend.service.exceptions.NoExplicitDefaultAccountException
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE
@@ -46,6 +47,13 @@ class ExceptionResponseHandler {
     fun handleInvalidDraftException(e: InvalidDraftException): ProblemDetail {
         val problemDetail: ProblemDetail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST)
         problemDetail.setProperty(CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE, ErrorCode.INVALID_INPUT.code)
+        return problemDetail
+    }
+
+    @ExceptionHandler(InvalidCurrencyCodeException::class)
+    fun handleInvalidCurrencyCodeException(e: InvalidCurrencyCodeException): ProblemDetail {
+        val problemDetail: ProblemDetail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST)
+        problemDetail.setProperty(CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE, ErrorCode.INVALID_CURRENCY_CODE.code)
         return problemDetail
     }
 }

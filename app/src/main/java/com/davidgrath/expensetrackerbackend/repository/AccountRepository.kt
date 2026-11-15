@@ -182,6 +182,16 @@ open class AccountRepository {
     }
 
 
+    fun getAllOccupancySlotsTrx(trxContext: DSLContext, profileId: Long): List<Short> {
+        val selectStep = trxContext.select(
+            ACCOUNT.OCCUPANCY_SLOT
+        ).from(ACCOUNT)
+            .where(ACCOUNT.PROFILE_ID.eq(profileId))
+
+        return selectStep.fetch().map { it.value1() }
+    }
+
+
     // endregion
 
     // region Update
@@ -237,6 +247,22 @@ open class AccountRepository {
             .set(ACCOUNT.IS_DEFAULT, isDefault.toByte())
             .where(ACCOUNT.ID.eq(accountId))
             .and(ACCOUNT.PROFILE_ID.eq(profileId))
+        val updatedCount = updateStep.execute()
+        LOGGER.info("Updated rows: {}", updatedCount)
+        if(updatedCount != 1) {
+            LOGGER.warn("Not exactly 1 row updated")
+        }
+        return updatedCount
+    }
+
+
+    fun moveSortKeyTrx(trxContext: DSLContext, profileId: Long, accountId: Long, sortKey: Short): Int {
+
+        val updateStep = trxContext.update(ACCOUNT)
+            .set(ACCOUNT.SORT_KEY, sortKey)
+            .where(ACCOUNT.ID.eq(accountId))
+            .and(ACCOUNT.PROFILE_ID.eq(profileId))
+
         val updatedCount = updateStep.execute()
         LOGGER.info("Updated rows: {}", updatedCount)
         if(updatedCount != 1) {

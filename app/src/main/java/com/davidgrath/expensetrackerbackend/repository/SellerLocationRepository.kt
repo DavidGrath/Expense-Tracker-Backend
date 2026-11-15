@@ -13,12 +13,12 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 
 @Service
-class SellerLocationRepository @Autowired constructor(open var dslContext: DSLContext) {
+class SellerLocationRepository @Autowired constructor(open var mainContext: DSLContext) {
 
     // region Create
 
     fun insertSellerLocation(sellerLocationPojo: SellerLocationPojo): Long {
-        return insertSellerLocationTrx(dslContext, sellerLocationPojo)
+        return insertSellerLocationTrx(mainContext, sellerLocationPojo)
     }
 
     fun insertSellerLocationTrx(trxContext: DSLContext, sellerLocationPojo: SellerLocationPojo): Long {
@@ -32,7 +32,7 @@ class SellerLocationRepository @Autowired constructor(open var dslContext: DSLCo
     // region Read
 
     fun getByProfileIdAndId(profileId: Long, id: Long): SellerLocationPojo? {
-        val selectStep = dslContext.select(SELLER_LOCATION.asterisk())
+        val selectStep = mainContext.select(SELLER_LOCATION.asterisk())
             .from(SELLER_LOCATION)
             .innerJoin(SELLER).on(sellerLocationToSellerPath)
             .where(SELLER_LOCATION.ID.eq(id))
@@ -42,7 +42,7 @@ class SellerLocationRepository @Autowired constructor(open var dslContext: DSLCo
     }
 
     fun getByUserIdAndId(userId: Long, id: Long): SellerLocationPojo? {
-        val selectStep = dslContext.select(SELLER_LOCATION.asterisk())
+        val selectStep = mainContext.select(SELLER_LOCATION.asterisk())
             .from(SELLER_LOCATION)
             .innerJoin(SELLER).on(sellerLocationToSellerPath)
             .innerJoin(PROFILE).on(PROFILE.ID.eq(SELLER.PROFILE_ID))
@@ -52,7 +52,12 @@ class SellerLocationRepository @Autowired constructor(open var dslContext: DSLCo
     }
 
     fun getByProfileIdAndSellerId(profileId: Long, sellerId: Long): List<SellerLocationPojo> {
-        val selectStep = dslContext.select(SELLER_LOCATION.asterisk())
+        return getByProfileIdAndSellerIdTrx(mainContext, profileId, sellerId)
+    }
+
+    //TODO Maybe create specific (Id,SortKey) tuple classes for these
+    fun getByProfileIdAndSellerIdTrx(trxContext: DSLContext, profileId: Long, sellerId: Long): List<SellerLocationPojo> {
+        val selectStep = trxContext.select(SELLER_LOCATION.asterisk())
             .from(SELLER_LOCATION)
             .innerJoin(SELLER).on(sellerLocationToSellerPath)
             .where(SELLER.ID.eq(sellerId))
@@ -65,7 +70,7 @@ class SellerLocationRepository @Autowired constructor(open var dslContext: DSLCo
     }
 
     fun countByProfileIdAndSellerId(profileId: Long, sellerId: Long): Int {
-        return countByProfileIdAndSellerIdTrx(dslContext, profileId, sellerId)
+        return countByProfileIdAndSellerIdTrx(mainContext, profileId, sellerId)
     }
     fun countByProfileIdAndSellerIdTrx(trxContext: DSLContext, profileId: Long, sellerId: Long): Int {
         val selectStep = trxContext.select(DSL.count(SELLER_LOCATION.ID))
@@ -78,7 +83,7 @@ class SellerLocationRepository @Autowired constructor(open var dslContext: DSLCo
     }
 
     fun getMaxOrdinalForSeller(profileId: Long, sellerId: Long): Short? {
-        val selectStep = dslContext.select(DSL.max(SELLER_LOCATION.ORDINAL))
+        val selectStep = mainContext.select(DSL.max(SELLER_LOCATION.ORDINAL))
             .from(SELLER_LOCATION)
             .innerJoin(SELLER).on(sellerLocationToSellerPath)
             .innerJoin(PROFILE).on(PROFILE.ID.eq(SELLER.PROFILE_ID))
@@ -89,7 +94,7 @@ class SellerLocationRepository @Autowired constructor(open var dslContext: DSLCo
 
 
     fun getMaxOrdinalSortKeyAndOccupancySlot(profileId: Long, sellerId: Long): OrdinalSortKeyOccupancySlot {
-        return getMaxOrdinalSortKeyAndOccupancySlotTrx(dslContext, profileId, sellerId)
+        return getMaxOrdinalSortKeyAndOccupancySlotTrx(mainContext, profileId, sellerId)
     }
 
     fun getMaxOrdinalSortKeyAndOccupancySlotTrx(trxContext: DSLContext, profileId: Long, sellerId: Long): OrdinalSortKeyOccupancySlot {
@@ -107,7 +112,7 @@ class SellerLocationRepository @Autowired constructor(open var dslContext: DSLCo
     }
 
     fun getAllByProfileId(profileId: Long): List<SellerLocationPojo> {
-        val selectStep = dslContext.select(SELLER_LOCATION.asterisk())
+        val selectStep = mainContext.select(SELLER_LOCATION.asterisk())
             .from(SELLER_LOCATION)
             .innerJoin(SELLER).on(sellerLocationToSellerPath)
             .where(SELLER.PROFILE_ID.eq(profileId))
@@ -118,16 +123,43 @@ class SellerLocationRepository @Autowired constructor(open var dslContext: DSLCo
         return result
     }
 
+
+    fun getAllOccupancySlotsTrx(trxContext: DSLContext, profileId: Long): List<Short> {
+        val selectStep = trxContext.select(
+            SELLER_LOCATION.OCCUPANCY_SLOT
+        ).from(SELLER_LOCATION)
+            .where(SELLER_LOCATION.PROFILE_ID.eq(profileId))
+
+        return selectStep.fetch().map { it.value1() }
+    }
+
     // endregion
 
     // region Update
 
     fun updateSellerLocation(profileId: Long, id: Long, name: String): Int {
-        val updateStep = dslContext.update(SELLER_LOCATION)
+        val updateStep = mainContext.update(SELLER_LOCATION)
             .set(SELLER_LOCATION.NAME, name)
             .from(SELLER_LOCATION.innerJoin(SELLER).on(sellerLocationToSellerPath))
             .where(SELLER_LOCATION.ID.eq(id))
             .and(SELLER.PROFILE_ID.eq(profileId))
+
+        val updatedCount = updateStep.execute()
+        LOGGER.info("Updated rows: {}", updatedCount)
+        if(updatedCount != 1) {
+            LOGGER.warn("Not exactly 1 row updated")
+        }
+        return updatedCount
+    }
+
+
+    //TODO Document this "...Trx" convention formally
+    fun moveSortKeyTrx(trxContext: DSLContext, profileId: Long, categoryId: Long, sortKey: Short): Int {
+
+        val updateStep = trxContext.update(SELLER_LOCATION)
+            .set(SELLER_LOCATION.SORT_KEY, sortKey)
+            .where(SELLER_LOCATION.ID.eq(categoryId))
+            .and(SELLER_LOCATION.PROFILE_ID.eq(profileId))
 
         val updatedCount = updateStep.execute()
         LOGGER.info("Updated rows: {}", updatedCount)

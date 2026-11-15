@@ -31,7 +31,6 @@ class SellerRepository @Autowired constructor(open var mainContext: DSLContext) 
 
     // endregion
 
-    // region Read
 
     fun getByProfileIdAndId(profileId: Long, id: Long): SellerPojo? {
         return getByProfileIdAndIdTrx(mainContext, profileId, id)
@@ -65,7 +64,11 @@ class SellerRepository @Autowired constructor(open var mainContext: DSLContext) 
     }
 
     fun getAllByProfileId(profileId: Long): List<SellerPojo> {
-        val selectStep = mainContext.select(SELLER.asterisk())
+        return getAllByProfileIdTrx(mainContext, profileId)
+    }
+
+    fun getAllByProfileIdTrx(trxContext: DSLContext, profileId: Long): List<SellerPojo> {
+        val selectStep = trxContext.select(SELLER.asterisk())
             .from(SELLER)
             .where(SELLER.PROFILE_ID.eq(profileId))
             .limit(DEFAULT_FETCH_LIMIT)
@@ -122,6 +125,32 @@ class SellerRepository @Autowired constructor(open var mainContext: DSLContext) 
             LOGGER.warn("Not exactly 1 row updated")
         }
         return updatedCount
+    }
+
+
+    fun moveSortKeyTrx(trxContext: DSLContext, profileId: Long, sellerId: Long, sortKey: Short): Int {
+
+        val updateStep = trxContext.update(SELLER)
+            .set(SELLER.SORT_KEY, sortKey)
+            .where(SELLER.ID.eq(sellerId))
+            .and(SELLER.PROFILE_ID.eq(profileId))
+
+        val updatedCount = updateStep.execute()
+        LOGGER.info("Updated rows: {}", updatedCount)
+        if(updatedCount != 1) {
+            LOGGER.warn("Not exactly 1 row updated")
+        }
+        return updatedCount
+    }
+
+
+    fun getAllOccupancySlotsTrx(trxContext: DSLContext, profileId: Long): List<Short> {
+        val selectStep = trxContext.select(
+            SELLER.OCCUPANCY_SLOT
+        ).from(SELLER)
+            .where(SELLER.PROFILE_ID.eq(profileId))
+
+        return selectStep.fetch().map { it.value1() }
     }
 
 

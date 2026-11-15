@@ -4,6 +4,7 @@ import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.entities.*
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.*
 import com.davidgrath.expensetrackerbackend.repository.*
+import com.davidgrath.expensetrackerbackend.service.exceptions.CountLimitExceededException
 import com.davidgrath.expensetrackerbackend.service.exceptions.EntityNotFoundException
 import com.davidgrath.expensetrackerbackend.service.exceptions.InvalidDraftException
 import com.davidgrath.expensetrackerbackend.utils.*
@@ -168,7 +169,7 @@ class TransactionDraftService {
     fun finishDraft(profileId: Long, userUuid: ByteArray, profileUuid: ByteArray, zoneId: ZoneId): Long {
         val start = System.currentTimeMillis()
         var transactionIdRet: Long = -1
-        transactionRepository.transactionContext { trx ->
+        genericRepository.transactionContext { trx ->
             val trxContext = trx.dsl()
         val userDraft = userDraftRepository.getDraftByProfileForUpdateTrx(trxContext, profileId)
 
@@ -210,6 +211,7 @@ class TransactionDraftService {
 
                 val draftFile =
                     File(timeHandler.getRoot(), Constants.FOLDER_NAME_USERS + "/${userUuidString}/" + image.path)
+                //TODO draft: data class UserFolder(userUuid: ByteArray, profileId: ByteArray), also UserImageFile and UserDocumentFile. This aligns with the "make this more convenient" note I left somewhere else around here
 
                 val path = fileService.moveFileToMain( //TODO Do not move here: simply copy and then delete on completion, in case a rollback i.e. exception happens
                     timeHandler.getRoot(),
@@ -257,9 +259,23 @@ class TransactionDraftService {
 
             val ordinalSortKeyOccupancySlot = transactionRepository.getMaxOrdinalSortKeyAndOccupancySlotTrx(trxContext, profileId, account.id!!)
             val nextTransactionOrdinal = ((ordinalSortKeyOccupancySlot.ordinal?: 0) + 1).toShort()
-            val nextSortKey = ((ordinalSortKeyOccupancySlot.sortKey?: 0) + 1_000).toShort()
-            val nextOccupancySlot = ((ordinalSortKeyOccupancySlot.occupancySlot?: 0) + 1).toShort()
-            //TODO This is an oversimplified way of getting the max values, handle the case of slots or sort keys being taken
+
+            val allSlots = transactionRepository.getAllOccupancySlotsTrx(trxContext, profileId, account.id!!)
+//            val nextOccupancySlot = ((ordinalSortKeyOccupancySlot.occupancySlot?: 0) + 1).toShort()
+            val nextOccupancySlot = findEarliestOccupancySlot(allSlots.toShortArray(), Constants.Constraints.MAX_TRANSACTIONS_PER_PROFILE)
+            if(nextOccupancySlot == null) {
+                throw CountLimitExceededException(Constants.Constraints.MAX_TRANSACTIONS_PER_PROFILE)
+            }
+
+            val idsToKeys = transactionRepository.getIdsAndSortKeysByProfileIdAndAccountIdAndDateTrx(trxContext, profileId, account.id!!, datedDate)
+            val idToSortKeyMap = idsToKeys.associate { it.id!! to it.sortKey!! }
+            val mover = object: Mover<Long> {
+                override fun moveSortKey(id: Long, sortKey: Short) {
+                    transactionRepository.moveSortKeyTrx(trxContext, profileId, id, account.id!!, datedDate, sortKey)
+                }
+            }
+
+            val nextSortKey = getNextSortKey(ordinalSortKeyOccupancySlot.sortKey?:0, idToSortKeyMap, mover)
 
             /* TODO Fix ordinals later
             if(datedTime != null) {

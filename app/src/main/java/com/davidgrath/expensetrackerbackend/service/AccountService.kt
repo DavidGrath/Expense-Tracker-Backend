@@ -8,10 +8,15 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.AccountP
 import com.davidgrath.expensetrackerbackend.repository.AccountRepository
 import com.davidgrath.expensetrackerbackend.repository.GenericRepository
 import com.davidgrath.expensetrackerbackend.repository.ProfileRepository
+import com.davidgrath.expensetrackerbackend.service.exceptions.CountLimitExceededException
 import com.davidgrath.expensetrackerbackend.service.exceptions.EntityNotFoundException
+import com.davidgrath.expensetrackerbackend.service.exceptions.InvalidCurrencyCodeException
 import com.davidgrath.expensetrackerbackend.service.exceptions.NoExplicitDefaultAccountException
 import com.davidgrath.expensetrackerbackend.utils.Constants
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.FALSE_BYTE
+import com.davidgrath.expensetrackerbackend.utils.Mover
+import com.davidgrath.expensetrackerbackend.utils.findEarliestOccupancySlot
+import com.davidgrath.expensetrackerbackend.utils.getNextSortKey
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
@@ -72,15 +77,39 @@ class AccountService {
 
             val existing = accountRepository.getAllByProfileIdTrx(trxContext, profile.id!!)
             if(existing.size >= Constants.Constraints.MAX_ACCOUNTS_PER_PROFILE) {
-                val exception = CustomHttpException(ErrorCode.LIMITS_EXCEEDED, HttpStatus.BAD_REQUEST) //TODO I'm not sure if I wanna throw CustomHttpExceptions at the service layer, but they're a good placeholder for now
+                val exception = CountLimitExceededException(Constants.Constraints.MAX_ACCOUNTS_PER_PROFILE)
                 LOGGER.error("Max accounts reached", exception)
+                throw exception
+            }
+            val exc: IllegalArgumentException? = try {
+                Currency.getInstance(currencyCode)
+                null
+            } catch (e: IllegalArgumentException) {
+                e
+            }
+            if(exc != null) {
+                val exception = InvalidCurrencyCodeException()
+                LOGGER.error("Invalid currency code", exception)
                 throw exception
             }
             val ordinalSortKeyOccupancySlot = accountRepository.getMaxOrdinalSortKeyAndOccupancySlotTrx(trxContext, profileId)
             val nextOrdinal = ((ordinalSortKeyOccupancySlot.ordinal?: 0) + 1).toShort()
-            val nextSortKey = ((ordinalSortKeyOccupancySlot.sortKey?: 0) + 1_000).toShort()
-            val nextOccupancySlot = ((ordinalSortKeyOccupancySlot.occupancySlot?: 0) + 1).toShort()
-            //TODO This is an oversimplified way of getting the max values, handle the case of slots or sort keys being taken
+
+            val allSlots = accountRepository.getAllOccupancySlotsTrx(trxContext, profileId)
+            val nextOccupancySlot = findEarliestOccupancySlot(allSlots.toShortArray(), Constants.Constraints.MAX_ACCOUNTS_PER_PROFILE)
+            if(nextOccupancySlot == null) {
+                throw CountLimitExceededException(Constants.Constraints.MAX_ACCOUNTS_PER_PROFILE)
+            }
+
+            val idToSortKeyMap = existing.associate { it.id!! to it.sortKey!! }
+            val mover = object: Mover<Long> {
+                override fun moveSortKey(id: Long, sortKey: Short) {
+                    accountRepository.moveSortKeyTrx(trxContext, profileId, id, sortKey)
+                }
+            }
+
+            val nextSortKey = getNextSortKey(ordinalSortKeyOccupancySlot.sortKey?:0, idToSortKeyMap, mover)
+
             val date = ZonedDateTime.now(timeHandler.getClock())
             val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
             val accountPojo = AccountPojo(null, profileId, currencyCode, null, null, name, FALSE_BYTE, nextOrdinal, nextSortKey, nextOccupancySlot, utcDate)

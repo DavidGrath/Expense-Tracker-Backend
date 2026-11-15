@@ -14,9 +14,13 @@ import org.jooq.impl.DSL
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.InputStream
+import java.math.BigDecimal
 import java.math.BigInteger
+import java.math.MathContext
 import java.security.MessageDigest
 import java.util.UUID
+import kotlin.math.floor
+import kotlin.math.min
 
 
 private val LOGGER = LoggerFactory.getLogger("com.davidgrath.expensetrackerbackend.Utils")
@@ -241,9 +245,6 @@ fun bytesToUUID(bytes: ByteArray): UUID {
         val num = (bytes[i+8].toLong() and 0xFF) shl ((7-i) * 8)
         low = low or num
     }
-//    val high = bytes.get(0).toLong().shl(7 * 8) or bytes.get(1).toLong().shl(6 * 8) or bytes.get(2).toLong().shl(5 * 8) or bytes.get(3).toLong().shl(4 * 8) or bytes.get(4).toLong().shl(3 * 8) or bytes.get(5).toLong().shl(2 * 8) or bytes.get(6).toLong().shl(1 * 8) or bytes.get(7).toLong().shl(0 * 8)
-    LOGGER.debug("High: {}", high.toString(16))
-//    val low = bytes.get(8).toLong().shl(7 * 8) or bytes.get(9).toLong().shl(6 * 8) or bytes.get(10).toLong().shl(5 * 8) or bytes.get(11).toLong().shl(4 * 8) or bytes.get(12).toLong().shl(3 * 8) or bytes.get(13).toLong().shl(2 * 8) or bytes.get(14).toLong().shl(1 * 8) or bytes.get(15).toLong().shl(0 * 8)
     val uuid = UUID(high, low)
     return uuid
 }
@@ -257,22 +258,103 @@ fun binaryIndexSearchNext(sortKeys: IntArray, current: Int, next: Int): Int? {
     return null
 }
 
+fun interface Mover<T: Comparable<T>> {
+    fun moveSortKey(id: T, sortKey: Short)
+}
+
+
+class DatabaseMover<T: Comparable<T>>: Mover<T> {
+    override fun moveSortKey(id: T, sortKey: Short) {
+        //UPDATE TABLE SET SORT_KEY = :sortKey WHERE ID = :id
+    }
+}
+
+/**
+ * It's quite inconvenient to reorganize elements if it's impossible to have a gap between each one, therefore it
+ * throws an exception when [maxIndexOfCollection] / the size of the elements, [idToKeyMap] <= 2
+ */
+fun <T: Comparable<T>> getNextSortKey(maxSortKey: Short, idToKeyMap: Map<T, Short>, mover: Mover<T>, maxIndexOfCollection: BigInteger = BigInteger(Short.MAX_VALUE.toString()), preferredSpacingFactor: Short = 1_000): Short {
+    require(preferredSpacingFactor > 1)
+    if(idToKeyMap.isEmpty()) {
+        return preferredSpacingFactor.toShort()
+    }
+    val sparseness = BigDecimal(maxIndexOfCollection).setScale(8)/BigDecimal(idToKeyMap.size)
+    LOGGER.debug("Sparseness: {}; {}", sparseness, idToKeyMap.size)
+    if(sparseness <= BigDecimal(2)) {
+        throw RuntimeException("Collection is not sparse enough")
+    }
+
+    var next = if(maxIndexOfCollection - BigInteger(maxSortKey.toString()) < BigInteger(preferredSpacingFactor.toString())) {
+        maxIndexOfCollection.toShort()
+    } else {
+        (maxSortKey + preferredSpacingFactor).toShort()
+    }
+    LOGGER.debug("Next: {}", next)
+
+    if(next - maxSortKey <= preferredSpacingFactor) {
+        LOGGER.info("Gap to next key is too small. Rebalancing")
+
+        val (spacingFactor, newMax) = rebalance(preferredSpacingFactor, maxIndexOfCollection, idToKeyMap, mover)
+        return (newMax + spacingFactor).toShort()
+    }
+    return next
+}
+
+/**
+ * TODO I think I can also rebalance by using row_number * preferredSpacingFactor at the repository level, but for now we use this
+ * The most important part is that it keeps the relative ordering between elements. It should only make the gaps between them even
+ * @return The chosen spacing factor used and the last sort key generated
+ */
+fun <T: Comparable<T>> rebalance(preferredSpacingFactor: Short, maxIndexOfCollection: BigInteger, sortKeyMap: Map<T, Short>, mover: Mover<T>): Pair<Short, Short> {
+
+    require(maxIndexOfCollection.compareTo(BigInteger.ONE)  > 0)
+    //for i in 1..existingSortKeys.size if existingSortKeys[i] > maxIndex throe IllegalArgumentException
+
+
+    val currentOccupantCount = sortKeyMap.size
+
+    val copy = sortKeyMap.toMap()
+    copy.entries.sortedByDescending { it.value }.onEachIndexed {i, (id, sortKey) ->
+        val index = BigInteger(i.toString())
+        mover.moveSortKey(id, (maxIndexOfCollection-(index)).toShort())
+    }
+    val spacingFactor = floor(maxIndexOfCollection.toDouble() / currentOccupantCount).toInt().toShort()
+    val chosenSpacingFactor = min(preferredSpacingFactor.toInt(), spacingFactor.toInt()).toShort()
+    val newCopy = sortKeyMap.toMap()
+    var newMax: Short = -1
+    newCopy.entries.sortedBy { it.value }.onEachIndexed {i, (id, sortKey) ->
+        val newPos = (i+1) * chosenSpacingFactor
+        mover.moveSortKey(id, newPos.toShort())
+        newMax = newPos.toShort() //In reality, only the last assignment is needed
+    }
+    return chosenSpacingFactor to newMax
+}
+
 /**
  * @param slots assumed to be sorted
  * @param max It is assumed that 1 is the starting point, so the range 1..max is searched
  */
-fun findEarliestOccupancySlot(slots: IntArray, max: Int): Int? {
+fun findEarliestOccupancySlot(slots: ShortArray, max: Int): Short? {
+    //TODO singular gap m such that 1<m<n and 1<=n<max is filled up
+    require(max >= 1) {
+        "Max must be positive"
+    }
+    val expanded = BooleanArray(max)
+    if(slots.size > max) {
+        throw IllegalArgumentException("List too large")
+    }
+    for(i in slots) {
+        if(i !in 1..max) {
+            throw IllegalArgumentException("Element out of bounds")
+        }
+        expanded[i - 1] = true
+    }
+    for(i in 1..max) {
+        if(!expanded[i-1]) {
+            return i.toShort()
+        }
+    }
     return null
-    //TODO Test cases: full range, empty range, 1<=n<max is filled up
-    // singular gap m such that 1<m<n and 1<=n<max is filled up
-//    var listIndex = 0
-//    for(i in 1..max) {
-//        if(slots[listIndex] != 1) {
-//            return i
-//        }
-//        listIndex++
-//    }
-//    return null
 }
 
 /**

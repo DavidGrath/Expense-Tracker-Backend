@@ -83,7 +83,6 @@ class UserService {
                 val nextOrdinal = (i + 1).toShort()
                 val nextSortKey = ((i + 1) * 1_000).toShort()
                 val nextOccupancySlot = (i + 1).toShort()
-                //TODO This is an oversimplified way of getting the max values, handle the case of slots or sort keys being taken
                     val defaultIcon = CATEGORY_IDS_ICONS_DEFAULT[category]!!
 
                     categoryRepository.insertCategoryTrx(trxContext,

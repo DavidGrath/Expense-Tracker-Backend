@@ -10,10 +10,16 @@ import com.davidgrath.expensetrackerbackend.generatedapi.model.StatisticsFilter
 import com.davidgrath.expensetrackerbackend.generatedapi.model.SuggestionsFieldType
 import com.davidgrath.expensetrackerbackend.repository.AccountRepository
 import com.davidgrath.expensetrackerbackend.repository.CategoryRepository
+import com.davidgrath.expensetrackerbackend.repository.GenericRepository
 import com.davidgrath.expensetrackerbackend.repository.StatisticsRepository
 import com.davidgrath.expensetrackerbackend.repository.TransactionItemRepository
 import com.davidgrath.expensetrackerbackend.repository.TransactionRepository
+import com.davidgrath.expensetrackerbackend.service.exceptions.CountLimitExceededException
+import com.davidgrath.expensetrackerbackend.utils.Constants
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.FALSE_BYTE
+import com.davidgrath.expensetrackerbackend.utils.Mover
+import com.davidgrath.expensetrackerbackend.utils.findEarliestOccupancySlot
+import com.davidgrath.expensetrackerbackend.utils.getNextSortKey
 import com.davidgrath.expensetrackerbackend.utils.statisticsFilterToStatisticsFilterDb
 import com.davidgrath.expensetrackerbackend.utils.toByte
 import org.slf4j.LoggerFactory
@@ -36,27 +42,44 @@ class TransactionService {
     @Autowired
     lateinit var categoryRepository: CategoryRepository
     @Autowired
+    lateinit var genericRepository: GenericRepository
+    @Autowired
     lateinit var timeHandler: TimeHandler
     
     fun addTransaction(profileId: Long, accountId: Long, debitOrCredit: Boolean, amount: BigDecimal, description: String, categoryId: Long, zoneId: ZoneId): Long {
         val date = ZonedDateTime.now(timeHandler.getClock())
         val utcDate = date.withZoneSameInstant(ZoneId.of("UTC"))
+        val localDate = utcDate.toLocalDate()
         val userTime = date.withZoneSameInstant(zoneId).toLocalTime()
         var transactionIdRet = -1L
-        transactionRepository.transactionContext { trx ->
+        genericRepository.transactionContext { trx ->
             val trxContext = trx.dsl()
             val account = accountRepository.getByProfileIdAndIdTrx(trxContext, profileId, accountId)!!
             val ordinalSortKeyOccupancySlot = transactionRepository.getMaxOrdinalSortKeyAndOccupancySlotTrx(trxContext, profileId, accountId)
             val nextOrdinal = ((ordinalSortKeyOccupancySlot.ordinal?: 0) + 1).toShort()
-            val nextSortKey = ((ordinalSortKeyOccupancySlot.sortKey?: 0) + 1_000).toShort()
-            val nextOccupancySlot = ((ordinalSortKeyOccupancySlot.occupancySlot?: 0) + 1).toShort()
-            //TODO This is an oversimplified way of getting the max values, handle the case of slots or sort keys being taken
+            val allSlots = transactionRepository.getAllOccupancySlotsTrx(trxContext, profileId, accountId)
+//            val nextOccupancySlot = ((ordinalSortKeyOccupancySlot.occupancySlot?: 0) + 1).toShort()
+            val nextOccupancySlot = findEarliestOccupancySlot(allSlots.toShortArray(), Constants.Constraints.MAX_TRANSACTIONS_PER_PROFILE)
+            if(nextOccupancySlot == null) {
+                throw CountLimitExceededException(Constants.Constraints.MAX_TRANSACTIONS_PER_PROFILE)
+            }
+
+            val idsToKeys = transactionRepository.getIdsAndSortKeysByProfileIdAndAccountIdAndDateTrx(trxContext, profileId, accountId, localDate)
+            val idToSortKeyMap = idsToKeys.associate { it.id!! to it.sortKey!! }
+            val mover = object: Mover<Long> {
+                override fun moveSortKey(id: Long, sortKey: Short) {
+                    transactionRepository.moveSortKeyTrx(trxContext, profileId, id, accountId, localDate,sortKey)
+                }
+            }
+
+            val nextSortKey = getNextSortKey(ordinalSortKeyOccupancySlot.sortKey?:0, idToSortKeyMap, mover)
+
             val transaction = TransactionPojo(
                 null,
                 profileId,
                 amount,
                 debitOrCredit.toByte(),
-                utcDate.toLocalDate(),
+                localDate,
                 userTime,
                 TransactionMode.Other,
                 null,
@@ -139,6 +162,7 @@ class TransactionService {
         profileId: Long, debitOrCredit: Boolean, fromDate: LocalDate?, toDate: LocalDate? = null,
         accountIds: List<Long>, dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>
     ): List<DateAmountSummary> {
+        //TODO Add a test here and at the controller layer to ensure fromDate?>toDate? is an invalid request
 
         val today = LocalDate.now(timeHandler.getClock())
         if(fromDate != null && fromDate.compareTo(today) > 0) {
