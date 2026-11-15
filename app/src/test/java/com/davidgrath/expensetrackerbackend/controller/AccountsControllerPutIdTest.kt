@@ -5,6 +5,7 @@ import com.davidgrath.expensetrackerbackend.configuration.TestRunControllerConfi
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.controller.exception.ExceptionResponseHandler
+import com.davidgrath.expensetrackerbackend.generatedapi.api.AccountsApi
 import com.davidgrath.expensetrackerbackend.generatedapi.model.AccountUpdateRequest
 import com.davidgrath.expensetrackerbackend.repository.AccountRepository
 import com.davidgrath.expensetrackerbackend.repository.ProfileRepository
@@ -29,6 +30,7 @@ import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ContextConfiguration
@@ -44,7 +46,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers
         AccountsController::class, SecurityConfiguration::class, TestRunControllerConfiguration::class, TestAuthController::class, ExceptionResponseHandler::class, TestUtilComponent::class
     ])
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
-class AccountsControllerUpdateByIdTest {
+class AccountsControllerPutIdTest {
 
     @Autowired
     lateinit var mockMvc: MockMvc
@@ -75,6 +77,38 @@ class AccountsControllerUpdateByIdTest {
         testUtilComponent.deleteAll()
     }
 
+    val endpoint = AccountsApi.PATH_ACCOUNTS_ID_PUT
+    val verb = HttpMethod.PUT
+
+    @Test
+    @Ignore
+    fun accountUpdateOkTest() {
+        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
+
+        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+
+
+        val defaultAccountId = accountRepository.getAllByProfileId(profile.id!!).firstOrNull()!!.id!!
+        val newName = "New Account name"
+        val newCode = "GBP"
+        val updateRequest = AccountUpdateRequest(newName, newCode)
+        var json: String = objectWriter.writeValueAsString(updateRequest)
+        var response = mockMvc
+            .perform(
+                MockMvcRequestBuilders.request(verb, endpoint, defaultAccountId)
+                    .header("Authorization", "Bearer ${jws}")
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(json)
+            )
+            .andExpectAll(
+                MockMvcResultMatchers.status().isOk
+            ).andReturn()
+        //TODO Maybe test side effects
+    }
+
+
     @Test
     fun givenNameBlankWhenUpdateAccountThenBadRequest() {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
@@ -90,7 +124,7 @@ class AccountsControllerUpdateByIdTest {
         var json: String = objectWriter.writeValueAsString(updateRequest)
         var response = mockMvc
             .perform(
-                MockMvcRequestBuilders.put("/accounts/{id}", defaultAccountId)
+                MockMvcRequestBuilders.request(verb, endpoint, defaultAccountId)
                     .header("Authorization", "Bearer ${jws}")
                     .header("Profile-Id", bytesToUUID(profile.uuid!!))
                     .contentType(MediaType.APPLICATION_JSON)
@@ -122,7 +156,7 @@ class AccountsControllerUpdateByIdTest {
         var json: String = objectWriter.writeValueAsString(updateRequest)
         var response = mockMvc
             .perform(
-                MockMvcRequestBuilders.put("/accounts/{id}", defaultAccountId)
+                MockMvcRequestBuilders.request(verb, endpoint, defaultAccountId)
                     .header("Authorization", "Bearer ${jws}")
                     .header("Profile-Id", bytesToUUID(profile.uuid!!))
                     .contentType(MediaType.APPLICATION_JSON)
@@ -135,7 +169,6 @@ class AccountsControllerUpdateByIdTest {
                 )
             ).andReturn()
     }
-
 
     @Test
     @Ignore("For some reason, JDBC says 1 row affected instead of zero. I could either use executeUpdate or augment the update statements to use 'and newValue!=currentValue', but those are complications for something I assumed was already trivial. Handle later")
@@ -155,7 +188,7 @@ class AccountsControllerUpdateByIdTest {
         var json: String = objectWriter.writeValueAsString(updateRequest)
         var response = mockMvc
             .perform(
-                MockMvcRequestBuilders.put("/accounts/{id}", defaultAccountId)
+                MockMvcRequestBuilders.request(verb, endpoint, defaultAccountId)
                     .header("Authorization", "Bearer ${jws}")
                     .header("Profile-Id", bytesToUUID(profile.uuid!!))
                     .contentType(MediaType.APPLICATION_JSON)
@@ -173,16 +206,10 @@ class AccountsControllerUpdateByIdTest {
         assertTrue(false)
     }
 
+
     @Test
     @Ignore
     fun givenAccountNotForUserWhenUpdateByIdThenNotFound() {
-        assertTrue(false)
-    }
-
-
-    @Test
-    @Ignore
-    fun accountUpdateOkTest() {
         assertTrue(false)
     }
 }

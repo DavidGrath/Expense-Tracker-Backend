@@ -78,6 +78,35 @@ class AccountsControllerPatchNameTest {
 
 
     @Test
+    fun accountNamePatchOkTest() {
+        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
+
+        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+
+
+
+
+        val defaultAccountId = accountRepository.getAllByProfileId(profile.id!!).firstOrNull()!!.id!!
+        val newName = "New name"
+        val updateRequest = AccountNameUpdateRequest(newName)
+        var json: String = objectWriter.writeValueAsString(updateRequest)
+        var response = mockMvc
+            .perform(
+                MockMvcRequestBuilders.patch("/accounts/{id}/name", defaultAccountId)
+                    .header("Authorization", "Bearer ${jws}")
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(json)
+            )
+            .andExpectAll(
+                MockMvcResultMatchers.status().isOk
+            ).andReturn()
+    }
+
+
+
+    @Test
     fun givenNameBlankWhenUpdateAccountNamePatchThenBadRequest() {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
@@ -107,7 +136,6 @@ class AccountsControllerPatchNameTest {
     }
 
 
-
     @Test
     @Ignore("row_count and the value returned by JDBC through jooq both return 1 instead of 0 for some reason. Tackle later")
     fun givenNoChangesWhenUpdateAccountNamePatchThenNoContent() {
@@ -131,34 +159,6 @@ class AccountsControllerPatchNameTest {
             .andExpectAll(
                 MockMvcResultMatchers.status().isNoContent,
                 MockMvcResultMatchers.content().string("")
-            ).andReturn()
-    }
-
-
-    @Test
-    fun accountNamePatchOkTest() {
-        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
-
-        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
-
-
-
-
-        val defaultAccountId = accountRepository.getAllByProfileId(profile.id!!).firstOrNull()!!.id!!
-        val newName = "New name"
-        val updateRequest = AccountNameUpdateRequest(newName)
-        var json: String = objectWriter.writeValueAsString(updateRequest)
-        var response = mockMvc
-            .perform(
-                MockMvcRequestBuilders.patch("/accounts/{id}/name", defaultAccountId)
-                    .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(json)
-            )
-            .andExpectAll(
-                MockMvcResultMatchers.status().isOk
             ).andReturn()
     }
 

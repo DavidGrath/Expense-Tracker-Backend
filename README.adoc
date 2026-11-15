@@ -141,9 +141,10 @@ GRANT CREATE,SELECT,ALTER,INDEX,INSERT,UPDATE,REFERENCES ON expense_tracker_data
 
 === Controller Level
 
-* Create tests classes per ENDPOINT, not per controller
+* Create tests classes per ENDPOINT AND VERB, not per controller
+** Naming convention: <ControllerName><Verb><SensibleName>Test
 * For each test class, the following guidelines should be used where applicable, but they are not the only options, of course:
-** Ok test
+** Ok test (prefer keeping this specifically as the first in the class)
 ** ID Not for user
 ** ID Not for profile
 ** ID Not exist

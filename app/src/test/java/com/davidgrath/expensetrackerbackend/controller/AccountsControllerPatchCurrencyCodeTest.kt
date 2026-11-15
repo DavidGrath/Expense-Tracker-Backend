@@ -75,6 +75,34 @@ class AccountsControllerPatchCurrencyCodeTest {
 
 
     @Test
+    //TODO Not found
+    fun accountCurrencyPatchOkTest() {
+        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
+
+        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+
+
+        val defaultAccountId = accountRepository.getAllByProfileId(profile.id!!).firstOrNull()!!.id!!
+        val newCode = "GBP"
+        val updateRequest = AccountCurrencyUpdateRequest(newCode)
+        var json: String = objectWriter.writeValueAsString(updateRequest)
+        var response = mockMvc
+            .perform(
+                MockMvcRequestBuilders.patch("/accounts/{id}/currencyCode", defaultAccountId)
+                    .header("Authorization", "Bearer ${jws}")
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(json)
+            )
+            .andExpectAll(
+                MockMvcResultMatchers.status().isOk,
+            ).andReturn()
+        //TODO I'm generally not sure if I should consistently test the side effects of controller methods after the webMvc assertion (e.g in this case: accountRepository, assertEquals newCode currencyCode)
+    }
+
+
+    @Test
     fun givenCurrencyCodeInvalidWhenUpdateAccountPatchThenBadRequest() {
         val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
@@ -128,34 +156,6 @@ class AccountsControllerPatchCurrencyCodeTest {
                 MockMvcResultMatchers.status().isNoContent,
                 MockMvcResultMatchers.content().string("")
             ).andReturn()
-    }
-
-
-    @Test
-    //TODO Not found
-    fun accountCurrencyPatchOkTest() {
-        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
-
-        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
-
-
-        val defaultAccountId = accountRepository.getAllByProfileId(profile.id!!).firstOrNull()!!.id!!
-        val newCode = "GBP"
-        val updateRequest = AccountCurrencyUpdateRequest(newCode)
-        var json: String = objectWriter.writeValueAsString(updateRequest)
-        var response = mockMvc
-            .perform(
-                MockMvcRequestBuilders.patch("/accounts/{id}/currencyCode", defaultAccountId)
-                    .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(json)
-            )
-            .andExpectAll(
-                MockMvcResultMatchers.status().isOk,
-            ).andReturn()
-        //TODO I'm generally not sure if I should consistently test the side effects of controller methods after the webMvc assertion (e.g in this case: accountRepository, assertEquals newCode currencyCode)
     }
 
 

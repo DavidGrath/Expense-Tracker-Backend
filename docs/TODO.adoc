@@ -34,6 +34,6 @@ Attempts to accumulate the high-level TODOs
 ** Done with the insert phase. Next is the update phase. For that I'll need to contemplate with myself and decide the
    exact mechanics of "custom sort", noting that transactions are a weird case compared to the other entities
 * 0001: (Low): Rework transaction draft from JSON to independent tables
-* (Medium) Rework all controller tests to be per endpoint instead of per controller
+* (Medium) Rework all controller tests to be per endpoint instead of per controller (WORKING ON THIS)
 * (Low) Rework the decision tables to use separate CSVs so they're more conveniently editable within the IDE
 * (Low) Append `noWait` to all my `SELECT ... FOR UPDATE` calls and add a handler method for MySQL errorCode 3572
