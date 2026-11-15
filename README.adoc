@@ -73,8 +73,13 @@ GRANT CREATE,SELECT,ALTER,INDEX,INSERT,UPDATE,REFERENCES ON expense_tracker_data
 * Repository
 ** The sizes of all List/Iterable results from Repository classes
 ** The number returned for `UPDATE` and `DELETE` operations
+** Whenever a lock is acquired with `SELECT ... FOR UPDATE`
+
 * Controller
 ** Custom error codes along with brief explanation before throwing it back to the client
+
+* Service
+** (TODO) Log all attempts to access unauthorized entities along with the target entity IDs to the console. INFO level
 
 [#versioning]
 == Versioning
@@ -117,6 +122,7 @@ For the sake of integration tests, some APIs will be exposed only within the `de
 ** Validation doesn't work, likely also because of the file splitting. TODO  I'll try adding a task that does merging and validation before the actual generation
 * Concerning repositories:
 ** Most of the methods should include a parameter that links back to the user: `userId` or `profileId` and the queries should include them, too. Basically https://developer.mozilla.org/en-US/docs/Web/Security/Attacks/IDOR[IDOR] mitigation
+* For deadlock prevention, try when possible to acquire locks in sorted order when acquiring multiple locks from the same table
 
 
 [source,mysql-sql]
@@ -131,11 +137,20 @@ GRANT CREATE,SELECT,ALTER,INDEX,INSERT,UPDATE,REFERENCES ON expense_tracker_data
 * Create a `Repostiory` method that takes a jooq `DSLContext` as the first parameter when working with (database) transactions
 ** Ensure the method name is suffixed with `'Trx'`
 
-== General Test Checklist
-Not exhaustive, mainly a guideline so I don't forget
+== Testing Guidelines
 
-* ID Not for user
-* ID Not for profile
-* ID Not exist
-* Bad input string
-* 204 No content
+=== Controller Level
+
+* Create tests classes per ENDPOINT, not per controller
+* For each test class, the following guidelines should be used where applicable, but they are not the only options, of course:
+** Ok test
+** ID Not for user
+** ID Not for profile
+** ID Not exist
+** Bad input string
+** 204 No content
+* In general, when accepting complex objects, try to isolate tests by each field or atomic group of fields
+** Latitude and Longitude are an example of an "atomic group" - you don't want one without the other
+
+=== Database Level
+* Nontrivial CHECK constraints
