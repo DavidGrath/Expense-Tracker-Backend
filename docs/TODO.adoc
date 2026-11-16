@@ -37,3 +37,4 @@ Attempts to accumulate the high-level TODOs
 * (Medium) Rework all controller tests to be per endpoint instead of per controller (WORKING ON THIS)
 * (Low) Rework the decision tables to use separate CSVs so they're more conveniently editable within the IDE
 * (Low) Append `noWait` to all my `SELECT ... FOR UPDATE` calls and add a handler method for MySQL errorCode 3572
+* (Medium) OTel logs and traces with custom attributes

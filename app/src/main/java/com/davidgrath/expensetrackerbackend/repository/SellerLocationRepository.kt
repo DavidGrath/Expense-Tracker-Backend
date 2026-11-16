@@ -138,9 +138,8 @@ class SellerLocationRepository @Autowired constructor(open var mainContext: DSLC
     // region Update
 
     fun updateSellerLocation(profileId: Long, id: Long, name: String): Int {
-        val updateStep = mainContext.update(SELLER_LOCATION)
+        val updateStep = mainContext.update(SELLER_LOCATION.innerJoin(SELLER).on(sellerLocationToSellerPath))
             .set(SELLER_LOCATION.NAME, name)
-            .from(SELLER_LOCATION.innerJoin(SELLER).on(sellerLocationToSellerPath))
             .where(SELLER_LOCATION.ID.eq(id))
             .and(SELLER.PROFILE_ID.eq(profileId))
 

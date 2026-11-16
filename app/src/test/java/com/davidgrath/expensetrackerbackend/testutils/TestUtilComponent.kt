@@ -3,6 +3,8 @@ package com.davidgrath.expensetrackerbackend.testutils
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ImagePojo
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.SellerLocationPojo
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.SellerPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionItemImagesPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionItemPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionPojo
@@ -32,6 +34,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.TestComponent
 import java.io.File
 import java.math.BigDecimal
+import java.time.LocalDateTime
 import java.util.UUID
 
 @TestComponent
@@ -141,5 +144,23 @@ class TestUtilComponent {
         val itemImage = TransactionItemImagesPojo(null, profileId, account.ordinal, nextOrdinal, itemOrdinal, imageOrdinal, 1_000, 1, MOCKED_DATE.atTime(MOCKED_TIME))
         itemImagesRepository.insertItemImage(itemImage)
         return imageId
+    }
+
+
+    /**
+     * @return the seller ID, seller ordinal, and location ID
+     */
+    fun seedSellers(profileId: Long): Triple<Long, Short, Long> {
+        val createdAt = LocalDateTime.now(timeHandler.getClock())
+        val ordinalSortKeyOccupancy = sellerRepository.getMaxOrdinalSortKeyAndOccupancySlot(profileId)
+        val nextOrdinal = ((ordinalSortKeyOccupancy.ordinal?: 0) + 1).toShort()
+        val nextSortKey = ((ordinalSortKeyOccupancy.sortKey?: 0) + 1_000).toShort()
+        val nextOccupancy = ((ordinalSortKeyOccupancy.occupancySlot?: 0) + 1).toShort()
+        val seller = SellerPojo(null, profileId, "Restaurant", nextOrdinal, nextSortKey, nextOccupancy, createdAt)
+        val sellerId = sellerRepository.insertSeller(seller)
+        val locationOrdinal: Short = 1
+        val sellerLocation = SellerLocationPojo(null, profileId, nextOrdinal, "Branch location", null, null, null, locationOrdinal, 500, 1, createdAt) //TODO rework to interval when done
+        val sellerLocationId = sellerLocationRepository.insertSellerLocation(sellerLocation)
+        return Triple(sellerId, nextOrdinal, sellerLocationId)
     }
 }
