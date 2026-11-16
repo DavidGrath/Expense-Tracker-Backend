@@ -4,9 +4,10 @@ plugins {
     id 'io.spring.dependency-management' version '1.1.6'
     id "com.diffplug.spotless" version "6.25.0"
     id "org.openapi.generator" version "7.15.0"
-    id 'org.jetbrains.kotlin.jvm' version '1.7.21'
+    id 'org.jetbrains.kotlin.jvm' version '1.9.22'
     id 'jacoco'
-    id "org.jetbrains.kotlin.plugin.spring" version "1.7.21"
+    id "io.gitlab.arturbosch.detekt" version "1.23.5"
+    id "org.jetbrains.kotlin.plugin.spring" version "1.9.22"
 }
 
 repositories {
@@ -198,28 +199,40 @@ tasks.register('jooqCodeGenProd', Exec) {
 
 
 tasks.register('setUpTestDb') {
-    exec {
-        commandLine "mysql.exe", "-u", "expense_tracker", "-ppassword", "-e", "DROP DATABASE IF EXISTS `expense_tracker_database_testlocal`;"
+    doLast {
+
+        exec {
+            commandLine "mysql.exe", "-u", "expense_tracker", "-ppassword", "-e", "DROP DATABASE IF EXISTS `expense_tracker_database_testlocal`;"
+        }
     }
-    exec {
-        commandLine "mysql.exe", "-u", "expense_tracker", "-ppassword", "-e", "CREATE DATABASE `expense_tracker_database_testlocal`;"
+    doLast {
+        exec {
+            commandLine "mysql.exe", "-u", "expense_tracker", "-ppassword", "-e", "CREATE DATABASE `expense_tracker_database_testlocal`;"
+        }
     }
-    exec {
-        workingDir "${rootDir}/database/flyway"
-        if (System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows')) {
-            commandLine "flyway.cmd", "migrate", "-environment=testlocal"
-        } else {
-            commandLine "flyway", "migrate", "-environment=testlocal"
+    doLast {
+        exec {
+            workingDir "${rootDir}/database/flyway"
+            if (System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows')) {
+                commandLine "flyway.cmd", "migrate", "-environment=testlocal"
+            } else {
+                commandLine "flyway", "migrate", "-environment=testlocal"
+            }
         }
     }
 }
 
 tasks.register('setUpCIDb') {
-    exec {
-        commandLine "mysql", "-u", "expense_tracker_dev", "-h", "172.26.48.26", "-p${System.getenv("MYSQL_CREDS_PSW")}", "-e", "DROP DATABASE IF EXISTS `expense_tracker_database_ci`;"
+    doLast {
+
+        exec {
+            commandLine "mysql", "-u", "expense_tracker_dev", "-h", "172.26.48.26", "-p${System.getenv("MYSQL_CREDS_PSW")}", "-e", "DROP DATABASE IF EXISTS `expense_tracker_database_ci`;"
+        }
     }
-    exec {
-        commandLine "mysql", "-u", "expense_tracker_dev", "-h", "172.26.48.26", "-p${System.getenv("MYSQL_CREDS_PSW")}", "-e", "CREATE DATABASE `expense_tracker_database_ci`;"
+    doLast {
+        exec {
+            commandLine "mysql", "-u", "expense_tracker_dev", "-h", "172.26.48.26", "-p${System.getenv("MYSQL_CREDS_PSW")}", "-e", "CREATE DATABASE `expense_tracker_database_ci`;"
+        }
     }
 
     /*exec {
@@ -314,4 +327,10 @@ jacocoTestCoverageVerification {
             }
         }
     }
+}
+
+
+tasks.withType(io.gitlab.arturbosch.detekt.Detekt).configureEach {
+    exclude("**/generated/**")
+    exclude("**/generatedapi/**")
 }

@@ -20,6 +20,7 @@ Attempts to accumulate the high-level TODOs
 * (Low) Generate SchemaSpy to static webpage
 * (Medium) Coroutines with MDCContext
 * (Medium) detekt
+** Added, project has over 1k issues, will resolve slowly
 * (Low) Consider using Hibernate validators
 ** Minor update: It seems I can use custom type mappings with custom formats in OpenAPI. Look into that more
 * (Low) Time zone consistency
