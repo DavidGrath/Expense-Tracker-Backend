@@ -1,7 +1,7 @@
 package com.davidgrath.expensetrackerbackend.repository
 
-import com.davidgrath.expensetrackerbackend.entities.views.AccountWithStats
-import com.davidgrath.expensetrackerbackend.entities.views.OrdinalSortKeyOccupancySlot
+import com.davidgrath.expensetrackerbackend.entities.dtos.AccountWithStats
+import com.davidgrath.expensetrackerbackend.entities.dtos.OrdinalSortKeyOccupancySlot
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.AccountPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.ACCOUNT
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.PROFILE

@@ -1,4 +1,4 @@
-package com.davidgrath.expensetrackerbackend.entities.views
+package com.davidgrath.expensetrackerbackend.entities.dtos
 
 data class CategoryWithStats(
     val id: Long,

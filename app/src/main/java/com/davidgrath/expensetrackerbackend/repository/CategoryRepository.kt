@@ -1,10 +1,9 @@
 package com.davidgrath.expensetrackerbackend.repository
 
-import com.davidgrath.expensetrackerbackend.entities.views.CategoryWithStats
-import com.davidgrath.expensetrackerbackend.entities.views.OrdinalSortKeyOccupancySlot
+import com.davidgrath.expensetrackerbackend.entities.dtos.CategoryWithStats
+import com.davidgrath.expensetrackerbackend.entities.dtos.OrdinalSortKeyOccupancySlot
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.Category
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.CategoryPojo
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.ACCOUNT
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.PROFILE
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION_ITEM

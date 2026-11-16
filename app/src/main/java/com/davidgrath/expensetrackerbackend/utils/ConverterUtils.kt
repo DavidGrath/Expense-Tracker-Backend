@@ -5,7 +5,7 @@ import com.davidgrath.expensetrackerbackend.entities.StatisticsFilterDb
 import com.davidgrath.expensetrackerbackend.entities.TransactionDraft
 import com.davidgrath.expensetrackerbackend.entities.TransactionDraftItem
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
-import com.davidgrath.expensetrackerbackend.entities.views.*
+import com.davidgrath.expensetrackerbackend.entities.dtos.*
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.*
 import com.davidgrath.expensetrackerbackend.generatedapi.model.*
 import java.net.URI

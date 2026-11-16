@@ -3,7 +3,7 @@ package com.davidgrath.expensetrackerbackend.service
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.entities.StatisticsFilterDb
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
-import com.davidgrath.expensetrackerbackend.entities.views.*
+import com.davidgrath.expensetrackerbackend.entities.dtos.*
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionItemPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionPojo
 import com.davidgrath.expensetrackerbackend.generatedapi.model.StatisticsFilter

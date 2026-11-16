@@ -1,8 +1,8 @@
 package com.davidgrath.expensetrackerbackend.service
 
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
-import com.davidgrath.expensetrackerbackend.entities.views.DocumentWithTransactionDateAndOrdinal
-import com.davidgrath.expensetrackerbackend.entities.views.ImageDocumentStats
+import com.davidgrath.expensetrackerbackend.entities.dtos.DocumentWithTransactionDateAndOrdinal
+import com.davidgrath.expensetrackerbackend.entities.dtos.ImageDocumentStats
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.DocumentPojo
 import com.davidgrath.expensetrackerbackend.repository.DocumentRepository
 import org.slf4j.LoggerFactory

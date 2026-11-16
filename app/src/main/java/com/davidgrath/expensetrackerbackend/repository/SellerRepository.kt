@@ -1,12 +1,9 @@
 package com.davidgrath.expensetrackerbackend.repository
 
-import com.davidgrath.expensetrackerbackend.entities.views.OrdinalSortKeyOccupancySlot
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ProfilePojo
+import com.davidgrath.expensetrackerbackend.entities.dtos.OrdinalSortKeyOccupancySlot
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.SellerPojo
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.ACCOUNT
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.PROFILE
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.SELLER
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.SELLER_LOCATION
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.DEFAULT_FETCH_LIMIT
 import org.jooq.DSLContext
 import org.jooq.impl.DSL

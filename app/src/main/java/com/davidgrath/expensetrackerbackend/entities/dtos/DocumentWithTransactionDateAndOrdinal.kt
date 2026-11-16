@@ -1,4 +1,4 @@
-package com.davidgrath.expensetrackerbackend.entities.views
+package com.davidgrath.expensetrackerbackend.entities.dtos
 
 import com.davidgrath.expensetrackerbackend.entities.DocumentType
 import java.time.LocalDate

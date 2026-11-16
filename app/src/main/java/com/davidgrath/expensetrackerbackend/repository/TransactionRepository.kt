@@ -1,19 +1,12 @@
 package com.davidgrath.expensetrackerbackend.repository
 
-import com.davidgrath.expensetrackerbackend.entities.StatisticsFilterDb
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
-import com.davidgrath.expensetrackerbackend.entities.views.*
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.CategoryPojo
+import com.davidgrath.expensetrackerbackend.entities.dtos.*
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.*
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.DEFAULT_FETCH_LIMIT
-import com.davidgrath.expensetrackerbackend.utils.applyFilters
 import com.davidgrath.expensetrackerbackend.utils.toByte
 import org.jooq.DSLContext
-import org.jooq.Record
-import org.jooq.SelectConditionStep
-import org.jooq.SelectOnConditionStep
-import org.jooq.TransactionalRunnable
 import org.jooq.impl.DSL
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired

@@ -19,7 +19,6 @@ Attempts to accumulate the high-level TODOs
 * (Low) https://xkcd.com/838/ Log all attempts to access unauthorized entities along with the target entity IDs to the console. INFO level
 * (Low) Generate SchemaSpy to static webpage
 * (Medium) Coroutines with MDCContext
-* (Medium) JaCoCo
 * (Medium) detekt
 * (Low) Consider using Hibernate validators
 ** Minor update: It seems I can use custom type mappings with custom formats in OpenAPI. Look into that more

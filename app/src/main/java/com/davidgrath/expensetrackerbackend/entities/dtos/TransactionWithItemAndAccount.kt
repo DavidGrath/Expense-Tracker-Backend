@@ -1,4 +1,4 @@
-package com.davidgrath.expensetrackerbackend.entities.views
+package com.davidgrath.expensetrackerbackend.entities.dtos
 
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import java.math.BigDecimal

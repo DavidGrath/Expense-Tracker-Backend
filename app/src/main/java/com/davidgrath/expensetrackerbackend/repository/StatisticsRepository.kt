@@ -1,9 +1,8 @@
 package com.davidgrath.expensetrackerbackend.repository
 
 import com.davidgrath.expensetrackerbackend.entities.StatisticsFilterDb
-import com.davidgrath.expensetrackerbackend.entities.views.ItemSumByCategory
-import com.davidgrath.expensetrackerbackend.entities.views.TransactionAndItemCount
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionItemPojo
+import com.davidgrath.expensetrackerbackend.entities.dtos.ItemSumByCategory
+import com.davidgrath.expensetrackerbackend.entities.dtos.TransactionAndItemCount
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.ACCOUNT
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.CATEGORY
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.SELLER
@@ -21,7 +20,6 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Repository
 import java.math.BigDecimal
-import java.time.LocalDate
 
 @Repository
 class StatisticsRepository {

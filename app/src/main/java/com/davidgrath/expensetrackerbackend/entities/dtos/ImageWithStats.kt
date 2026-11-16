@@ -1,47 +1,42 @@
-package com.davidgrath.expensetrackerbackend.entities.views
+package com.davidgrath.expensetrackerbackend.entities.dtos
 
-import java.time.LocalDateTime
-
-data class ImageWithItemId(
-    val itemId: Long,
+data class ImageWithStats(
     val id: Long,
     val profileId: Long,
     val sizeBytes: Long,
-    val sha_256: ByteArray, //TODO Consider using a jooq converter
+    val sha256: ByteArray,
     val mimeType: String,
-    val uri: String,
     val path: String,
-    val createdAt: LocalDateTime
+    val transactionCount: Long,
+    val itemCount: Long
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as ImageWithItemId
+        other as ImageWithStats
 
-        if (itemId != other.itemId) return false
         if (id != other.id) return false
         if (profileId != other.profileId) return false
         if (sizeBytes != other.sizeBytes) return false
-        if (!sha_256.contentEquals(other.sha_256)) return false
+        if (transactionCount != other.transactionCount) return false
+        if (itemCount != other.itemCount) return false
+        if (!sha256.contentEquals(other.sha256)) return false
         if (mimeType != other.mimeType) return false
-        if (uri != other.uri) return false
         if (path != other.path) return false
-        if (createdAt != other.createdAt) return false
 
         return true
     }
 
     override fun hashCode(): Int {
-        var result = itemId.hashCode()
-        result = 31 * result + id.hashCode()
+        var result = id.hashCode()
         result = 31 * result + profileId.hashCode()
         result = 31 * result + sizeBytes.hashCode()
-        result = 31 * result + sha_256.contentHashCode()
+        result = 31 * result + transactionCount.hashCode()
+        result = 31 * result + itemCount.hashCode()
+        result = 31 * result + sha256.contentHashCode()
         result = 31 * result + mimeType.hashCode()
-        result = 31 * result + uri.hashCode()
         result = 31 * result + path.hashCode()
-        result = 31 * result + createdAt.hashCode()
         return result
     }
 }

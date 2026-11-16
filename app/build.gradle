@@ -5,6 +5,7 @@ plugins {
     id "com.diffplug.spotless" version "6.25.0"
     id "org.openapi.generator" version "7.15.0"
     id 'org.jetbrains.kotlin.jvm' version '1.7.21'
+    id 'jacoco'
     id "org.jetbrains.kotlin.plugin.spring" version "1.7.21"
 }
 
@@ -270,5 +271,47 @@ compileKotlin {
 compileTestKotlin {
     kotlinOptions {
         jvmTarget = "17"
+    }
+}
+
+
+tasks.named('test') {
+    jacoco {
+        excludes = ["com.davidgrath.expensetrackerbackend.generated.jooq.**", "com.davidgrath.expensetrackerbackend.generatedapi.**"]
+    }
+}
+
+def jacocoExclude = ["**/generated/**",
+                     "**/entities/dtos/**",
+                     "**/entities/**",
+                     "**/generatedapi/**",
+]
+
+jacocoTestReport {
+    afterEvaluate {
+        classDirectories =
+                files(classDirectories.files.collect( {
+                    fileTree(dir: it, exclude: jacocoExclude)
+                }))
+    }
+
+}
+
+jacocoTestCoverageVerification {
+    afterEvaluate {
+        classDirectories =
+                files(classDirectories.files.collect( {
+                    fileTree(dir: it, exclude: jacocoExclude)
+                }))
+    }
+    violationRules {
+        rule {
+            excludes = ["com.davidgrath.expensetrackerbackend.generated.jooq.**", "com.davidgrath.expensetrackerbackend.generatedapi.**"]
+            limit {
+                counter = "LINE"
+                value = "COVEREDRATIO"
+                minimum = 0.75
+            }
+        }
     }
 }

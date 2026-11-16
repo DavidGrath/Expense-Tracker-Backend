@@ -1,13 +1,12 @@
 package com.davidgrath.expensetrackerbackend.repository
 
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
-import com.davidgrath.expensetrackerbackend.entities.views.DocumentWithTransactionDateAndOrdinal
-import com.davidgrath.expensetrackerbackend.entities.views.ImageDocumentStats
+import com.davidgrath.expensetrackerbackend.entities.dtos.DocumentWithTransactionDateAndOrdinal
+import com.davidgrath.expensetrackerbackend.entities.dtos.ImageDocumentStats
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.DocumentPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.*
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.DEFAULT_FETCH_LIMIT
 import org.jooq.DSLContext
-import org.jooq.Fields
 import org.jooq.impl.DSL
 import org.jooq.impl.DSL.inline
 import org.slf4j.LoggerFactory

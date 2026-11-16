@@ -1,8 +1,8 @@
 package com.davidgrath.expensetrackerbackend.repository
 
-import com.davidgrath.expensetrackerbackend.entities.views.ImageDocumentStats
-import com.davidgrath.expensetrackerbackend.entities.views.ImageWithStats
-import com.davidgrath.expensetrackerbackend.entities.views.TransactionAndItemCount
+import com.davidgrath.expensetrackerbackend.entities.dtos.ImageDocumentStats
+import com.davidgrath.expensetrackerbackend.entities.dtos.ImageWithStats
+import com.davidgrath.expensetrackerbackend.entities.dtos.TransactionAndItemCount
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.Image
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ImagePojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.PROFILE

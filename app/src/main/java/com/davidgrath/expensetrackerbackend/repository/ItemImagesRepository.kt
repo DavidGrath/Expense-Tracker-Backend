@@ -1,7 +1,7 @@
 package com.davidgrath.expensetrackerbackend.repository
 
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
-import com.davidgrath.expensetrackerbackend.entities.views.ImageWithItemId
+import com.davidgrath.expensetrackerbackend.entities.dtos.ImageWithItemId
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ImagePojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionItemImagesPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.*

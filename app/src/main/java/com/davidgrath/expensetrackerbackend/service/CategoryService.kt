@@ -1,10 +1,7 @@
 package com.davidgrath.expensetrackerbackend.service
 
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
-import com.davidgrath.expensetrackerbackend.controller.CategoriesController
-import com.davidgrath.expensetrackerbackend.controller.exception.CustomHttpException
-import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
-import com.davidgrath.expensetrackerbackend.entities.views.CategoryWithStats
+import com.davidgrath.expensetrackerbackend.entities.dtos.CategoryWithStats
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.CategoryPojo
 import com.davidgrath.expensetrackerbackend.repository.CategoryRepository
 import com.davidgrath.expensetrackerbackend.repository.GenericRepository
@@ -17,7 +14,6 @@ import com.davidgrath.expensetrackerbackend.utils.getNextSortKey
 import com.davidgrath.expensetrackerbackend.utils.toByte
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import java.time.ZoneId
 import java.time.ZonedDateTime

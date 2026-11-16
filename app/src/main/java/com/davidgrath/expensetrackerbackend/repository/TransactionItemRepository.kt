@@ -1,11 +1,9 @@
 package com.davidgrath.expensetrackerbackend.repository
 
 import com.davidgrath.expensetrackerbackend.entities.SearchFilterDb
-import com.davidgrath.expensetrackerbackend.entities.StatisticsFilterDb
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
-import com.davidgrath.expensetrackerbackend.entities.views.DateAmountSummary
-import com.davidgrath.expensetrackerbackend.entities.views.StringFieldWithTimestamp
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.TransactionItem
+import com.davidgrath.expensetrackerbackend.entities.dtos.DateAmountSummary
+import com.davidgrath.expensetrackerbackend.entities.dtos.StringFieldWithTimestamp
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionItemPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.ACCOUNT
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.CATEGORY
@@ -14,9 +12,6 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.SEL
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION_ITEM
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.DEFAULT_FETCH_LIMIT
-import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.FALSE_BYTE
-import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.TRUE_BYTE
-import com.davidgrath.expensetrackerbackend.utils.applyFilters
 import com.davidgrath.expensetrackerbackend.utils.toByte
 import org.jooq.DSLContext
 import org.jooq.DatePart
