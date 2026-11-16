@@ -78,26 +78,32 @@ base {
 //TODO Having to do this 6 times feels unnecessary. Try and fix... or maybe use a different versioning system that doesn't generate invalid URLs
 jar {
     archiveVersion = ''
+    exclude("secrets-*.properties")
 }
 
 distTar {
     archiveVersion = ''
+    exclude("secrets-*.properties")
 }
 
 distZip {
     archiveVersion = ''
+    exclude("secrets-*.properties")
 }
 
 bootJar {
     archiveVersion = ''
+    exclude("secrets-*.properties")
 }
 
 bootDistTar {
     archiveVersion = ''
+    exclude("secrets-*.properties")
 }
 
 bootDistZip {
     archiveVersion = ''
+    exclude("secrets-*.properties")
 }
 // Apply a specific Java toolchain to ease working on different environments.
 java {
