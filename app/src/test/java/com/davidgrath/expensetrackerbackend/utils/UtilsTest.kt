@@ -41,6 +41,9 @@ class UtilsTest {
     fun validateGenericSingleLineStringTest() {
         //TODO Emoji are a complicated case, but they're allowed for now. Normalisation, hehe
         val controlChar = "\u0001"
+        /**
+         * TODO I should probably extract these Test values shared with [com.davidgrath.expensetrackerbackend.GeneralConstraintsTest] into a dedicated file
+         */
         val mark = "\u0300"
         val separators = " \u2028\u2029"
         val softHyphen = '\u00ad'
@@ -54,8 +57,8 @@ class UtilsTest {
         assertTrue(validateGenericSingleLineString("search"))
         assertTrue(validateGenericSingleLineString(emoji))
         assertTrue(validateGenericSingleLineString(queryWithMark))
-        assertTrue(validateGenericSingleLineString(queryWithControlCharsWhitespace))
 
+        assertFalse(validateGenericSingleLineString(queryWithControlCharsWhitespace))
         assertFalse(validateGenericSingleLineString(""))
         assertFalse(validateGenericSingleLineString(completeNonsenseString))
         assertFalse(validateGenericSingleLineString(queryWithControlCharsAndSeparators))

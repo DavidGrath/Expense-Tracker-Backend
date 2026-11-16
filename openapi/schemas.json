@@ -868,12 +868,13 @@
         "properties": {
           "name": {
             "type": "string",
-            "maxLength": 20
+            "maxLength": 20,
+            "nullable": false
           },
           "currencyCode": {
             "type": "string",
             "description": "An ISO 4217 Currency Code",
-            "maxLength": 3
+            "nullable": false
           }
         }
       },
@@ -881,12 +882,14 @@
         "type": "object",
         "properties": {
           "name": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 20,
+            "nullable": false
           },
           "currencyCode": {
             "type": "string",
             "description": "An ISO 4217 Currency Code",
-            "maxLength": 3
+            "nullable": false
           }
         }
       },
@@ -912,7 +915,7 @@
           "currencyCode": {
             "type": "string",
             "description": "An ISO 4217 Currency Code",
-            "maxLength": 3
+            "nullable": false
           }
         }
       },

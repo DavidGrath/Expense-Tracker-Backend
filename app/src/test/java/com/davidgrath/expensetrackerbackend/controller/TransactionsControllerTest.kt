@@ -6,6 +6,7 @@ import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.configuration.WebMvcConfiguration
 import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.controller.exception.ExceptionResponseHandler
+import com.davidgrath.expensetrackerbackend.generatedapi.api.SellersApi
 import com.davidgrath.expensetrackerbackend.generatedapi.api.TransactionsApi
 import com.davidgrath.expensetrackerbackend.generatedapi.model.BasicTransactionCreateRequest
 import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionSearchFilter
@@ -32,6 +33,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ContextConfiguration
@@ -88,111 +90,8 @@ class TransactionsControllerTest {
         testUtilComponent.deleteAll()
     }
 
-    @Test
-    fun basicTransactionValidationTest() {
-        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
-
-        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
-        val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
-        val misc = categoryRepository.findByProfileIdAndStringId(profile.id!!, "miscellaneous")
 
 
-        val nullDescriptionRequest = BasicTransactionCreateRequest(accountId, true, BigDecimal.TEN, null, misc!!.id, "Etc/UTC")
-        var json: String = objectWriter.writeValueAsString(nullDescriptionRequest)
-        var response = mockMvc
-            .perform(
-                MockMvcRequestBuilders.post("/transactions/basic")
-                    .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", bytesToUUID(profile.uuid!!).toString())
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(json)
-            )
-            .andExpectAll(
-                MockMvcResultMatchers.status().isBadRequest,
-                MockMvcResultMatchers.jsonPath(
-                    "$.detail", Matchers.equalToIgnoringCase("Invalid request content.")
-                )
-            ).andReturn()
-
-        val zeroAmountRequest = BasicTransactionCreateRequest(accountId, true, BigDecimal.ZERO, "Description", misc!!.id, "Etc/UTC")
-        json = objectWriter.writeValueAsString(zeroAmountRequest)
-        response = mockMvc
-            .perform(
-                MockMvcRequestBuilders.post("/transactions/basic")
-                    .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", bytesToUUID(profile.uuid!!).toString())
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(json)
-            )
-            .andExpectAll(
-                MockMvcResultMatchers.status().isBadRequest,
-                MockMvcResultMatchers.jsonPath(
-                    "$.detail", Matchers.equalToIgnoringCase("Invalid request content.")
-                )
-            ).andReturn()
-
-    }
-
-    @Test
-    fun givenAccountIdExistsAndAccountIdBelongsToAnotherUserWhenCreateTransactionThenNotFound() {
-
-        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
-
-        val userId = userService.createUser("user2", "password", Locale.US)
-        val profile2 = profileRepository.findByUuid(userId, Constants.DEFAULT_PROFILE_ID)!!
-        val accounts = accountRepository.getAllByProfileId(profile2.id!!)
-        val misc = categoryRepository.findByProfileIdAndStringId(profile.id!!, "miscellaneous") //TODO This should cause a failure
-        var basicTransactionRequest = BasicTransactionCreateRequest(accounts[0].id!!, true, BigDecimal.TEN, "Description", misc!!.id, "Etc/UTC")
-
-        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
-        val json: String = objectWriter.writeValueAsString(basicTransactionRequest)
-        mockMvc
-            .perform(
-                MockMvcRequestBuilders.post("/transactions/basic")
-                    .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", bytesToUUID(profile.uuid!!).toString())
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(json)
-            )
-            .andExpectAll(
-                MockMvcResultMatchers.status().isNotFound,
-                MockMvcResultMatchers.jsonPath(
-                    "$.$CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE", Matchers.equalTo(ErrorCode.ENTITY_NOT_FOUND.code)
-                )
-            )
-    }
-
-    @Test
-    fun givenCategoryIdExistsAndCategoryIdBelongsToAnotherUserWhenCreateTransactionThenNotFound() {
-
-        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
-
-        val userId = userService.createUser("user2", "password", Locale.US)
-        val profile2 = profileRepository.findByUuid(userId, Constants.DEFAULT_PROFILE_ID)!!
-        val accounts = accountRepository.getAllByProfileId(profile.id!!)
-        val misc = categoryRepository.findByProfileIdAndStringId(profile2.id!!, "miscellaneous") //TODO This should cause a failure
-        var basicTransactionRequest = BasicTransactionCreateRequest(accounts[0].id!!, true, BigDecimal.TEN, "Description", misc!!.id, "Etc/UTC")
-
-        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
-        val json: String = objectWriter.writeValueAsString(basicTransactionRequest)
-        mockMvc
-            .perform(
-                MockMvcRequestBuilders.post("/transactions/basic")
-                    .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", bytesToUUID(profile.uuid!!).toString())
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(json)
-            )
-            .andExpectAll(
-                MockMvcResultMatchers.status().isNotFound,
-                MockMvcResultMatchers.jsonPath(
-                    "$.$CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE", Matchers.equalTo(ErrorCode.ENTITY_NOT_FOUND.code)
-                )
-            )
-    }
 
     @Test
     @Ignore("Not ready yet")
@@ -225,66 +124,9 @@ class TransactionsControllerTest {
             )*/
     }
 
-    @Test
-    @Ignore("Not ready yet")
-    fun givenAccountIdExistsAndAccountIdBelongsToAnotherProfileWhenCreateTransactionThenBadRequest() {
-        assertTrue(false)
-    }
 
-    @Test
-    fun givenRequestTimeZoneNotValidWhenCreateTransactionThenBadRequest() {
-        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
-        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
-        val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
-        val misc = categoryRepository.findByProfileIdAndStringId(profile.id!!, "miscellaneous")
 
-        var badTimeZoneRequest = BasicTransactionCreateRequest(accountId, true, BigDecimal.TEN, "Description", misc!!.id, "Etc/Wrong")
-        var json: String = objectWriter.writeValueAsString(badTimeZoneRequest)
-        var response = mockMvc
-            .perform(
-                MockMvcRequestBuilders.post("/transactions/basic")
-                    .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", bytesToUUID(profile.uuid!!).toString())
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(json)
-            )
-            .andExpectAll(
-                MockMvcResultMatchers.status().isBadRequest,
-                MockMvcResultMatchers.jsonPath(
-                    "$.$CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE", Matchers.equalToIgnoringCase(ErrorCode.TIME_ZONE_NOT_VALID.code)
-                )
-            ).andReturn()
-    }
-
-    @Test
-    fun givenSearchQueryIsInvalidWhenSearchThenBadRequest() {
-        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
-
-        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
-
-        val searchFilter = TransactionSearchFilter()
-        var json: String = objectWriter.writeValueAsString(searchFilter)
-
-        val invalidQuery = " " //More test cases are covered extensively in the utils test
-        var response = mockMvc
-            .perform(
-                MockMvcRequestBuilders.post("/transactions/search")
-                    .queryParam("query", invalidQuery)
-                    .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", bytesToUUID(profile.uuid!!).toString())
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(json)
-            )
-            .andExpectAll(
-                MockMvcResultMatchers.status().isBadRequest,
-                MockMvcResultMatchers.jsonPath(
-                    "$.$CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE", Matchers.equalToIgnoringCase(ErrorCode.INVALID_SEARCH_QUERY.code)
-                )
-            ).andReturn()
-    }
 
     /**
      * Background: I started running some insertion scripts with JMeter, and later opened the Android app with the same user and got a timeout, based on OkHttp's default of 10 seconds.

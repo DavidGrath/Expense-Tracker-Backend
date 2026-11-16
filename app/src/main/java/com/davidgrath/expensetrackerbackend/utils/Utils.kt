@@ -395,20 +395,21 @@ fun <T: Record> applyFilters(sStep: SelectConditionStep<T>, statisticsFilter: St
 }
 
 val invalidRegex = Regex("^[\\p{Z}\\p{M}\\p{Cf}]+$")
-val invalidRegexControl = Regex("[\\p{Cc}&&[^\\r\\n\\t]]")
+val invalidRegexControl = Regex("\\p{Cc}") //TODO ZWJ, ZWNJ, SOFT HYPHEN, consider a sanitisation pipeline
+val invalidRegexControlExceptCrLfTab = Regex("[\\p{Cc}&&[^\\r\\n\\t]]")
 fun validateSearchString(queryString: String): Boolean {
     return validateGenericSingleLineString(queryString)
 }
 
 fun validateGenericSingleLineString(string: String): Boolean {
-    val trimmed = string.trim()
-    if(trimmed.isBlank()) {
+//    val trimmed = string.trim() //TODO Sanitisation should be considered separately, I think
+    if(string.isBlank()) {
         return false
     }
-    if(trimmed.matches(invalidRegex)) {
+    if(string.matches(invalidRegex)) {
         return false
     }
-    if(trimmed.contains(invalidRegexControl)) {
+    if(string.contains(invalidRegexControl)) {
         return false
     }
     return true

@@ -93,6 +93,7 @@ class TransactionDraftService {
             val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
             val json = JSON.json(jsonString)
             val userDraft = UserDraftPojo(null, profileId, null, null, UserDraftType.Create, json, utcDate)
+            //No need to acquire a lock here since I've placed a unique constraint that allows only 1 Create-type draft to exist per profile
             userDraftRepository.insertDraft(userDraft)
         } else {
             LOGGER.info("Draft already exists")
