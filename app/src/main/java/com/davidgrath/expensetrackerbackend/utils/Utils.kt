@@ -8,10 +8,12 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.SEL
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION_ITEM
 import com.google.gson.Gson
+import io.opentelemetry.api.trace.Span
 import org.jooq.Record
 import org.jooq.SelectConditionStep
 import org.jooq.impl.DSL
 import org.slf4j.LoggerFactory
+import org.slf4j.MDC
 import java.io.File
 import java.io.InputStream
 import java.math.BigDecimal
@@ -413,4 +415,21 @@ fun validateGenericSingleLineString(string: String): Boolean {
         return false
     }
     return true
+}
+
+fun doTheOtelThing(userUuid: ByteArray, profileUuid: ByteArray) {
+    val userUuidString = bytesToUUID(userUuid).toString()
+    val profileUuidString = bytesToUUID(profileUuid).toString()
+    MDC.put("extrack.user_uuid", userUuidString)
+    MDC.put("extrack.profile_uuid", profileUuidString)
+    val span = Span.current()
+    span.setAttribute("extrack.user_uuid", userUuidString)
+    span.setAttribute("extrack.profile_uuid", profileUuidString)
+}
+
+fun doTheOtelThing(userUuid: ByteArray) {
+    val userUuidString = bytesToUUID(userUuid).toString()
+    MDC.put("extrack.user_uuid", userUuidString)
+    val span = Span.current()
+    span.setAttribute("extrack.user_uuid", userUuidString)
 }

@@ -65,10 +65,11 @@ open class TransactionsController: TransactionsApi {
     override fun transactionsBasicPost(profileId: @NotNull String, basicTransactionCreateRequest: @Valid BasicTransactionCreateRequest?): ResponseEntity<Long?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
-        val userUuid = user!!.uuid!!
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
+
         val zone = try {
             ZoneId.of(basicTransactionCreateRequest!!.timeZone)
         } catch (e: DateTimeException) {
@@ -107,9 +108,10 @@ open class TransactionsController: TransactionsApi {
     override fun transactionsGet(profileId: @NotNull String, accountIds: @NotNull @Valid List<Long?>, fromDate: @Valid LocalDate?, toDate: @Valid LocalDate?): ResponseEntity<List<TransactionDetails?>?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         val transactions = transactionService.getTransactionsWithItems(profile.id!!, fromDate, toDate,
             accountIds as List<Long>, emptyList(), emptyList(), emptyList(), emptyList())
@@ -179,9 +181,11 @@ open class TransactionsController: TransactionsApi {
 
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
+
         val t = transactionService.getByProfileIdAndId(profile.id!!, id)
         if(t == null) {
             val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
@@ -217,10 +221,11 @@ open class TransactionsController: TransactionsApi {
     ): ResponseEntity<Void?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
         val userUuid = user!!.uuid!!
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         if(!transactionDraftService.doesDraftExistForProfile(profile.id!!)) {
             val exception = CustomHttpException(ErrorCode.DRAFT_DOES_NOT_EXIST, HttpStatus.NOT_FOUND)
@@ -254,10 +259,10 @@ open class TransactionsController: TransactionsApi {
     ): ResponseEntity<LocalDate?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
-        val userUuid = user!!.uuid!!
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         if(!accountService.areAllAccountsForUser(user.id!!, accountIds.map { it!! })) {
             val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
@@ -283,10 +288,10 @@ open class TransactionsController: TransactionsApi {
     ): ResponseEntity<List<String?>?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
-        val userUuid = user!!.uuid!!
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         val suggestions = transactionService.getGenericSuggestions(profile.id!!, fieldType, query)
         return ResponseEntity.ok(suggestions)
@@ -295,10 +300,10 @@ open class TransactionsController: TransactionsApi {
     override fun transactionsDraftGet(profileId: @NotNull String): ResponseEntity<TransactionDraft?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
-        val userUuid = user!!.uuid!!
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         if(!transactionDraftService.doesDraftExistForProfile(profile.id!!)) {
             val exception = CustomHttpException(ErrorCode.DRAFT_DOES_NOT_EXIST, HttpStatus.NOT_FOUND)
@@ -318,10 +323,10 @@ open class TransactionsController: TransactionsApi {
     override fun transactionsDraftItemsPost(profileId: @NotNull String): ResponseEntity<UUID?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
-        val userUuid = user!!.uuid!!
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         if(!transactionDraftService.doesDraftExistForProfile(profile.id!!)) {
             val exception = CustomHttpException(ErrorCode.DRAFT_DOES_NOT_EXIST, HttpStatus.NOT_FOUND)
@@ -344,10 +349,10 @@ open class TransactionsController: TransactionsApi {
     ): ResponseEntity<TransactionDraft?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
-        val userUuid = user!!.uuid!!
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         if(!transactionDraftService.doesDraftExistForProfile(profile.id!!)) {
             val exception = CustomHttpException(ErrorCode.DRAFT_DOES_NOT_EXIST, HttpStatus.NOT_FOUND)
@@ -378,10 +383,10 @@ open class TransactionsController: TransactionsApi {
     override fun transactionsDraftPost(profileId: @NotNull String): ResponseEntity<TransactionDraft?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
-        val userUuid = user!!.uuid!!
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         if(transactionDraftService.doesDraftExistForProfile(profile.id!!)) {
             val exception = CustomHttpException(ErrorCode.DRAFT_ALREADY_EXISTS, HttpStatus.BAD_REQUEST)
@@ -389,7 +394,7 @@ open class TransactionsController: TransactionsApi {
             throw exception
         }
         val account = accountService.getAccountsForProfile(profile.id)[0]
-        transactionDraftService.createDraft(profile.id!!, account.id!!) //TODO There isn't a unique constraint to enforce this. Potential TOCTOU. Add in next commit
+        transactionDraftService.createDraft(profile.id!!, account.id!!)
         val scheme = httpServletRequest.scheme
         val host = httpServletRequest.serverName
         val port = httpServletRequest.serverPort
@@ -405,10 +410,10 @@ open class TransactionsController: TransactionsApi {
     ): ResponseEntity<TransactionDraft?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
-        val userUuid = user!!.uuid!!
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         if(!transactionDraftService.doesDraftExistForProfile(profile.id!!)) {
             val exception = CustomHttpException(ErrorCode.DRAFT_DOES_NOT_EXIST, HttpStatus.NOT_FOUND)
@@ -483,10 +488,10 @@ open class TransactionsController: TransactionsApi {
     ): ResponseEntity<Void?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
-        val userUuid = user!!.uuid!!
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         if(!transactionDraftService.doesDraftExistForProfile(profile.id!!)) {
             val exception = CustomHttpException(ErrorCode.DRAFT_DOES_NOT_EXIST, HttpStatus.NOT_FOUND)
@@ -513,10 +518,11 @@ open class TransactionsController: TransactionsApi {
     ): ResponseEntity<URI?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
         val userUuid = user!!.uuid!!
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         LOGGER.debug("Document null: {}", document == null)
         LOGGER.debug("Resource type: {}", document!!.resource!!.javaClass.typeName)
@@ -561,10 +567,10 @@ open class TransactionsController: TransactionsApi {
     ): ResponseEntity<Void?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
-        val userUuid = user!!.uuid!!
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         if(!transactionDraftService.doesDraftExistForProfile(profile.id!!)) {
             val exception = CustomHttpException(ErrorCode.DRAFT_DOES_NOT_EXIST, HttpStatus.NOT_FOUND)
@@ -596,10 +602,11 @@ open class TransactionsController: TransactionsApi {
     ): ResponseEntity<TransactionDraft?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
         val userUuid = user!!.uuid!!
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         LOGGER.debug("Resource type: {}", file!!.resource.javaClass.typeName)
         LOGGER.debug("Is open: {}", file!!.resource.isOpen)
@@ -643,10 +650,10 @@ open class TransactionsController: TransactionsApi {
     ): ResponseEntity<Void?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
-        val userUuid = user!!.uuid!!
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         if(!transactionDraftService.doesDraftExistForProfile(profile.id!!)) {
             val exception = CustomHttpException(ErrorCode.DRAFT_DOES_NOT_EXIST, HttpStatus.NOT_FOUND)
@@ -676,7 +683,8 @@ open class TransactionsController: TransactionsApi {
         query: @NotNull @Valid String,
         transactionSearchFilter: @Valid TransactionSearchFilter?
     ): ResponseEntity<List<TransactionDetails?>?>? {
-
+        //TODO Remaining behaviour
+//        doTheOtelThing(user.uuid!!, profile.uuid!!)
         if(!validateSearchString(query)) {
             val exception = CustomHttpException(ErrorCode.INVALID_SEARCH_QUERY, HttpStatus.BAD_REQUEST)
             LOGGER.error("Search query is invalid", exception)

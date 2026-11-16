@@ -5,6 +5,7 @@ import com.davidgrath.expensetrackerbackend.generatedapi.model.Profile
 import com.davidgrath.expensetrackerbackend.service.ProfileService
 import com.davidgrath.expensetrackerbackend.service.UserService
 import com.davidgrath.expensetrackerbackend.utils.bytesToUUID
+import com.davidgrath.expensetrackerbackend.utils.doTheOtelThing
 import jakarta.validation.constraints.NotNull
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -24,7 +25,7 @@ class ProfilesController: ProfilesApi{
     override fun profilesGet(): ResponseEntity<List<Profile?>?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
         val profilePojos = profileService.getAllByUserId(user!!.id!!)!!
         val profiles = profilePojos.map {
@@ -36,8 +37,9 @@ class ProfilesController: ProfilesApi{
     override fun profilesUuidGet(uuid: @NotNull String): ResponseEntity<Profile?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
+        doTheOtelThing(user!!.uuid!!)
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, uuid!!)!!
         val p = Profile(profile.id, bytesToUUID(profile.uuid!!).toString(), profile.name)
         return ResponseEntity.ok(p)

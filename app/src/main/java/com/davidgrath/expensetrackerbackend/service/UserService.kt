@@ -48,7 +48,8 @@ class UserService {
 
         //Create User
         val encryptedPassword = passwordEncoder.encode(password)
-        val uuid = uuidToBytes(UUID.randomUUID()) //TODO JUG UUIDv7
+        val uuidX = UUID.randomUUID()
+        val uuid = uuidToBytes(uuidX) //TODO JUG UUIDv7
         var userIdRet = -1L
         profileRepository.transactionContext { trx ->
             val trxContext = trx.dsl()
@@ -56,7 +57,7 @@ class UserService {
             val userId = userRepository.insertUserTrx(trxContext, user)
 
 
-            LOGGER.info("Created user {}", username)
+            LOGGER.info("Created user {}", uuidX)
 
             //Create profile
             val profileUuid = uuidToBytes(UUID.fromString(Constants.DEFAULT_PROFILE_ID))
@@ -65,7 +66,7 @@ class UserService {
             val nextProfileOccupancySlot: Short = 1
             val profile = ProfilePojo(null, userId, "Default Profile", profileUuid, nextProfileSortKey, nextProfileOccupancySlot, utcDate)
             val profileId = profileRepository.insertProfileTrx(trxContext, profile)
-            LOGGER.info("Created default profile for user {}", username)
+            LOGGER.info("Created default profile for user {}", uuidX)
 
 
             //Create Accounts

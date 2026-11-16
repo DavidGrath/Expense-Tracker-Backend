@@ -16,6 +16,7 @@ import com.davidgrath.expensetrackerbackend.service.UserService
 import com.davidgrath.expensetrackerbackend.utils.Constants
 import com.davidgrath.expensetrackerbackend.utils.accountPojoToAccount
 import com.davidgrath.expensetrackerbackend.utils.accountWithStatsToAccountDetails
+import com.davidgrath.expensetrackerbackend.utils.doTheOtelThing
 import com.davidgrath.expensetrackerbackend.utils.validateGenericSingleLineString
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotNull
@@ -41,9 +42,10 @@ class AccountsController: AccountsApi {
     override fun accountsGet(profileId: @NotNull String): ResponseEntity<List<Account?>?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         val accounts = accountService.getAccountsForProfile(profile.id!!)
         val apiAccounts = accounts.map { a ->
@@ -55,9 +57,10 @@ class AccountsController: AccountsApi {
     override fun accountsDetailsGet(profileId: @NotNull String): ResponseEntity<List<AccountDetails?>?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         val accounts = accountService.getAccountSummariesForProfile(profile.id!!)
         val apiAccounts = accounts.map { a ->
@@ -73,9 +76,10 @@ class AccountsController: AccountsApi {
 
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         val account = accountService.getAccountSummary(profile.id!!, id)
         if(account == null) {
@@ -94,9 +98,10 @@ class AccountsController: AccountsApi {
     ): ResponseEntity<Void?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         validateAccountOwnership(user.id!!, profile.id!!, id)
 
@@ -133,9 +138,10 @@ class AccountsController: AccountsApi {
     ): ResponseEntity<Long?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject) //TODO Do I really need to log the username all the time? From the perspective of OTel making this redundant with user UUID and privacy concerns, I see very little need
+
         val user = userService.getByUsername(principal.subject!!)
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         val currency = try {
             Currency.getInstance(accountCreateRequest!!.currencyCode)
@@ -166,10 +172,12 @@ class AccountsController: AccountsApi {
 
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
-//        validateAccountOwnership(user.id!!, profile.id!!, id)
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
+
+//        validateAccountOwnership(user.id!!, profile.id!!, id) //TODO IDor tests
         val currency = try {
             Currency.getInstance(accountCurrencyUpdateRequest!!.currencyCode)
         } catch (e: IllegalArgumentException) {
@@ -192,9 +200,10 @@ class AccountsController: AccountsApi {
     ): ResponseEntity<AccountDefaultUpdateResponse?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         validateAccountOwnership(user.id!!, profile.id!!, id)
 
@@ -221,11 +230,12 @@ class AccountsController: AccountsApi {
     ): ResponseEntity<Void?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
-//        validateAccountOwnership(user.id!!, profile.id!!, id)
+//        validateAccountOwnership(user.id!!, profile.id!!, id) //TODO IDOR Tests
         val nameTrimmed = accountNameUpdateRequest!!.name.trim()
         if(!validateGenericSingleLineString(nameTrimmed)) {
             val exception = CustomHttpException(ErrorCode.INVALID_INPUT, HttpStatus.BAD_REQUEST)

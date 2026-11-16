@@ -51,10 +51,11 @@ class StatisticsController: StatisticsApi {
     ): ResponseEntity<List<TotalAmountByCategory?>?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
-        val user = userService.getByUsername(principal.subject!!)
 
+
+        val user = userService.getByUsername(principal.subject!!)
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         val filterValidationResult = statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
         when(filterValidationResult) {
@@ -83,10 +84,10 @@ class StatisticsController: StatisticsApi {
     ): ResponseEntity<List<TotalAmountByDate?>?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
-        val userUuid = user!!.uuid!!
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         val filterValidationResult = statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
         when(filterValidationResult) {
@@ -117,10 +118,11 @@ class StatisticsController: StatisticsApi {
     ): ResponseEntity<BigDecimal?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
+
         val user = userService.getByUsername(principal.subject!!)
-        val userUuid = user!!.uuid!! //TODO OTel Logs and traces
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         val filterValidationResult = statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
         when(filterValidationResult) {
@@ -148,10 +150,10 @@ class StatisticsController: StatisticsApi {
     ): ResponseEntity<List<TotalAmountByCategory?>?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
-        val userUuid = user!!.uuid!!
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         val filterValidationResult = statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
         when(filterValidationResult) {
@@ -180,10 +182,10 @@ class StatisticsController: StatisticsApi {
     ): ResponseEntity<List<TotalAmountByDate?>?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
-        val userUuid = user!!.uuid!!
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         val filterValidationResult = statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
         when(filterValidationResult) {
@@ -214,10 +216,10 @@ class StatisticsController: StatisticsApi {
     ): ResponseEntity<BigDecimal?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
-        val userUuid = user!!.uuid!!
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         val filterValidationResult = statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
         when(filterValidationResult) {
@@ -246,9 +248,10 @@ class StatisticsController: StatisticsApi {
     ): ResponseEntity<List<TransactionDetails?>?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         val filterValidationResult = statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
         when(filterValidationResult) {
@@ -337,9 +340,10 @@ class StatisticsController: StatisticsApi {
     ): ResponseEntity<StatsTransactionAndItemCount?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         val filterValidationResult = statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
         when(filterValidationResult) {
@@ -367,10 +371,10 @@ class StatisticsController: StatisticsApi {
     ): ResponseEntity<List<TotalAmountByDate?>?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
-        val userUuid = user!!.uuid!!
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         val filterValidationResult = statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
         when(filterValidationResult) {
@@ -401,10 +405,10 @@ class StatisticsController: StatisticsApi {
     ): ResponseEntity<List<TotalAmountByDate?>?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
-        val userUuid = user!!.uuid!!
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         val filterValidationResult = statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
         when(filterValidationResult) {
@@ -438,10 +442,10 @@ class StatisticsController: StatisticsApi {
     ): ResponseEntity<List<TotalAmountPerCategory>?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
-        val userUuid = user!!.uuid!!
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         val filterValidationResult = statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
         when(filterValidationResult) {
@@ -478,10 +482,10 @@ class StatisticsController: StatisticsApi {
     ): ResponseEntity<List<TotalAmountPerCategory>?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
-        val userUuid = user!!.uuid!!
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         val filterValidationResult = statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
         when(filterValidationResult) {

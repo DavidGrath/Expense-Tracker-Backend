@@ -52,7 +52,7 @@ open class AuthController: AuthApi {
         val jwt = authService.parseToken(refreshToken)
         val payload = jwt.payload
         val refreshSubject = payload.subject
-        LOGGER.info("Username: {}", refreshSubject)
+        LOGGER.info("Username: {}", refreshSubject) //TODO Special case for UUID consideration, since it doesn't actually need the database
         val type = payload.get(Constants.CUSTOM_CLAIM_TYPE, String::class.java)
         if(type != Constants.TokenType.Refresh.value) {
             val exception = CustomHttpException(ErrorCode.INVALID_AUTH_TOKEN_TYPE, HttpStatus.UNAUTHORIZED)

@@ -34,9 +34,10 @@ class CategoriesController: CategoriesApi {
     override fun categoriesGet(profileId: @NotNull String): ResponseEntity<List<Category?>?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         val categories = categoryService.getCategoriesForProfile(profile.id!!)
         val apiCategories = categories.map { c ->
@@ -48,9 +49,11 @@ class CategoriesController: CategoriesApi {
     override fun categoriesIdPut(id: @NotNull Long, profileId: @NotNull String, categoryUpdateRequest: @Valid CategoryUpdateRequest?): ResponseEntity<Void?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
+
         if(!categoryService.isCategoryForUser(user.id!!, id)) {
             val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
             LOGGER.error("Category not for user", exception)
@@ -100,9 +103,10 @@ class CategoriesController: CategoriesApi {
     override fun categoriesPost(profileId: @NotNull String, categoryCreateRequest: @Valid CategoryCreateRequest?): ResponseEntity<Long?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         val nameTrimmed = categoryCreateRequest!!.name.trim()
         if(nameTrimmed.isBlank()) {
@@ -136,9 +140,10 @@ class CategoriesController: CategoriesApi {
     override fun categoriesDetailsGet(profileId: @NotNull String): ResponseEntity<List<CategoryDetails?>?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         val categories = categoryService.getCategoryDetailsForProfile(profile.id!!)
         val apiCategories = categories.map { c ->

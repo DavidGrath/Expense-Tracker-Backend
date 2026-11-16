@@ -8,6 +8,7 @@ import com.davidgrath.expensetrackerbackend.generatedapi.model.ImageDocumentStat
 import com.davidgrath.expensetrackerbackend.service.ImageService
 import com.davidgrath.expensetrackerbackend.service.ProfileService
 import com.davidgrath.expensetrackerbackend.service.UserService
+import com.davidgrath.expensetrackerbackend.utils.doTheOtelThing
 import com.davidgrath.expensetrackerbackend.utils.imageWithStatsToImageDetails
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.constraints.NotNull
@@ -35,9 +36,10 @@ class ImagesController: ImagesApi {
     override fun imagesGet(profileId: @NotNull String): ResponseEntity<List<ImageDetails?>?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         val scheme = httpServletRequest.scheme
         val host = httpServletRequest.serverName
@@ -57,9 +59,10 @@ class ImagesController: ImagesApi {
     ): ResponseEntity<ImageDetails?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         if(!imageService.isImageForUser(user.id!!, id)) {
             val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
@@ -92,9 +95,10 @@ class ImagesController: ImagesApi {
     override fun imagesStatsGet(profileId: @NotNull String): ResponseEntity<ImageDocumentStats?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
 
         val stats = imageService.getImageStats(profile.id!!)
         val countAndSize = ImageDocumentStats(stats.count, stats.totalSizeBytes)

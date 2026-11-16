@@ -67,6 +67,9 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     implementation("org.jspecify:jspecify:1.0.0")
     implementation("com.bucket4j:bucket4j_jdk17-core:8.16.0")
+
+    implementation(platform("io.opentelemetry:opentelemetry-bom:1.68.0"))
+    implementation("io.opentelemetry:opentelemetry-api")
 }
 
 group="com.davidgrath"

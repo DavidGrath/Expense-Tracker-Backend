@@ -32,9 +32,10 @@ class FilesController {
 
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
-        LOGGER.info("Username: {}", principal.subject)
+
         val user = userService.getByUsername(principal.subject!!)
         val userUuid = user!!.uuid!!
+        //TODO Handle profile not exist
 
         val userUuidString = bytesToUUID(userUuid).toString()
         val file = file(root, Constants.FOLDER_NAME_USERS, userUuidString, Constants.FOLDER_NAME_PROFILES, profileUuid, path)
