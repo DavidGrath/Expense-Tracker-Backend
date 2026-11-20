@@ -18,7 +18,9 @@ Attempts to accumulate the high-level TODOs
 * (Low) Alternatively, or combined - increment the version number automatically in the pipeline
 * (Low) https://xkcd.com/838/ Log all attempts to access unauthorized entities along with the target entity IDs to the console. INFO level
 * (Low) Generate SchemaSpy to static webpage
-* (Medium) Coroutines with MDCContext
+* (Low) Coroutines with MDCContext
+** Demoted from Medium to Low. It can bring great benefit, but for one thing, I'd like
+to make it a 2-phase overhaul along with introducing R2DBC, and also, it's gonna be a large overhaul
 * (Medium) detekt
 ** Added, project has over 1k issues, will resolve slowly
 * (Low) Consider using Hibernate validators

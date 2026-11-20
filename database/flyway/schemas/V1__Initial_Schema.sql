@@ -70,7 +70,7 @@ CREATE TABLE financial_institution (
 CREATE TABLE `account` (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     profile_id BIGINT NOT NULL,
-    currency_code CHAR(3) NOT NULL COMMENT "An ISO 4217 currency code",  #--TODO collation ascii case sensitive,
+    currency_code CHAR(3) CHARACTER SET ascii COLLATE ascii_bin NOT NULL COMMENT "An ISO 4217 currency code",
     financial_institution_id BIGINT,
     reference_number VARCHAR(50),
     `name` VARCHAR(50) NOT NULL,
@@ -144,7 +144,7 @@ CREATE TABLE `transaction` (
     debit_or_credit BOOLEAN NOT NULL,
     dated_at DATE NOT NULL,
     `time` TIME COMMENT 'If present, used to determine the sort_key position of a transaction within a day for an account',
-    `mode` VARCHAR(30) NOT NULL DEFAULT "other",
+    `mode` VARCHAR(30) CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT "other",
     note VARCHAR(500),
     account_ordinal SMALLINT NOT NULL,
     seller_ordinal SMALLINT,
@@ -160,7 +160,7 @@ CREATE TABLE `transaction` (
     UNIQUE KEY uq_transaction_account_dated_at_sort_key (profile_id, account_ordinal, dated_at, sort_key),
     UNIQUE KEY uq_transaction_account_dated_at_occupancy_slot (profile_id, account_ordinal, dated_at, occupancy_slot),
     CONSTRAINT chk_transaction_mode_enum CHECK (
-        `mode` IN ( #--TODO Im reworking this soon, also collation ascii
+        `mode` IN ( #--TODO Im reworking this soon
             "card",
             "transfer",
             "cash",
@@ -190,12 +190,13 @@ CREATE TABLE transaction_item (
     brand VARCHAR(50),
     variation VARCHAR(20) COMMENT "Like 'XL size', or 'Chocolate flavor'",
     weight DECIMAL(12,6),
-    #--weight_prefix VARCHAR(8),
+    weight_prefix VARCHAR(2) CHARACTER SET ascii COLLATE ascii_bin COMMENT "For metric units only",
     weight_unit VARCHAR(20),
     volume DECIMAL(12,6),
-    #--volume_prefix VARCHAR (6),
+    volume_prefix VARCHAR (2) CHARACTER SET ascii COLLATE ascii_bin COMMENT "For metric units only",
     volume_unit VARCHAR(20),
     is_reduction BOOLEAN NOT NULL COMMENT "Basically discounts for expenses and deductions for income",
+    is_charge BOOLEAN NOT NULL COMMENT "General flag for things like fees, charges, and taxes",
     created_at DATETIME NOT NULL DEFAULT(NOW(3)),
     CONSTRAINT fk_transaction_item_transaction FOREIGN KEY (profile_id, account_ordinal, transaction_ordinal) REFERENCES transaction (profile_id, account_ordinal, ordinal),
     CONSTRAINT fk_transaction_item_category FOREIGN KEY (profile_id, primary_category_ordinal) REFERENCES category (profile_id, ordinal),
@@ -207,13 +208,14 @@ CREATE TABLE transaction_item (
     CONSTRAINT chk_transaction_item_brand_valid CHECK (brand IS NULL OR (NOT `brand` REGEXP '[\\p{Cc}\\p{Zl}\\p{Zp}]' AND NOT `brand` REGEXP '^[\\p{Zs}\\p{M}\\p{Cf}]+$' AND char_length(`brand`) > 0)),
     CONSTRAINT chk_transaction_item_variation_valid CHECK (variation IS NULL OR (NOT `variation` REGEXP '[\\p{Cc}\\p{Zl}\\p{Zp}]' AND NOT `variation` REGEXP '^[\\p{Zs}\\p{M}\\p{Cf}]+$' AND char_length(`variation`) > 0)),
     CONSTRAINT chk_transaction_item_quantity_valid CHECK (1 <= quantity AND quantity <= 100),
-    CONSTRAINT chk_transaction_item_is_reduction_valid CHECK (NOT is_reduction OR (is_reduction AND brand IS NULL and variation IS NULL AND weight IS NULL AND weight_unit IS NULL AND volume IS NULL AND volume_unit IS NULL AND quantity=1)),
+    CONSTRAINT chk_transaction_item_is_reduction_valid CHECK (NOT is_reduction OR (is_reduction AND brand IS NULL and variation IS NULL AND weight IS NULL AND weight_prefix IS NULL AND weight_unit IS NULL AND volume IS NULL AND volume_prefix AND volume_unit IS NULL AND quantity=1)),
     CONSTRAINT chk_transaction_item_weight_valid CHECK ((weight IS NULL and weight_unit IS NULL) or (weight IS NOT NULL AND weight_unit IS NOT NULL AND weight > 0)),
     CONSTRAINT chk_transaction_item_volume_valid CHECK ((volume IS NULL and volume_unit IS NULL) or (volume IS NOT NULL AND volume_unit IS NOT NULL AND volume > 0)),
-    CONSTRAINT chk_transaction_item_weight_unit_valid CHECK (weight_unit IS NULL OR weight_unit IN ('g', 'lb')), #--TODO Actually check UCUM, test
-    CONSTRAINT chk_transaction_item_volume_unit_valid CHECK (volume_unit IS NULL OR volume_unit IN ('l', 'fl-oz')), #--TODO Actually check UCUM, test
-    #--CONSTRAINT chk_transaction_item_weight_prefix_valid CHECK (weight_prefix IS NULL OR (weight_unit = 'g' AND weight_prefix IN ('k', 'M', 'milli')) OR (weight_unit != 'g' AND weight_prefix IS NULL)), #--TODO Actually check UCUM, test
-    #--CONSTRAINT chk_transaction_item_volume_prefix_valid CHECK (volume_prefix IS NULL OR (volume_unit = 'l' AND volume_prefix IN ('k', 'M', 'milli')) OR (volume_unit != 'l' AND volume_prefix IS NULL)), #--TODO Actually check UCUM, test
+    CONSTRAINT chk_transaction_item_weight_unit_valid CHECK (weight_unit IS NULL OR weight_unit IN ('g', '[oz_av]', '[lb_av]')),
+    CONSTRAINT chk_transaction_item_volume_unit_valid CHECK (volume_unit IS NULL OR volume_unit IN ('l', '[foz_us]', '[gal_us]')),
+    CONSTRAINT chk_transaction_item_weight_prefix_valid CHECK (weight_prefix IS NULL OR (weight_unit = 'g' AND weight_prefix IN ('m', 'c', 'k', 'M')) OR (weight_unit != 'g' AND weight_prefix IS NULL)),
+    CONSTRAINT chk_transaction_item_volume_prefix_valid CHECK (volume_prefix IS NULL OR (volume_unit = 'l' AND volume_prefix IN ('m', 'c', 'k', 'M')) OR (volume_unit != 'l' AND volume_prefix IS NULL)),
+    CONSTRAINT chk_transaction_item_reduction_charge_valid CHECK (NOT (is_reduction AND is_charge)), #--TODO test
     CONSTRAINT chk_transaction_item_ordinal_valid CHECK (ordinal > 0),
     CONSTRAINT chk_transaction_item_sort_key_valid CHECK (sort_key > 0),
     CONSTRAINT chk_transaction_item_occupancy_slot_valid CHECK (1 <= occupancy_slot AND occupancy_slot <= 30)
@@ -225,7 +227,7 @@ CREATE TABLE `image` (
     size_bytes BIGINT NOT NULL,
     sha_256 BINARY(32) NOT NULL COMMENT 'Primarily to prevent unnecessary duplication during uploads',
     `sha_256_display` CHAR(64) GENERATED ALWAYS AS (hex(`sha_256`)) VIRTUAL COMMENT 'Display value for SHA 256 column',
-    mime_type VARCHAR(50) NOT NULL, #--TODO collation ascii
+    mime_type VARCHAR(50) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
     uri VARCHAR(500) NOT NULL, #--TODO delete: the uri should always be derivable from the path and so this column is redundant
     `path` VARCHAR(500) NOT NULL COMMENT 'Relative path from filesystem root. Ideally it shouldnt change between storage provicers',
     `ordinal` SMALLINT NOT NULL COMMENT 'For use with composite foreign keys', #--Wouldn't make sense to have a sort key here since images are primarily attached to items through the junction table. That one actually has a sort key
@@ -247,7 +249,7 @@ CREATE TABLE document (
     size_bytes BIGINT NOT NULL,
     sha_256 BINARY(32) NOT NULL COMMENT 'Primarily to prevent unnecessary duplication during uploads',
     `sha_256_display` CHAR(64) GENERATED ALWAYS AS (hex(`sha_256`)) VIRTUAL COMMENT 'Display value for SHA 256 column',
-    mime_type VARCHAR(50) NOT NULL,
+    mime_type VARCHAR(50) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
     uri VARCHAR(500) NOT NULL, #--TODO same as above
     `path` VARCHAR(500) NOT NULL COMMENT 'Relative path from filesystem root. Ideally it shouldnt change between storage providers',
     sort_key SMALLINT NOT NULL COMMENT 'To allow for custom reordering of documents within transactions. WARNING: Not to be relied on as a stable secondary identifier',

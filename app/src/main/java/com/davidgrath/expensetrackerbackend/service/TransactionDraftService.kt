@@ -8,6 +8,7 @@ import com.davidgrath.expensetrackerbackend.service.exceptions.CountLimitExceede
 import com.davidgrath.expensetrackerbackend.service.exceptions.EntityNotFoundException
 import com.davidgrath.expensetrackerbackend.service.exceptions.InvalidDraftException
 import com.davidgrath.expensetrackerbackend.utils.*
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.FALSE_BYTE
 import com.google.gson.GsonBuilder
 import org.jooq.JSON
 import org.slf4j.LoggerFactory
@@ -393,7 +394,10 @@ class TransactionDraftService {
                         null,
                         null,
                         null,
+                        null,
+                        null,
                         draftItem.isReduction.toByte(),
+                        FALSE_BYTE, //TODO Implement in draft
                         utcDate.toLocalDateTime()
                     )
                 } else {
@@ -412,10 +416,13 @@ class TransactionDraftService {
                         draftItem.brand,
                         draftItem.variation,
                         draftItem.weight,
+                        null, // TODO Add to draft
                         draftItem.weightUnit,
                         draftItem.volume,
+                        null, // TODO Add to draft
                         draftItem.volumeUnit,
                         draftItem.isReduction.toByte(),
+                        FALSE_BYTE, // TODO Add to draft
                         utcDate.toLocalDateTime()
                     )
                 }
@@ -530,7 +537,7 @@ class TransactionDraftService {
                     BigDecimal.ZERO
                 }
             }.reduce { acc, bigDecimal -> acc.plus(bigDecimal) }
-            if (regularSum.compareTo(reductionSum) <= 0) {
+            if (regularSum.compareTo(reductionSum) <= 0) {  //TODO Test if not tested yet
                 LOGGER.info("Sum of reductions cannot be greater than or equal to the sum of regular items")
                 valid = false
             }

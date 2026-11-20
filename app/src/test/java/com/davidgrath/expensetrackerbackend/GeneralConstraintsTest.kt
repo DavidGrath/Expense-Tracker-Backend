@@ -103,6 +103,9 @@ class GeneralConstraintsTest {
         const val CONSTRAINT_NAME_TRANSACTION_ITEM_IS_REDUCTION_VALID = "chk_transaction_item_is_reduction_valid"
         const val CONSTRAINT_NAME_TRANSACTION_ITEM_WEIGHT_VALID = "chk_transaction_item_weight_valid"
         const val CONSTRAINT_NAME_TRANSACTION_ITEM_VOLUME_VALID = "chk_transaction_item_volume_valid"
+        const val CONSTRAINT_NAME_TRANSACTION_ITEM_WEIGHT_PREFIX_VALID = "chk_transaction_item_weight_prefix_valid"
+        const val CONSTRAINT_NAME_TRANSACTION_ITEM_VOLUME_PREFIX_VALID = "chk_transaction_item_volume_prefix_valid"
+        const val CONSTRAINT_NAME_TRANSACTION_ITEM_REDUCTION_CHARGE_VALID = "chk_transaction_item_reduction_charge_valid"
         //const val CONSTRAINT_NAME_TRANSACTION_ITEM_OCCUPANCY_SLOT_VALID = "chk_transaction_item_occupancy_slot_valid"
 //        const val CONSTRAINT_NAME_IMAGE_SIZE_BYTES_VALID = "chk_image_size_bytes_valid"
         const val CONSTRAINT_NAME_IMAGE_MIME_TYPE_VALID = "chk_image_mime_type_valid"
@@ -572,7 +575,7 @@ class GeneralConstraintsTest {
         var weightUnit: String? = null
 
         var item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal,"Description", transactionAmount, categoryOrdinal, 1, 1_000, 1, 1, null, null,
-            weight, weightUnit, null, null, FALSE_BYTE, dateTime)
+            weight, null, weightUnit, null, null, null, FALSE_BYTE, FALSE_BYTE, dateTime)
 
         var exception: DataAccessException? = try {
             itemRepository.insertTransactionItem(item)
@@ -629,7 +632,7 @@ class GeneralConstraintsTest {
         var weight: BigDecimal? = null
         var weightUnit: String? = null
         var item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal,  "Description", transactionAmount, categoryOrdinal, 1, 1_000, 1, 1, null, null,
-            weight, weightUnit, null, null, FALSE_BYTE, dateTime)
+            weight, null, weightUnit, null, null, null, FALSE_BYTE,FALSE_BYTE, dateTime)
 
         var exception: DataAccessException? = try {
             itemRepository.insertTransactionItem(item)
@@ -676,7 +679,7 @@ class GeneralConstraintsTest {
         var volumeUnit: String? = null
 
         var item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal,  "Description", transactionAmount, categoryOrdinal, 1, 1_000, 1, 1, null, null,
-            null, null, volume, volumeUnit, FALSE_BYTE, dateTime)
+            null, null, null, volume, null, volumeUnit, FALSE_BYTE, FALSE_BYTE, dateTime)
 
         var exception: DataAccessException? = try {
             itemRepository.insertTransactionItem(item)
@@ -733,7 +736,7 @@ class GeneralConstraintsTest {
         var volume: BigDecimal? = null
         var volumeUnit: String? = null
         var item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal, "Description", transactionAmount, categoryOrdinal, 1, 1_000, 1, 1, null, null,
-            null, null, volume, volumeUnit, FALSE_BYTE, dateTime)
+            null, null, null, volume, null, volumeUnit, FALSE_BYTE, FALSE_BYTE, dateTime)
 
         var exception: DataAccessException? = try {
             itemRepository.insertTransactionItem(item)
@@ -745,7 +748,7 @@ class GeneralConstraintsTest {
         assertNull(exception)
 
         volume = BigDecimal(100)
-        volumeUnit = "L" //TODO UCUM
+        volumeUnit = "L"
 
         item = item.copy(volume = volume, volumeUnit = volumeUnit, sortKey = 2_000, occupancySlot = 2, ordinal = 2)
 
@@ -1166,12 +1169,14 @@ class GeneralConstraintsTest {
         var brand: String? = null
         var variation: String? = null
         var weight: BigDecimal? = null
+        var weightPrefix: String? = null
         var weightUnit: String? = null
         var volume: BigDecimal? = null
+        var volumePrefix: String? = null
         var volumeUnit: String? = null
 
         var item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal, "Description", transactionAmount, categoryOrdinal, 1, 1_000, 1, quantity, brand, variation,
-            weight, weightUnit, volume, volumeUnit, isReduction, dateTime)
+            weight, weightPrefix, weightUnit, volume, volumePrefix, volumeUnit, isReduction, FALSE_BYTE,dateTime)
 
         var exception: DataAccessException? = try {
             itemRepository.insertTransactionItem(item)
@@ -1180,13 +1185,13 @@ class GeneralConstraintsTest {
             e
         }
 
-        assertSQLCheckConstraint(exception, CONSTRAINT_NAME_TRANSACTION_ITEM_IS_REDUCTION_VALID)
+        assertSQLCheckConstraint(exception, CONSTRAINT_NAME_TRANSACTION_ITEM_IS_REDUCTION_VALID) //TODO Add weight and volume unit
 
         quantity = 1
         brand = "Brand"
 
         item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal, "Description", transactionAmount, categoryOrdinal, 1, 1_000, 1, quantity, brand, variation,
-            weight, weightUnit, volume, volumeUnit, isReduction, dateTime)
+            weight, weightPrefix, weightUnit, volume, volumePrefix, volumeUnit, isReduction, FALSE_BYTE,dateTime)
 
         exception = try {
             itemRepository.insertTransactionItem(item)
@@ -1201,7 +1206,7 @@ class GeneralConstraintsTest {
         variation = "Variation"
 
         item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal, "Description", transactionAmount, categoryOrdinal, 1, 1_000, 1, quantity, brand, variation,
-            weight, weightUnit, volume, volumeUnit, isReduction, dateTime)
+            weight, weightPrefix, weightUnit, volume, volumePrefix, volumeUnit, isReduction, FALSE_BYTE, dateTime)
 
         exception = try {
             itemRepository.insertTransactionItem(item)
@@ -1215,10 +1220,11 @@ class GeneralConstraintsTest {
 
         variation = null
         weight = BigDecimal(100)
+        weightPrefix = "k"
         weightUnit = "g"
 
         item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal, "Description", transactionAmount, categoryOrdinal, 1, 1_000, 1, quantity, brand, variation,
-            weight, weightUnit, volume, volumeUnit, isReduction, dateTime)
+            weight, weightPrefix, weightUnit, volume, volumePrefix, volumeUnit, isReduction, FALSE_BYTE, dateTime)
 
         exception = try {
             itemRepository.insertTransactionItem(item)
@@ -1230,12 +1236,14 @@ class GeneralConstraintsTest {
         assertSQLCheckConstraint(exception, CONSTRAINT_NAME_TRANSACTION_ITEM_IS_REDUCTION_VALID)
 
         weight = null
+        weightPrefix = null
         weightUnit = null
         volume = BigDecimal(100)
+        volumePrefix = "k"
         volumeUnit = "L"
 
         item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal, "Description", transactionAmount, categoryOrdinal, 1, 1_000, 1, quantity, brand, variation,
-            weight, weightUnit, volume, volumeUnit, isReduction, dateTime)
+            weight, weightPrefix, weightUnit, volume, volumePrefix, volumeUnit, isReduction, FALSE_BYTE,dateTime)
 
         exception = try {
             itemRepository.insertTransactionItem(item)
@@ -1269,8 +1277,10 @@ class GeneralConstraintsTest {
         var brand: String? = null
         var variation: String? = null
         var weight: BigDecimal? = null
+        var weightPrefix: String? = null
         var weightUnit: String? = null
         var volume: BigDecimal? = null
+        var volumePrefix: String? = null
         var volumeUnit: String? = null
         var sortKey: Short = 1_000
         var occupancySlot: Short = 1
@@ -1279,7 +1289,7 @@ class GeneralConstraintsTest {
         val isReduction = FALSE_BYTE
 
         var item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal, "Description", transactionAmount, categoryOrdinal, itemOrdinal, sortKey, occupancySlot, quantity, brand, variation,
-            weight, weightUnit, volume, volumeUnit, isReduction, dateTime)
+            weight, weightPrefix, weightUnit, volume, volumePrefix, volumeUnit, isReduction, FALSE_BYTE,dateTime)
 
         var exception: DataAccessException? = try {
             itemRepository.insertTransactionItem(item)
@@ -1297,7 +1307,7 @@ class GeneralConstraintsTest {
         itemOrdinal++
 
         item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal, "Description", transactionAmount, categoryOrdinal, itemOrdinal, sortKey, occupancySlot, quantity, brand, variation,
-            weight, weightUnit, volume, volumeUnit, isReduction, dateTime)
+            weight, weightPrefix,  weightUnit, volume, volumePrefix, volumeUnit, isReduction, FALSE_BYTE,dateTime)
 
         exception = try {
             itemRepository.insertTransactionItem(item)
@@ -1315,7 +1325,7 @@ class GeneralConstraintsTest {
         itemOrdinal++
 
         item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal, "Description", transactionAmount, categoryOrdinal, itemOrdinal, sortKey, occupancySlot, quantity, brand, variation,
-            weight, weightUnit, volume, volumeUnit, isReduction, dateTime)
+            weight, weightPrefix,  weightUnit, volume, volumePrefix, volumeUnit, isReduction, FALSE_BYTE, dateTime)
 
         exception = try {
             itemRepository.insertTransactionItem(item)
@@ -1328,13 +1338,14 @@ class GeneralConstraintsTest {
 
         variation = null
         weight = BigDecimal(100)
+        weightPrefix = "k"
         weightUnit = "g"
         sortKey = (sortKey + 1_000).toShort()
         occupancySlot++
         itemOrdinal++
 
         item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal, "Description", transactionAmount, categoryOrdinal, itemOrdinal, sortKey, occupancySlot, quantity, brand, variation,
-            weight, weightUnit, volume, volumeUnit, isReduction, dateTime)
+            weight, weightPrefix,  weightUnit, volume, volumePrefix, volumeUnit, isReduction, FALSE_BYTE, dateTime)
 
         exception = try {
             itemRepository.insertTransactionItem(item)
@@ -1346,15 +1357,17 @@ class GeneralConstraintsTest {
         assertNull(exception)
 
         weight = null
+        weightPrefix = null
         weightUnit = null
         volume = BigDecimal(100)
+        volumePrefix = "k"
         volumeUnit = "L"
         sortKey = (sortKey + 1_000).toShort()
         occupancySlot++
         itemOrdinal++
 
         item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal, "Description", transactionAmount, categoryOrdinal, itemOrdinal, sortKey, occupancySlot, quantity, brand, variation,
-            weight, weightUnit, volume, volumeUnit, isReduction, dateTime)
+            weight, weightPrefix, weightUnit, volume,volumePrefix, volumeUnit, isReduction, FALSE_BYTE, dateTime)
 
         exception = try {
             itemRepository.insertTransactionItem(item)
@@ -1583,7 +1596,7 @@ class GeneralConstraintsTest {
         for (invalidDescription in invalidDescriptions) {
 
             var item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal, invalidDescription, transactionAmount, categoryOrdinal, 1, 1_000, 1, 1, null, null,
-                null, null, null, null, FALSE_BYTE, dateTime)
+                null, null, null, null, null, null, FALSE_BYTE,FALSE_BYTE, dateTime)
 
             var exception: DataAccessException? = try {
                 itemRepository.insertTransactionItem(item)
@@ -1615,7 +1628,7 @@ class GeneralConstraintsTest {
 
         val validDescription = nameWithMark
         var item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal, validDescription, transactionAmount, categoryOrdinal, 1, 1_000, 1, 1, null, null,
-            null, null, null, null, FALSE_BYTE, dateTime)
+            null, null, null, null,null, null, FALSE_BYTE, FALSE_BYTE, dateTime)
 
         var exception: DataAccessException? = try {
             itemRepository.insertTransactionItem(item)
@@ -1654,7 +1667,7 @@ class GeneralConstraintsTest {
         for (invalidBrand in invalidBrands) {
 
             var item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal, "Description", transactionAmount, categoryOrdinal, 1, 1_000, 1, 1, invalidBrand, null,
-                null, null, null, null, FALSE_BYTE, dateTime)
+                null, null, null, null, null, null, FALSE_BYTE, FALSE_BYTE, dateTime)
 
             var exception: DataAccessException? = try {
                 itemRepository.insertTransactionItem(item)
@@ -1686,7 +1699,7 @@ class GeneralConstraintsTest {
 
         val validBrand = nameWithMark
         var item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal, "Description", transactionAmount, categoryOrdinal, 1, 1_000, 1, 1, validBrand, null,
-            null, null, null, null, FALSE_BYTE, dateTime)
+            null, null, null, null, null, null, FALSE_BYTE, FALSE_BYTE, dateTime)
 
         var exception: DataAccessException? = try {
             itemRepository.insertTransactionItem(item)
@@ -1725,7 +1738,7 @@ class GeneralConstraintsTest {
         for (invalidVariation in invalidVariations) {
 
             var item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal, "Description", transactionAmount, categoryOrdinal, 1, 1_000, 1, 1, null, invalidVariation,
-                null, null, null, null, FALSE_BYTE, dateTime)
+                null, null, null, null, null, null, FALSE_BYTE,FALSE_BYTE, dateTime)
 
             var exception: DataAccessException? = try {
                 itemRepository.insertTransactionItem(item)
@@ -1757,7 +1770,7 @@ class GeneralConstraintsTest {
 
         val validVariation = nameWithMark
         var item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal, "Description", transactionAmount, categoryOrdinal, 1, 1_000, 1, 1, null, validVariation,
-            null, null, null, null, FALSE_BYTE, dateTime)
+            null, null, null, null, null, null, FALSE_BYTE, FALSE_BYTE, dateTime)
 
         var exception: DataAccessException? = try {
             itemRepository.insertTransactionItem(item)
@@ -2008,5 +2021,303 @@ class GeneralConstraintsTest {
         assertNull(exception)
     }
 
+
+    @Test
+    fun givenTransactionItemWeightPrefixIsInvalidWhenSaveThenFail() {
+        val (profileId, dateTime) = createProfile()
+
+        val accountOrdinal: Short = 1
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", FALSE_BYTE, accountOrdinal, 1_000, 1, dateTime)
+        val accountId = accountRepository.insertAccount(account)
+
+        val transactionOrdinal: Short = 1
+        val transactionAmount = BigDecimal(100)
+        val transaction = TransactionPojo(null, profileId, transactionAmount, TRUE_BYTE, dateTime.toLocalDate(), null, TransactionMode.Other,null, accountOrdinal, null, null, transactionOrdinal, 1_000, 1, dateTime)
+        val transactionId = transactionRepository.insertTransaction(transaction)
+
+        val categoryOrdinal: Short = 1
+        val category = CategoryPojo(null, profileId, "miscellaneous", FALSE_BYTE, null, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category", categoryOrdinal, 1_000, 1, dateTime)
+        val categoryId = categoryRepository.insertCategory(category)
+
+        var weight: BigDecimal? = BigDecimal(100)
+        val incompatiblePrefixUnitList = arrayOf("[foz_us]", "[gal_us]")
+        val prefixes = arrayOf("m", "c", "k", "M")
+
+        for(prefix in prefixes) {
+            for(unit in incompatiblePrefixUnitList) {
+                var item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal,  "Description", transactionAmount, categoryOrdinal, 1, 1_000, 1, 1, null, null,
+                    weight, prefix, unit, null, null, null,FALSE_BYTE, FALSE_BYTE, dateTime)
+
+                var exception: DataAccessException? = try {
+                    itemRepository.insertTransactionItem(item)
+                    null
+                } catch (e: DataAccessException) {
+                    e
+                }
+
+                assertSQLCheckConstraint(exception, CONSTRAINT_NAME_TRANSACTION_ITEM_WEIGHT_PREFIX_VALID)
+            }
+        }
+    }
+
+    @Test
+    fun givenTransactionItemWeightPrefixIsValidWhenSaveThenSuccess() {
+        val (profileId, dateTime) = createProfile()
+
+        val accountOrdinal: Short = 1
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", FALSE_BYTE, accountOrdinal, 1_000, 1, dateTime)
+        val accountId = accountRepository.insertAccount(account)
+
+        val transactionOrdinal: Short = 1
+        val transactionAmount = BigDecimal(100)
+        val transaction = TransactionPojo(null, profileId, transactionAmount, TRUE_BYTE, dateTime.toLocalDate(), null, TransactionMode.Other,null, accountOrdinal, null, null, transactionOrdinal, 1_000, 1, dateTime)
+        val transactionId = transactionRepository.insertTransaction(transaction)
+
+        val categoryOrdinal: Short = 1
+        val category = CategoryPojo(null, profileId, "miscellaneous", FALSE_BYTE, null, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category", categoryOrdinal, 1_000, 1, dateTime)
+        val categoryId = categoryRepository.insertCategory(category)
+
+        var weight: BigDecimal? = BigDecimal(100)
+        val compatiblePrefixUnitList = arrayOf("g")
+        val incompatiblePrefixUnitList = arrayOf("[oz_av]", "[lb_av]")
+        // https://ucum.org/ucum#section-Prefixes
+        val prefixesWithNull = arrayOf<String?>("m", "c", "k", "M", null)
+
+        var ordinal: Short = 1
+        var sortKey: Short = 1_000
+        var occupancySlot: Short = 1
+        for(prefix in prefixesWithNull) {
+            for(unit in compatiblePrefixUnitList) {
+                var item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal,  "Description", transactionAmount, categoryOrdinal, ordinal, sortKey, occupancySlot, 1, null, null,
+                    weight, prefix, unit, null, null, null, FALSE_BYTE, FALSE_BYTE, dateTime)
+
+                var exception: DataAccessException? = try {
+                    itemRepository.insertTransactionItem(item)
+                    null
+                } catch (e: DataAccessException) {
+                    e
+                }
+
+                assertNull(exception)
+                ordinal++
+                sortKey = (sortKey + 1_000).toShort()
+                occupancySlot++
+            }
+            ordinal++
+            sortKey = (sortKey + 1_000).toShort()
+            occupancySlot++
+        }
+        for(unit in incompatiblePrefixUnitList) {
+            var item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal,  "Description", transactionAmount, categoryOrdinal, ordinal, sortKey, occupancySlot, 1, null, null,
+                weight, null, unit, null, null, null, FALSE_BYTE, FALSE_BYTE, dateTime)
+
+            var exception: DataAccessException? = try {
+                itemRepository.insertTransactionItem(item)
+                null
+            } catch (e: DataAccessException) {
+                e
+            }
+
+            assertNull(exception)
+            ordinal++
+            sortKey = (sortKey + 1_000).toShort()
+            occupancySlot++
+        }
+    }
+
+    @Test
+    fun givenTransactionItemVolumePrefixIsInvalidWhenSaveThenFail() {
+        val (profileId, dateTime) = createProfile()
+
+        val accountOrdinal: Short = 1
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", FALSE_BYTE, accountOrdinal, 1_000, 1, dateTime)
+        val accountId = accountRepository.insertAccount(account)
+
+        val transactionOrdinal: Short = 1
+        val transactionAmount = BigDecimal(100)
+        val transaction = TransactionPojo(null, profileId, transactionAmount, TRUE_BYTE, dateTime.toLocalDate(), null, TransactionMode.Other,null, accountOrdinal, null, null, transactionOrdinal, 1_000, 1, dateTime)
+        val transactionId = transactionRepository.insertTransaction(transaction)
+
+        val categoryOrdinal: Short = 1
+        val category = CategoryPojo(null, profileId, "miscellaneous", FALSE_BYTE, null, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category", categoryOrdinal, 1_000, 1, dateTime)
+        val categoryId = categoryRepository.insertCategory(category)
+
+        var volume: BigDecimal? = BigDecimal(100)
+        val incompatiblePrefixUnitList = arrayOf("[foz_us]", "[gal_us]")
+        val prefixes = arrayOf("m", "c", "k", "M")
+
+        for(prefix in prefixes) {
+            for(unit in incompatiblePrefixUnitList) {
+                var item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal,  "Description", transactionAmount, categoryOrdinal, 1, 1_000, 1, 1, null, null,
+                    null, null, null, volume, prefix, unit, FALSE_BYTE, FALSE_BYTE, dateTime)
+
+                var exception: DataAccessException? = try {
+                    itemRepository.insertTransactionItem(item)
+                    null
+                } catch (e: DataAccessException) {
+                    e
+                }
+
+                assertSQLCheckConstraint(exception, CONSTRAINT_NAME_TRANSACTION_ITEM_VOLUME_PREFIX_VALID)
+            }
+        }
+    }
+
+    @Test
+    fun givenTransactionItemVolumePrefixIsValidWhenSaveThenSuccess() {
+        val (profileId, dateTime) = createProfile()
+
+        val accountOrdinal: Short = 1
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", FALSE_BYTE, accountOrdinal, 1_000, 1, dateTime)
+        val accountId = accountRepository.insertAccount(account)
+
+        val transactionOrdinal: Short = 1
+        val transactionAmount = BigDecimal(100)
+        val transaction = TransactionPojo(null, profileId, transactionAmount, TRUE_BYTE, dateTime.toLocalDate(), null, TransactionMode.Other,null, accountOrdinal, null, null, transactionOrdinal, 1_000, 1, dateTime)
+        val transactionId = transactionRepository.insertTransaction(transaction)
+
+        val categoryOrdinal: Short = 1
+        val category = CategoryPojo(null, profileId, "miscellaneous", FALSE_BYTE, null, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category", categoryOrdinal, 1_000, 1, dateTime)
+        val categoryId = categoryRepository.insertCategory(category)
+
+        var volume: BigDecimal? = BigDecimal(100)
+        val compatiblePrefixUnitList = arrayOf("l")
+        val incompatiblePrefixUnitList = arrayOf("[foz_us]", "[gal_us]")
+        // https://ucum.org/ucum#section-Prefixes
+        val prefixesWithNull = arrayOf<String?>("m", "c", "k", "M", null)
+
+        var ordinal: Short = 1
+        var sortKey: Short = 1_000
+        var occupancySlot: Short = 1
+        for(prefix in prefixesWithNull) {
+            for(unit in compatiblePrefixUnitList) {
+                var item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal,  "Description", transactionAmount, categoryOrdinal, ordinal, sortKey, occupancySlot, 1, null, null,
+                    null, null, null, volume, prefix, unit, FALSE_BYTE, FALSE_BYTE, dateTime)
+
+                var exception: DataAccessException? = try {
+                    itemRepository.insertTransactionItem(item)
+                    null
+                } catch (e: DataAccessException) {
+                    e
+                }
+
+                assertNull(exception)
+                ordinal++
+                sortKey = (sortKey + 1_000).toShort()
+                occupancySlot++
+            }
+            ordinal++
+            sortKey = (sortKey + 1_000).toShort()
+            occupancySlot++
+        }
+        for(unit in incompatiblePrefixUnitList) {
+            var item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal,  "Description", transactionAmount, categoryOrdinal, ordinal, sortKey, occupancySlot, 1, null, null,
+                null, null, null, volume, null, unit, FALSE_BYTE, FALSE_BYTE, dateTime)
+
+            var exception: DataAccessException? = try {
+                itemRepository.insertTransactionItem(item)
+                null
+            } catch (e: DataAccessException) {
+                e
+            }
+
+            assertNull(exception)
+            ordinal++
+            sortKey = (sortKey + 1_000).toShort()
+            occupancySlot++
+        }
+    }
+
+
+    @Test
+    fun transactionItemChargeAndReduction() {
+        val (profileId, dateTime) = createProfile()
+
+        val accountOrdinal: Short = 1
+        val account = AccountPojo(null, profileId, "USD", null, "", "Basic Account", FALSE_BYTE, accountOrdinal, 1_000, 1, dateTime)
+        val accountId = accountRepository.insertAccount(account)
+
+        val transactionOrdinal: Short = 1
+        val transactionAmount = BigDecimal(100)
+        val transaction = TransactionPojo(null, profileId, transactionAmount, TRUE_BYTE, dateTime.toLocalDate(), null, TransactionMode.Other,null, accountOrdinal, null, null, transactionOrdinal, 1_000, 1, dateTime)
+        val transactionId = transactionRepository.insertTransaction(transaction)
+
+        val categoryOrdinal: Short = 1
+        val category = CategoryPojo(null, profileId, "miscellaneous", FALSE_BYTE, null, "${Constants.ICON_NAMESPACE_MATERIAL_SYMBOLS}:category", categoryOrdinal, 1_000, 1, dateTime)
+        val categoryId = categoryRepository.insertCategory(category)
+
+        var isCharge = TRUE_BYTE
+        var isReduction = TRUE_BYTE
+
+        var ordinal: Short = 1
+        var sortKey: Short = 1_000
+        var occupancySlot: Short = 1
+
+        var item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal,  "Description", transactionAmount, categoryOrdinal, ordinal, sortKey, occupancySlot, 1, null, null,
+            null, null, null, null, null, null, isReduction, isCharge, dateTime)
+
+        var exception: DataAccessException? = try {
+            itemRepository.insertTransactionItem(item)
+            null
+        } catch (e: DataAccessException) {
+            e
+        }
+
+        assertSQLCheckConstraint(exception, CONSTRAINT_NAME_TRANSACTION_ITEM_REDUCTION_CHARGE_VALID)
+
+        isCharge = FALSE_BYTE
+        isReduction = FALSE_BYTE
+
+        ordinal++
+        sortKey = (sortKey + 1_000).toShort()
+        occupancySlot++
+
+        item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal,  "Description", transactionAmount, categoryOrdinal, ordinal, sortKey, occupancySlot, 1, null, null,
+            null, null, null, null, null, null, isReduction, isCharge, dateTime)
+
+        exception = try {
+            itemRepository.insertTransactionItem(item)
+            null
+        } catch (e: DataAccessException) {
+            e
+        }
+        assertNull(exception)
+
+        isCharge = FALSE_BYTE
+        isReduction = TRUE_BYTE
+
+        ordinal++
+        sortKey = (sortKey + 1_000).toShort()
+        occupancySlot++
+
+        item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal,  "Description", transactionAmount, categoryOrdinal, ordinal, sortKey, occupancySlot, 1, null, null,
+            null, null, null, null, null, null, isReduction, isCharge, dateTime)
+
+        exception = try {
+            itemRepository.insertTransactionItem(item)
+            null
+        } catch (e: DataAccessException) {
+            e
+        }
+        assertNull(exception)
+
+        isCharge = TRUE_BYTE
+        isReduction = FALSE_BYTE
+
+        ordinal++
+        sortKey = (sortKey + 1_000).toShort()
+        occupancySlot++
+
+        item = TransactionItemPojo(null, profileId, accountOrdinal, transactionOrdinal,  "Description", transactionAmount, categoryOrdinal, ordinal, sortKey, occupancySlot, 1, null, null,
+            null, null, null, null, null, null, isReduction, isCharge, dateTime)
+
+        exception = try {
+            itemRepository.insertTransactionItem(item)
+            null
+        } catch (e: DataAccessException) {
+            e
+        }
+        assertNull(exception)
+    }
 
 }

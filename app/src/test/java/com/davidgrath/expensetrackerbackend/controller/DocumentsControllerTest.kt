@@ -15,7 +15,9 @@ import com.davidgrath.expensetrackerbackend.service.TransactionDraftServiceTest.
 import com.davidgrath.expensetrackerbackend.service.TransactionDraftServiceTest.Companion.MOCKED_TIME
 import com.davidgrath.expensetrackerbackend.testutils.*
 import com.davidgrath.expensetrackerbackend.utils.Constants
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.FALSE_BYTE
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.JWT_ALG
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.TRUE_BYTE
 import com.davidgrath.expensetrackerbackend.utils.bytesToUUID
 import com.davidgrath.expensetrackerbackend.utils.file
 import com.davidgrath.expensetrackerbackend.utils.toByte
@@ -187,14 +189,14 @@ class DocumentsControllerTest {
         val nextOrdinal = ((ordinalSortKeyOccupancy.ordinal?: 0) + 1).toShort()
         val nextSortKey = ((ordinalSortKeyOccupancy.sortKey?: 0) + 1_000).toShort()
         val nextOccupancy = ((ordinalSortKeyOccupancy.occupancySlot?: 0) + 1).toShort()
-        val transaction = TransactionPojo(null, profileId, amount, true.toByte(), MOCKED_DATE, MOCKED_TIME,
+        val transaction = TransactionPojo(null, profileId, amount, TRUE_BYTE, MOCKED_DATE, MOCKED_TIME,
             TransactionMode.Other, null, account.ordinal!!, null, null, nextOrdinal, nextSortKey, nextOccupancy, MOCKED_DATE.atTime(MOCKED_TIME),)
 
         val transactionId = transactionRepository.insertTransaction(transaction)
         val misc = categoryRepository.findByProfileIdAndStringId(profileId, "miscellaneous")!!
 
         val item = TransactionItemPojo(null, profileId, account.ordinal, nextOrdinal, "Basic", amount, misc.ordinal!!, 1, 1_000, 1, 1, null,
-            null, null, null, null, null,false.toByte(),
+            null, null, null, null, null,null, null, FALSE_BYTE, FALSE_BYTE,
             MOCKED_DATE.atTime(MOCKED_TIME))
         val itemId = transactionItemRepository.insertTransactionItem(item)
         //TODO make this more convenient

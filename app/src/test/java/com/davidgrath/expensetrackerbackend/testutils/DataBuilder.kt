@@ -79,7 +79,7 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
                 throw IllegalStateException("Category does not exist")
             }
             items.add(TransactionItemPojo(null, profile.id, -1, -1, description, amount, categoryDb.ordinal, 1, 1_000, 1,1, null, null, null,
-                null, null, null,false.toByte(), LocalDateTime.now()))
+                null, null, null, null, null, FALSE_BYTE,FALSE_BYTE, LocalDateTime.now()))
             return this
         }
 
@@ -323,8 +323,8 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
     private class TransactionItemBuilderImpl(private val xTransactionBuilderImpl: TransactionBuilderImpl, private val categoryRepository: CategoryRepository, private val profileDb: ProfilePojo): TransactionItemBuilder {
 
         private var item = TransactionItemPojo(null, profileDb.id, -1, -1, "", BigDecimal.ZERO, -1, 0, 0, 0, null, "", null,
-            null, null, null, null,
-            false.toByte(), LocalDateTime.now())
+            null, null, null, null, null, null,
+            FALSE_BYTE, FALSE_BYTE, LocalDateTime.now())
         private var images = listOf<TestData.Resource>()
         private var mainDetailsSet = false
 
@@ -342,7 +342,7 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
                 throw IllegalStateException("Category does not exist")
             }
             item = TransactionItemPojo(null, profileDb.id, -1, -1, description, amount, categoryDb.ordinal!!, 0, 1, 1, 1, null, "", null,
-            null, null, null, false.toByte(), LocalDateTime.now())
+            null, null, null, null, null, FALSE_BYTE, FALSE_BYTE, LocalDateTime.now())
             mainDetailsSet = true
             return this
         }

@@ -110,7 +110,7 @@ class TestUtilComponent {
 
         val itemOrdinal: Short = 1
         val item = TransactionItemPojo(null, profileId, account.ordinal, nextOrdinal, "Basic", amount, misc.ordinal!!, itemOrdinal, 1_000, 1, 1, null,
-            null, null, null, null, null,FALSE_BYTE,
+            null, null, null, null, null, null, null, FALSE_BYTE,FALSE_BYTE,
             MOCKED_DATE.atTime(MOCKED_TIME))
         val itemId = transactionItemRepository.insertTransactionItem(item)
         //TODO make this more convenient

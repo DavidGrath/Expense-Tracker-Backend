@@ -93,7 +93,9 @@ class TransactionService {
             )
             val transactionId = transactionRepository.insertTransactionTrx(trxContext, transaction)
             val category = categoryRepository.findByProfileIdAndIdTrx(trxContext, profileId, categoryId)
-            val item = TransactionItemPojo(null, profileId, account.ordinal, nextOrdinal, description, amount, category!!.ordinal, 1, 1_000, 1, 1,  null,null, null, null, null, null,FALSE_BYTE, utcDate.toLocalDateTime())
+            val item = TransactionItemPojo(null, profileId, account.ordinal, nextOrdinal,
+                description, amount, category!!.ordinal, 1, 1_000, 1, 1,  null,null, null, null, null, null, null, null,
+                FALSE_BYTE, FALSE_BYTE,utcDate.toLocalDateTime())
             transactionItemRepository.insertTransactionItemTrx(trxContext, item)
             transactionIdRet = transactionId
         }
