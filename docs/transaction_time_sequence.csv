@@ -1,0 +1,33 @@
+AHasTime,   BHasTime,   XHasTime,   XLessA, XLessB, Sequence
+FALSE,      FALSE,      FALSE,      FALSE,  FALSE,<Impossible>
+FALSE,      FALSE,      FALSE,      FALSE,  TRUE,<Impossible>
+      FALSE,      FALSE,      FALSE,TRUE,  FALSE,<Impossible>
+      FALSE,      FALSE,      FALSE,TRUE,  TRUE,<Impossible>
+      FALSE,      FALSE,TRUE,      FALSE,  FALSE,"A,B,X"
+      FALSE,      FALSE,TRUE,      FALSE,  TRUE,<Impossible> (X<B being impossible feels like three valued logic and I need to improve that ambiguity)
+      FALSE,      FALSE,TRUE,TRUE,  FALSE,<Impossible>
+      FALSE,      FALSE,TRUE,TRUE,  TRUE,<Impossible>
+FALSE,TRUE,      FALSE,      FALSE,  FALSE,<Impossible>
+FALSE,TRUE,      FALSE,      FALSE,  TRUE,<Impossible>
+      FALSE,TRUE,      FALSE,TRUE,  FALSE,<Impossible>
+      FALSE,TRUE,      FALSE,TRUE,  TRUE,<Impossible>
+      FALSE,TRUE,TRUE,      FALSE,  FALSE,"A,B,X"
+      FALSE,TRUE,TRUE,      FALSE,  TRUE,"A,X,B"
+      FALSE,TRUE,TRUE,TRUE,  FALSE,<Impossible>
+      FALSE,TRUE,TRUE,TRUE,  TRUE,<Impossible>
+TRUE,      FALSE,      FALSE,      FALSE,  FALSE,<Impossible>
+TRUE,      FALSE,      FALSE,      FALSE,  TRUE,<Impossible>
+TRUE,      FALSE,      FALSE,TRUE,  FALSE,<Impossible>
+TRUE,      FALSE,      FALSE,TRUE,  TRUE,<Impossible>
+TRUE,      FALSE,TRUE,      FALSE,  FALSE,"A,X,B"
+TRUE,      FALSE,TRUE,      FALSE,  TRUE,<Impossible>
+TRUE,      FALSE,TRUE,TRUE,  FALSE,"X,A,B"
+TRUE,      FALSE,TRUE,TRUE,  TRUE,<Impossible>
+TRUE,TRUE,      FALSE,      FALSE,  FALSE,<Impossible>
+TRUE,TRUE,      FALSE,      FALSE,  TRUE,<Impossible>
+TRUE,TRUE,      FALSE,TRUE,  FALSE,<Impossible>
+TRUE,TRUE,      FALSE,TRUE,  TRUE,<Impossible>
+TRUE,TRUE,TRUE,      FALSE,  FALSE,"A,B,X"
+TRUE,TRUE,TRUE,      FALSE,  TRUE,"A,X,B"
+TRUE,TRUE,TRUE,TRUE,  FALSE,"X,A,B"
+TRUE,TRUE,TRUE,TRUE,  TRUE,"X,A,B"

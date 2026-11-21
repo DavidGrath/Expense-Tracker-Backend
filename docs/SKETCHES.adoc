@@ -1,0 +1,193 @@
+= Sketches
+
+Very primitive scratchpad for what I have planned for the future in terms of specs and mechanics
+
+== Insert Timed Transaction
+A transaction's time field is optional, and any time-less transactions are simply appended at the end of the
+day for the specific account according to the `sort_key`. For timed transactions, however, some form of ordering should be imposed
+
+* Time-less transactions can be moved around arbitrarily when editing a transaction
+* Timed transactions should obey the rules of insertion if they are moved around, meaning it should also prevent the user
+from breaking causality on the frontend
+
+=== Variables
+* AHasTime
+* BHasTime
+* XHasTime
+* XLessA
+* XLessB
+
+* X is the new transaction
+
+The decision table is in link:transaction_time_sequence.csv[]
+
+== Move Around
+Sort keys are only really useful if I can perform operations to move them around, so let's discuss that
+
+=== Primitives
+* Move up 1 position
+** 204 If already at the top, or it's the only item in its sequence
+* Move down 1 position
+** 204 If already at the bottom, or it's the only item in its sequence
+* Move to immediately before X
+** 204 If already immediately before X
+** Of course, 404 if X doesn't exist
+* Move to immediately after X
+** 204 If already immediately after X
+** Of course, 404 if X doesn't exist
+* Move to top
+** 204 If already at the top, or it's the only item in its sequence
+* Move to bottom
+** 204 If already at the bottom, or it's the only item in its sequence
+
+And so these 6 endpoints, if I don't add more, should be supported by all entities with sort keys, except maybe
+profiles since I permit just 2. Transactions in particular have extra conditions as highlighted above
+
+== Budgets
+=== Main Table
+Not conclusive
+
+* id
+* profile_id
+* currency_code: char(3) character set ascii collate ascii_bin
+* amount: decimal // If categories are present, then the amount must be >= the sum of non-null category amounts
+* include_charges: boolean
+* include_reductions: boolean //Not applicable if category filters are present, since they filter out line items
+* debit_or_credit: Basically whether this is an expenses budget or a savings tracker
+* subtract_opposite_transactions: If taking money out of your account affects your savings goal, and if income resets your expenses
+* r_rule: String
+* start_date: Date
+* end_date: Date? // Not null means it's ongoing, although it may contradict with r_rule. Up for review
+* ordinal: smallint
+* sort_key: smallint
+* occupancy_slot: smallint
+* unique (profile_id,ordinal,currency_code)
+
+=== Budget History Table
+* budget_id
+* amount: decimal // because someone can change the amount in the next cycle. The multiple changes to the active budget shouldn't be inserted here, just the amount at the closing date
+It will also require a budget_accounts_history table
+** Oof, what if a user goes back to edit a transaction that affects a historical entry? Do we:
+*** Let the "view" derived from the budget get updated?
+*** Snapshot the total amounts per category and account when creating the historical entry?
+**** I'd need to add a creation date for this historical entry, but I think I prefer the former approach because
+the user has the final say about what their history actually is, so this table shouldn't feel like an "archive"
+as much as it should feel like a "cycle that was in the past". Maybe I should actually rename it from "history" to "past archive"
+
+
+=== Budget Accounts Table
+* profile_id
+* budget_ordinal: smallint
+* account_ordinal: smallint
+* budget_currency_code char(3) character set ascii collate ascii_bin
+* account_currency_code char(3) character set ascii collate ascii_bin
+** Oh yeah, I should probably document it in my ADR or something that I choose ASCII for columns like this specifically as a "visual cue" that they should have a restricted charset, it has nothing to do with space or performance. Although the collation is specifically there for case sensitivity
+* `CHECK (account_currency_code = budget_currency_code)`
+* `fk profile_id,budget_ordinal,budget_currency_code references budget(profile_id,ordinal,currency_code)`
+* `fk profile_ordinal,account_ordinal,account_currency_code references account(profile_id,ordinal,currency_code)` //TODO Add this uq to account
+
+=== Budget Accounts History Table
+TBD
+
+=== Budget Categories Table
+The problem here in particular is with line items, reductions, and charges. I should probably create a central
+document that records the effects of reductions charges, but basically, the current interpretation is:
+
+* If this table is not empty, then we cannot reliably determine when to apply reductions, and so they are excluded
+
+==== Columns
+* profile_id
+* category_ordinal: smallint
+* fk (profile_id, category_ordinal) references category(profile_id,ordinal)
+* uq (profile_id, category_ordinal)
+* amount: decimal null
+
+
+== Presets
+=== Statistics Preset
+==== Tables
+* statistics_preset(name: string, fk account_currency_code nullable)
+* ordinal
+* sort_key
+* occupancy_slot: smallint (max 5)
+** Also, let weekdays be a single nullable byte: it has no fk integrity requirements, and the bitmask shouldn't be too bad, it's better than having a dedicated table when I don't have to
+* statistics_preset_accounts (currency_code references preset(currency_code) also references account(currency_code))
+** Why do I need to reference 2 different tables from the same column here? I'm trying to enforce the requirement that
+statistics should reference only once currency code at a time
+* statistics_preset_categories uq(preset,category)
+* statistics_preset_sellers uq(preset,seller_id)
+* statistics_preset_seller_locations uq(preset,seller_location_id)
+* statistics_preset_modes uq(preset,mode)
+
+=== Search Preset
+* search_preset(name: string, weekdays: byte (see above))
+** ordinal
+** sort_key
+** occupancy_slot: smallint (max 5)
+* search_preset_accounts
+** No need to reference currency code here since there's no single currency restriction
+* search_preset_categories uq(preset,category)
+* search_preset_sellers uq(preset,seller_id)
+* search_preset_seller_locations uq(preset,seller_location_id)
+* search_preset_modes uq(preset,mode)
+
+== People
+=== Tables
+
+==== Person
+* name: string
+* number: varchar(16) //E164 syntax "^+[1-9]\d{1,14}$" - yes, I know syntax!=semantics, but it's a good restriction
+
+==== Person Image
+Basically everything that applies to image
+* Oh, but make person_id the primary key since we only need 1 per person
+
+=== Event
+The typical example is someone's birthday. That's pretty much it. But I don't want to make an elaborate Google Events-like schema just for that
+
+* name: String
+
+== Transaction Links
+The general purpose is simply: this transaction is related to this other transaction. That's it.
+
+=== Main table
+* profile_id
+* from_account_ordinal
+* from_transaction_ordinal
+* to_account_ordinal
+* to_transaction_ordinal
+* uq (profile_id,from_account_ordinal,from_transaction_ordinal,to_account_ordinal,to_transaction_ordinal)
+* check not ( (from_account_ordinal = to_account_ordinal) and (from_transaction_ordinal=to_transaction_ordinal))
+
+== Similar Transactions
+Very very very niche scenario for myself specifically
+The basic idea is: get all transactions grouped be approximate similarity or exact similarity
+Of course, we'll need to consider charges and reductions as usual
+I'll either use lateral joins or a windowed sum. For the latter, I'll likely need to round down to the nearest 2 dp or so
+
+
+* Differences of 10% at < 1000 and 1% at >= 1000 from the first value create a new bucket
+
+Bucket 1
+100
+101
+
+Bucket 2
+110 //>=110% of 100
+120 //<110% of 110
+
+Bucket 3
+1100 //>=110% of 120
+1110 // <101% of 1000
+
+Bucket 4
+10
+
+
+* I could also use DBScan, I guess, but I prioritize the window function version for the fun factor
+* Bleh, once PPP comes into the mix, I realise that it might need extra considerations
+* And after doing some research, I think I'll use Box-Cox with DBScan. Maybe I'll implement the first algorithm, but Box-Cox takes priority now
+
+== Recurring Expenses
+* Yeah, this is quite involved, to be honest. It could be as simple as "monthly amount posted to account",
+but I know there's more to it
