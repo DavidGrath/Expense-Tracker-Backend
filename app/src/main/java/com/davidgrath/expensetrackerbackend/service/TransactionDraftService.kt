@@ -165,50 +165,56 @@ class TransactionDraftService {
             }
             val mutable = transactionDraft.items.toMutableList()
 
-            var item = mutable[itPos]
+            var itemCopy = item
 
-            val unitEnum = WeightUnitEnum.values().find { it.stringVal == item.weightUnit }
-            if(unitEnum == null) {
-                throw InvalidWeightUnitException()
-            }
-            var prefixEnum: UnitPrefixEnum? = null
-            if(item.weightPrefix != null) {
-                prefixEnum = UnitPrefixEnum.values().find { it.stringVal == item.weightPrefix }
-                if(prefixEnum == null) {
-                    throw InvalidUnitPrefixException()
+            if(itemCopy.weight != null) {
+                val unitEnum = WeightUnitEnum.values().find { it.stringVal == item.weightUnit }
+                if (unitEnum == null) {
+                    throw InvalidWeightUnitException()
+                }
+                var prefixEnum: UnitPrefixEnum? = null
+                if (itemCopy.weightPrefix != null) {
+                    prefixEnum = UnitPrefixEnum.values().find { it.stringVal == itemCopy.weightPrefix }
+                    if (prefixEnum == null) {
+                        throw InvalidUnitPrefixException()
+                    }
+                }
+                LOGGER.debug("Weight unit: {}", unitEnum)
+                if (unitEnum == WeightUnitEnum.Gram) {
+                    itemCopy = itemCopy.copy(weightPrefix = prefixEnum?.stringVal)
+                } else {
+                    if (itemCopy.weightPrefix != null) {
+                        LOGGER.info("Prefix specified for non metric unit. Ignoring")
+                    }
+                    itemCopy = itemCopy.copy(weightPrefix = null)
+
                 }
             }
-            if(unitEnum != WeightUnitEnum.Gram) {
-                item = item.copy(weightPrefix = prefixEnum?.stringVal)
-            } else {
-                if(item.weightPrefix != null) {
-                    LOGGER.info("Prefix specified for non metric unit. Ignoring") //TODO test
-                }
-                item = item.copy( weightPrefix = null)
 
-            }
+            if(itemCopy.volume != null) {
+                val volumeUnitEnum = VolumeUnitEnum.values().find { it.stringVal == itemCopy.volumeUnit }
+                if (volumeUnitEnum == null) {
+                    throw InvalidVolumeUnitException()
+                }
+                var volumePrefixEnum: UnitPrefixEnum? = null
+                if (itemCopy.volumePrefix != null) {
+                    volumePrefixEnum = UnitPrefixEnum.values().find { it.stringVal == itemCopy.volumePrefix }
+                    if (volumePrefixEnum == null) {
+                        throw InvalidUnitPrefixException()
+                    }
+                }
+                LOGGER.debug("Volume unit: {}", volumeUnitEnum)
+                if (volumeUnitEnum == VolumeUnitEnum.Liter) {
+                    itemCopy = itemCopy.copy(volumePrefix = volumePrefixEnum?.stringVal)
+                } else {
+                    if (itemCopy.volumePrefix != null) {
+                        LOGGER.info("Prefix specified for non metric unit. Ignoring")
+                    }
+                    itemCopy = itemCopy.copy(volumePrefix = null)
 
-            val volumeUnitEnum = VolumeUnitEnum.values().find { it.stringVal == item.volumeUnit }
-            if(volumeUnitEnum == null) {
-                throw InvalidVolumeUnitException()
-            }
-            var volumePrefixEnum: UnitPrefixEnum? = null
-            if(item.volumePrefix != null) {
-                prefixEnum = UnitPrefixEnum.values().find { it.stringVal == item.volumePrefix }
-                if(prefixEnum == null) {
-                    throw InvalidUnitPrefixException()
                 }
             }
-            if(volumeUnitEnum != VolumeUnitEnum.Liter) {
-                item = item.copy(volumePrefix = prefixEnum?.stringVal)
-            } else {
-                if(item.volumePrefix != null) {
-                    LOGGER.info("Prefix specified for non metric unit. Ignoring") //TODO test
-                }
-                item = item.copy(volumePrefix = null)
-
-            }
-            mutable[itPos] = item
+            mutable[itPos] = itemCopy
             transactionDraft = transactionDraft.copy(items = mutable)
 
 

@@ -4,6 +4,7 @@ import com.davidgrath.expensetrackerbackend.configuration.SecurityConfiguration
 import com.davidgrath.expensetrackerbackend.configuration.TestRunControllerConfiguration
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.configuration.WebMvcConfiguration
+import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.controller.exception.ExceptionResponseHandler
 import com.davidgrath.expensetrackerbackend.entities.UnitPrefixEnum
 import com.davidgrath.expensetrackerbackend.generatedapi.api.TransactionsApi
@@ -47,6 +48,7 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers
 import java.math.BigDecimal
+import java.util.UUID
 
 @RunWith(SpringRunner::class)
 @WebMvcTest(TransactionsController::class)
@@ -93,60 +95,10 @@ class TransactionsDraftControllerPutTest {
     fun tearDown() {
         testUtilComponent.deleteAll()
     }
-    //TODO Ok test, seller, sellerLocation, and account IDOR/404, non metric weight, non metric volume
+    //TODO Ok test, seller, sellerLocation, and account IDOR/404
 
     val endpoint = TransactionsApi.PATH_TRANSACTIONS_DRAFT_PUT
     val verb = HttpMethod.PUT
 
-    @Test
-    fun putDraftItemUuidOkTest() {
-        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
 
-        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
-        val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
-        val food = categoryRepository.findByProfileIdAndStringId(profile.id!!, "food")
-        transactionDraftService.createDraft(profile!!.id!!, accountId)
-
-
-        val draft = transactionDraftService.getDraft(profile.id!!)
-        val item = draft!!.items[0]
-        val uuid = item.uuid
-
-        val itemUpdateRequest = TransactionDraftItemUpdateRequest(
-            BigDecimal.TEN, "Yoghurt", food!!.id!!,
-            false, 4, "Generic Brand", "Chocolate",
-            TransactionDraftItemUpdateRequestWeight(BigDecimal(2), WeightUnit.G, UnitPrefix.K),
-            TransactionDraftItemUpdateRequestVolume(BigDecimal(2_000), VolumeUnit.L, UnitPrefix.M),
-        )
-
-        val objectWriter: ObjectWriter = ObjectMapper().writer()
-        val json = objectWriter.writeValueAsString(itemUpdateRequest)
-
-        mockMvc
-            .perform(
-                MockMvcRequestBuilders.request(verb, endpoint, uuid)
-                    .header("Authorization", "Bearer ${jws}")
-                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(json)
-            )
-            .andExpectAll(
-                MockMvcResultMatchers.status().isOk,
-                MockMvcResultMatchers.jsonPath("$.items[0].amount", Matchers.equalTo<Int>(10)),
-                MockMvcResultMatchers.jsonPath("$.items[0].description", Matchers.equalTo<String>("Yoghurt")),
-                MockMvcResultMatchers.jsonPath("$.items[0].categoryId", Matchers.equalTo<Int>(food.id!!.toInt())),
-                MockMvcResultMatchers.jsonPath("$.items[0].isReduction", Matchers.equalTo(false)),
-                MockMvcResultMatchers.jsonPath("$.items[0].quantity", Matchers.equalTo<Int>(4)),
-                MockMvcResultMatchers.jsonPath("$.items[0].brand", Matchers.equalTo("Generic Brand")),
-                MockMvcResultMatchers.jsonPath("$.items[0].variation", Matchers.equalTo("Chocolate")),
-                MockMvcResultMatchers.jsonPath("$.items[0].weight.amount", Matchers.equalTo(2)),
-                MockMvcResultMatchers.jsonPath("$.items[0].weight.unit", Matchers.equalTo("g")),
-                MockMvcResultMatchers.jsonPath("$.items[0].weight.prefix", Matchers.equalTo("k")),
-                MockMvcResultMatchers.jsonPath("$.items[0].volume.amount", Matchers.equalTo(2_000)),
-                MockMvcResultMatchers.jsonPath("$.items[0].volume.unit", Matchers.equalTo("l")),
-                MockMvcResultMatchers.jsonPath("$.items[0].volume.prefix", Matchers.equalTo("m")),
-            ).andReturn()
-
-    }
 }

@@ -150,7 +150,9 @@ fun draftItemUpdateRequestToDraftItem(uuid: UUID, transactionDraftItemUpdateRequ
     val t = transactionDraftItemUpdateRequest
 
     return TransactionDraftItem(uuid, null, t.categoryId, t.amount, t.description, t.brand, t.variation, t.quantity,
-        t.weight.amount, t.weight.prefix.value, t.weight.unit.value, null, null,null, t.isReduction)
+        t.weight?.amount, t.weight?.prefix?.value, t.weight?.unit?.value,
+        t.volume?.amount, t.volume?.prefix?.value, t.volume?.unit?.value,
+        t.isReduction)
 }
 
 fun transactionDraftToApiDraft(draft: TransactionDraft, baseUrl: Triple<String, String, Int>): com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraft {

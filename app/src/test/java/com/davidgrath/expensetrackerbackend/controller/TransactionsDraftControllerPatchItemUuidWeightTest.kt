@@ -184,7 +184,6 @@ class TransactionsDraftControllerPatchItemUuidWeightTest {
         val item = draft!!.items[0]
         val uuid = item.uuid
         val nonExistentUuid = UUID(0L, 0L)
-        println("UUID: $nonExistentUuid")
 
         val weightRequest = TransactionDraftItemPatchWeightRequest(BigDecimal.ONE, WeightUnit.G, UnitPrefix.K)
 
