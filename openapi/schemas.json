@@ -1310,6 +1310,40 @@
         "description": "Only for metric units. Selected subset from https://ucum.org/ucum#section-Prefixes",
         "type": "string",
         "enum": ["m", "c", "k", "M"]
+      },
+      "UserStatus": {
+        "description": "New users have signed up with their emails. Active users have verified their emails with an OTP and have a username",
+        "type": "string",
+        "enum": ["new", "active"]
+      },
+      "UserDetails": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "status": {
+            "$ref": "#/components/schemas/UserStatus"
+          },
+          "uuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "username": {
+            "description": "Null if user status is new. TODO Not implemented on the DB yet",
+            "type": "string"
+          },
+          "signedUpDateTimeUTC": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "activatedDateTimeUTC": {
+            "description": "Null if user status is new",
+            "type": "string",
+            "format": "date-time"
+          }
+        }
       }
     }
   }

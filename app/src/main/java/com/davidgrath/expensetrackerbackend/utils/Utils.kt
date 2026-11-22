@@ -417,6 +417,9 @@ fun validateGenericSingleLineString(string: String): Boolean {
     return true
 }
 
+/**
+ * It does the thing. The OpenTelemetry thing
+ */
 fun doTheOtelThing(userUuid: ByteArray, profileUuid: ByteArray) {
     val userUuidString = bytesToUUID(userUuid).toString()
     val profileUuidString = bytesToUUID(profileUuid).toString()
@@ -427,6 +430,9 @@ fun doTheOtelThing(userUuid: ByteArray, profileUuid: ByteArray) {
     span.setAttribute("extrack.profile_uuid", profileUuidString)
 }
 
+/**
+ * It does the thing. The OpenTelemetry thing
+ */
 fun doTheOtelThing(userUuid: ByteArray) {
     val userUuidString = bytesToUUID(userUuid).toString()
     MDC.put("extrack.user_uuid", userUuidString)

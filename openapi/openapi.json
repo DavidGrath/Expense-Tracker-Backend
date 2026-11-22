@@ -2161,6 +2161,25 @@
           }
         }
       }
+    },
+    "/users/me": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas.json/#/components/schemas/UserDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
