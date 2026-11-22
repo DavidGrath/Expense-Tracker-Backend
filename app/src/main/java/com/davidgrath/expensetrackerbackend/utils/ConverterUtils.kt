@@ -87,7 +87,7 @@ fun transactionWithItemToTransactionItem(transactionWithItem: TransactionWithIte
     }
     return TransactionItem(
         transactionWithItem.itemId, transactionWithItem.itemAmount, transactionWithItem.itemDescription, transactionWithItemToCategory(transactionWithItem),
-        transactionWithItem.itemQuantity, transactionWithItem.itemIsReduction.toBoolean(), transactionWithItem.itemBrand, transactionWithItem.itemVariation, imagesApi
+        transactionWithItem.itemQuantity, transactionWithItem.itemIsReduction.toBoolean(), transactionWithItem.itemBrand, transactionWithItem.itemVariation, null, null, imagesApi //TODO weight and volume
     )
 }
 
@@ -96,14 +96,35 @@ fun transactionItemPojoToTransactionItem(transactionItemPojo: TransactionItemPoj
         val imageUrl = URI(baseUrl.first, null, baseUrl.second, baseUrl.third, "/files" + it.path, null, null)
         Image(it.id, it.sizeBytes, imageUrl, it.mimeType)
     }
+    val weight: TransactionItemWeight? = if(transactionItemPojo.weight != null) {
+        val prefix: UnitPrefix? = if(transactionItemPojo.weightPrefix != null) {
+            UnitPrefix.fromValue(transactionItemPojo.weightPrefix)
+        } else {
+            null
+        }
+        TransactionItemWeight(transactionItemPojo.weight, WeightUnit.fromValue(transactionItemPojo.weightUnit), prefix)
+    } else {
+        null
+    }
+
+    val volume: TransactionItemVolume? = if(transactionItemPojo.volume != null) {
+        val prefix: UnitPrefix? = if(transactionItemPojo.volumePrefix != null) {
+            UnitPrefix.fromValue(transactionItemPojo.volumePrefix)
+        } else {
+            null
+        }
+        TransactionItemVolume(transactionItemPojo.volume, VolumeUnit.fromValue(transactionItemPojo.volumeUnit), prefix)
+    } else {
+        null
+    }
     return TransactionItem(
         transactionItemPojo.id, transactionItemPojo.amount, transactionItemPojo.description, categoryPojoToCategory(categoryPojo),
-        transactionItemPojo.quantity, transactionItemPojo.isReduction.toBoolean(), transactionItemPojo.brand, transactionItemPojo.variation, imagesApi
+        transactionItemPojo.quantity, transactionItemPojo.isReduction.toBoolean(), transactionItemPojo.brand, transactionItemPojo.variation, weight, volume, imagesApi
         )
 }
 
 fun documentPojoToDocument(document: DocumentPojo, baseUrl: Triple<String, String, Int>): Document {
-    val documentUrl = URI(baseUrl.first, null, baseUrl.second, baseUrl.third, "/files" + document.path, null, null)
+    val documentUrl = URI(baseUrl.first, null, baseUrl.second, baseUrl.third, "/files" + document.path, null, null) //TODO Bleh, this is a bug, I removed leading slashes a while back. Now I need to add a test to ensure the URLs are valid
     return Document(document.id, document.transactionId, document.sizeBytes, documentUrl, document.mimeType, document.type!!.toApiType())
 }
 fun documentPojoToDocumentDetails(document: DocumentWithTransactionDateAndOrdinal, baseUrl: Triple<String, String, Int>): DocumentDetails {
@@ -127,8 +148,9 @@ fun categoryWithStatsToApiCategory(categoryWithStats: CategoryWithStats): Catego
 
 fun draftItemUpdateRequestToDraftItem(uuid: UUID, transactionDraftItemUpdateRequest: TransactionDraftItemUpdateRequest): TransactionDraftItem {
     val t = transactionDraftItemUpdateRequest
+
     return TransactionDraftItem(uuid, null, t.categoryId, t.amount, t.description, t.brand, t.variation, t.quantity,
-        null, null, null, null, t.isReduction)
+        t.weight.amount, t.weight.prefix.value, t.weight.unit.value, null, null,null, t.isReduction)
 }
 
 fun transactionDraftToApiDraft(draft: TransactionDraft, baseUrl: Triple<String, String, Int>): com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraft {
@@ -141,8 +163,28 @@ fun transactionDraftToApiDraft(draft: TransactionDraft, baseUrl: Triple<String, 
             val imageUrl = URI(baseUrl.first, null, baseUrl.second, baseUrl.third, "/files" + it.path, null, null)
             TransactionDraftFile(it.dbId, it.sizeBytes, imageUrl, it.mimeType, null, it.sha256)
         }
+        val weight: TransactionItemWeight? = if(item.weight != null) {
+            val prefix: UnitPrefix? = if(item.weightPrefix != null)  {
+                UnitPrefix.fromValue(item.weightPrefix)
+            } else {
+                null
+            }
+            TransactionItemWeight(item.weight, WeightUnit.fromValue(item.weightUnit), prefix)
+        } else {
+            null
+        }
+        val volume: TransactionItemVolume? = if(item.volume != null) {
+            val prefix: UnitPrefix? = if(item.volumePrefix != null)  {
+                UnitPrefix.fromValue(item.volumePrefix)
+            } else {
+                null
+            }
+            TransactionItemVolume(item.volume, VolumeUnit.fromValue(item.volumeUnit), prefix)
+        } else {
+            null
+        }
         com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraftItem(item.dbId, item.uuid, item.amount, item.description, item.category, item.isReduction,
-            item.quantity, item.brand, item.variation, images, emptyList())
+            item.quantity, item.brand, item.variation, weight, volume, images, emptyList())
     }
     val apiDraft = com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraft(
         items, emptyList(), documents, emptyList(), draft.customDate, draft.customTime?.toString(),

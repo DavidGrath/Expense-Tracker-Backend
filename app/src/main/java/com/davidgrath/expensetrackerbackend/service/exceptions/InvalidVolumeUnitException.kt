@@ -1,0 +1,3 @@
+package com.davidgrath.expensetrackerbackend.service.exceptions
+
+class InvalidVolumeUnitException: RuntimeException(), ServiceLayerException

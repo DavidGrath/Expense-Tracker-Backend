@@ -656,6 +656,120 @@
         }
       }
     },
+    "/transactions/draft/items/{uuid}/weight": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/profileId"
+        },
+        {
+          "name": "uuid",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "patch": {
+        "tags": [
+          "transactions"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "./schemas.json/#/components/schemas/TransactionDraftItemPatchWeightRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas.json/#/components/schemas/TransactionDraft"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["transactions"],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas.json/#/components/schemas/TransactionDraft"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transactions/draft/items/{uuid}/volume": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/profileId"
+        },
+        {
+          "name": "uuid",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "patch": {
+        "tags": [
+          "transactions"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "./schemas.json/#/components/schemas/TransactionDraftItemPatchVolumeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas.json/#/components/schemas/TransactionDraft"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["transactions"],
+        "responses": {
+          "200": {
+            "description": " ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas.json/#/components/schemas/TransactionDraft"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/transactions/draft/documents": {
       "parameters": [
         {

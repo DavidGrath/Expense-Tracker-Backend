@@ -105,6 +105,34 @@
           "variation": {
             "type": "string"
           },
+          "weight": {
+            "type": "object",
+            "properties": {
+              "amount": {
+                "type": "number"
+              },
+              "unit": {
+                "$ref": "#/components/schemas/WeightUnit"
+              },
+              "prefix": {
+                "$ref": "#/components/schemas/UnitPrefix"
+              }
+            }
+          },
+          "volume": {
+            "type": "object",
+            "properties": {
+              "amount": {
+                "type": "number"
+              },
+              "unit": {
+                "$ref": "#/components/schemas/VolumeUnit"
+              },
+              "prefix": {
+                "$ref": "#/components/schemas/UnitPrefix"
+              }
+            }
+          },
           "images": {
             "type": "array",
             "items": {
@@ -660,6 +688,34 @@
           "variation": {
             "type": "string"
           },
+          "weight": {
+            "type": "object",
+            "properties": {
+              "amount": {
+                "type": "number"
+              },
+              "unit": {
+                "$ref": "#/components/schemas/WeightUnit"
+              },
+              "prefix": {
+                "$ref": "#/components/schemas/UnitPrefix"
+              }
+            }
+          },
+          "volume": {
+            "type": "object",
+            "properties": {
+              "amount": {
+                "type": "number"
+              },
+              "unit": {
+                "$ref": "#/components/schemas/VolumeUnit"
+              },
+              "prefix": {
+                "$ref": "#/components/schemas/UnitPrefix"
+              }
+            }
+          },
           "images": {
             "type": "array",
             "items": {
@@ -677,6 +733,7 @@
       },
       "TransactionDraftItemUpdateRequest": {
         "type": "object",
+        "description": "TODO Add charge",
         "properties": {
           "amount": {
             "type": "number",
@@ -704,9 +761,107 @@
           },
           "variation": {
             "type": "string"
+          },
+          "weight": {
+            "type": "object",
+            "properties": {
+              "amount": {
+                "type": "number",
+                "nullable": false,
+                "minimum": 0,
+                "exclusiveMinimum": true
+              },
+              "unit": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/WeightUnit"
+                  },
+                  {
+                    "nullable": false
+                  }
+                ]
+              },
+              "prefix": {
+                "$ref": "#/components/schemas/UnitPrefix"
+              }
+            },
+            "nullable": true
+          },
+          "volume": {
+            "type": "object",
+            "properties": {
+              "amount": {
+                "type": "number",
+                "nullable": false,
+                "minimum": 0,
+                "exclusiveMinimum": true
+              },
+              "unit": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/VolumeUnit"
+                  },
+                  {
+                    "nullable": false
+                  }
+                ]
+              },
+              "prefix": {
+                "$ref": "#/components/schemas/UnitPrefix"
+              }
+            },
+            "nullable": true
           }
         },
         "required": ["amount", "description", "categoryId"]
+      },
+      "TransactionDraftItemPatchWeightRequest": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "nullable": false,
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "unit": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeightUnit"
+              },
+              {
+                "nullable": false
+              }
+            ]
+          },
+          "prefix": {
+            "$ref": "#/components/schemas/UnitPrefix"
+          }
+        }
+      },
+      "TransactionDraftItemPatchVolumeRequest": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "nullable": false,
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "unit": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/VolumeUnit"
+              },
+              {
+                "nullable": false
+              }
+            ]
+          },
+          "prefix": {
+            "$ref": "#/components/schemas/UnitPrefix"
+          }
+        }
       },
       "TransactionDraftFile": {
         "type": "object",
@@ -1142,6 +1297,19 @@
             }
           }
         }
+      },
+      "WeightUnit": {
+        "type": "string",
+        "enum": ["g", "[lb_av]", "[oz_av]"]
+      },
+      "VolumeUnit": {
+        "type": "string",
+        "enum": ["l", "[foz_us]", "[gal_us]"]
+      },
+      "UnitPrefix": {
+        "description": "Only for metric units. Selected subset from https://ucum.org/ucum#section-Prefixes",
+        "type": "string",
+        "enum": ["m", "c", "k", "M"]
       }
     }
   }

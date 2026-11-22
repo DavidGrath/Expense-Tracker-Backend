@@ -675,7 +675,7 @@ open class TransactionsController: TransactionsApi {
             throw exception
         }
         val ret = transactionDraftService.deleteItem(profile.id, uuid)
-        return ResponseEntity.ok().build()
+        return ResponseEntity.ok().build() //TODO all draft modification methods should return the new draft
     }
 
     override fun transactionsSearchPost(
@@ -691,6 +691,106 @@ open class TransactionsController: TransactionsApi {
             throw exception
         }
         return ResponseEntity.ok(emptyList())
+    }
+
+    override fun transactionsDraftItemsUuidVolumeDelete(
+        profileId: @NotNull String,
+        uuid: @NotNull UUID
+    ): ResponseEntity<TransactionDraft?>? {
+        val authentication = SecurityContextHolder.getContext().authentication
+        val principal = authentication.principal as Jwt
+
+        val user = userService.getByUsername(principal.subject!!)
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
+
+        val scheme = httpServletRequest.scheme
+        val host = httpServletRequest.serverName
+        val port = httpServletRequest.serverPort
+        val triple = Triple(scheme, host, port)
+
+        transactionDraftService.removeDraftItemVolume(profile.id!!, uuid)
+
+        val draft = transactionDraftService.getDraft(profile.id!!)!!
+        val apiDraft = transactionDraftToApiDraft(draft, triple)
+        return ResponseEntity.ok(apiDraft)
+    }
+
+    override fun transactionsDraftItemsUuidVolumePatch(
+        profileId: @NotNull String,
+        uuid: @NotNull UUID,
+        transactionDraftItemPatchVolumeRequest: @Valid TransactionDraftItemPatchVolumeRequest?
+    ): ResponseEntity<TransactionDraft?>? {
+        val authentication = SecurityContextHolder.getContext().authentication
+        val principal = authentication.principal as Jwt
+
+        val user = userService.getByUsername(principal.subject!!)
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
+
+        val scheme = httpServletRequest.scheme
+        val host = httpServletRequest.serverName
+        val port = httpServletRequest.serverPort
+        val triple = Triple(scheme, host, port)
+
+        transactionDraftService.modifyDraftItemVolume(profile.id!!, uuid,
+            transactionDraftItemPatchVolumeRequest!!.amount!!, transactionDraftItemPatchVolumeRequest!!.prefix.value,
+            transactionDraftItemPatchVolumeRequest.unit.value
+        )
+
+        val draft = transactionDraftService.getDraft(profile.id!!)!!
+        val apiDraft = transactionDraftToApiDraft(draft, triple)
+        return ResponseEntity.ok(apiDraft)
+    }
+
+    override fun transactionsDraftItemsUuidWeightDelete(
+        profileId: @NotNull String,
+        uuid: @NotNull UUID
+    ): ResponseEntity<TransactionDraft?>? {
+        val authentication = SecurityContextHolder.getContext().authentication
+        val principal = authentication.principal as Jwt
+
+        val user = userService.getByUsername(principal.subject!!)
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
+
+        val scheme = httpServletRequest.scheme
+        val host = httpServletRequest.serverName
+        val port = httpServletRequest.serverPort
+        val triple = Triple(scheme, host, port)
+
+        transactionDraftService.removeDraftItemWeight(profile.id!!, uuid)
+
+        val draft = transactionDraftService.getDraft(profile.id!!)!!
+        val apiDraft = transactionDraftToApiDraft(draft, triple)
+        return ResponseEntity.ok(apiDraft)
+    }
+
+    override fun transactionsDraftItemsUuidWeightPatch(
+        profileId: @NotNull String,
+        uuid: @NotNull UUID,
+        transactionDraftItemPatchWeightRequest: @Valid TransactionDraftItemPatchWeightRequest?
+    ): ResponseEntity<TransactionDraft?>? {
+        val authentication = SecurityContextHolder.getContext().authentication
+        val principal = authentication.principal as Jwt
+
+        val user = userService.getByUsername(principal.subject!!)
+        val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
+        doTheOtelThing(user.uuid!!, profile.uuid!!)
+
+        val scheme = httpServletRequest.scheme
+        val host = httpServletRequest.serverName
+        val port = httpServletRequest.serverPort
+        val triple = Triple(scheme, host, port)
+
+        transactionDraftService.modifyDraftItemWeight(profile.id!!, uuid,
+            transactionDraftItemPatchWeightRequest!!.amount!!, transactionDraftItemPatchWeightRequest!!.prefix.value,
+            transactionDraftItemPatchWeightRequest.unit.value
+        )
+
+        val draft = transactionDraftService.getDraft(profile.id!!)!!
+        val apiDraft = transactionDraftToApiDraft(draft, triple)
+        return ResponseEntity.ok(apiDraft)
     }
 
     companion object {

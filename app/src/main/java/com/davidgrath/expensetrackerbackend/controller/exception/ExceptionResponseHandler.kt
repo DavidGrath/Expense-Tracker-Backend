@@ -4,6 +4,9 @@ import com.davidgrath.expensetrackerbackend.service.exceptions.CountLimitExceede
 import com.davidgrath.expensetrackerbackend.service.exceptions.EntityNotFoundException
 import com.davidgrath.expensetrackerbackend.service.exceptions.InvalidCurrencyCodeException
 import com.davidgrath.expensetrackerbackend.service.exceptions.InvalidDraftException
+import com.davidgrath.expensetrackerbackend.service.exceptions.InvalidUnitPrefixException
+import com.davidgrath.expensetrackerbackend.service.exceptions.InvalidVolumeUnitException
+import com.davidgrath.expensetrackerbackend.service.exceptions.InvalidWeightUnitException
 import com.davidgrath.expensetrackerbackend.service.exceptions.NoExplicitDefaultAccountException
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE
 import org.springframework.http.HttpStatus
@@ -54,6 +57,25 @@ class ExceptionResponseHandler {
     fun handleInvalidCurrencyCodeException(e: InvalidCurrencyCodeException): ProblemDetail {
         val problemDetail: ProblemDetail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST)
         problemDetail.setProperty(CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE, ErrorCode.INVALID_CURRENCY_CODE.code)
+        return problemDetail
+    }
+
+    @ExceptionHandler(InvalidWeightUnitException::class)
+    fun handleInvalidWeightUnitException(e: InvalidWeightUnitException): ProblemDetail {
+        val problemDetail: ProblemDetail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST)
+        problemDetail.setProperty(CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE, ErrorCode.INVALID_WEIGHT_UNIT.code)
+        return problemDetail
+    }
+    @ExceptionHandler(InvalidVolumeUnitException::class)
+    fun handleInvalidVolumeUnitException(e: InvalidVolumeUnitException): ProblemDetail {
+        val problemDetail: ProblemDetail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST)
+        problemDetail.setProperty(CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE, ErrorCode.INVALID_VOLUME_UNIT.code)
+        return problemDetail
+    }
+    @ExceptionHandler(InvalidUnitPrefixException::class)
+    fun handleInvalidUnitPrefixException(e: InvalidUnitPrefixException): ProblemDetail {
+        val problemDetail: ProblemDetail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST)
+        problemDetail.setProperty(CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE, ErrorCode.INVALID_UNIT_PREFIX.code)
         return problemDetail
     }
 }

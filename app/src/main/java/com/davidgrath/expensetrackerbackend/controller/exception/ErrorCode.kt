@@ -20,5 +20,8 @@ enum class ErrorCode(val code: String) {
     INVALID_SEARCH_QUERY("invalid_search_query"),
     INVALID_STATISTICS_FILTER("invalid_statistics_filter"),
     INVALID_CURRENCY_CODE("invalid_currency_code"),
+    INVALID_WEIGHT_UNIT("invalid_weight_unit"),
+    INVALID_VOLUME_UNIT("invalid_volume_unit"),
+    INVALID_UNIT_PREFIX("invalid_unit_prefix"),
     SERVER_ERROR("server_error"),
 }

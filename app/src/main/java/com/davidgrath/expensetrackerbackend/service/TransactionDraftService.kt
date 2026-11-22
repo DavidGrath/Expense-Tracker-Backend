@@ -7,6 +7,9 @@ import com.davidgrath.expensetrackerbackend.repository.*
 import com.davidgrath.expensetrackerbackend.service.exceptions.CountLimitExceededException
 import com.davidgrath.expensetrackerbackend.service.exceptions.EntityNotFoundException
 import com.davidgrath.expensetrackerbackend.service.exceptions.InvalidDraftException
+import com.davidgrath.expensetrackerbackend.service.exceptions.InvalidUnitPrefixException
+import com.davidgrath.expensetrackerbackend.service.exceptions.InvalidVolumeUnitException
+import com.davidgrath.expensetrackerbackend.service.exceptions.InvalidWeightUnitException
 import com.davidgrath.expensetrackerbackend.utils.*
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.FALSE_BYTE
 import com.google.gson.GsonBuilder
@@ -85,6 +88,8 @@ class TransactionDraftService {
                 null,
                 null,
                 null,
+                null,
+                null,
                 false,
                 1_000
             )
@@ -159,6 +164,206 @@ class TransactionDraftService {
                 throw EntityNotFoundException()
             }
             val mutable = transactionDraft.items.toMutableList()
+
+            var item = mutable[itPos]
+
+            val unitEnum = WeightUnitEnum.values().find { it.stringVal == item.weightUnit }
+            if(unitEnum == null) {
+                throw InvalidWeightUnitException()
+            }
+            var prefixEnum: UnitPrefixEnum? = null
+            if(item.weightPrefix != null) {
+                prefixEnum = UnitPrefixEnum.values().find { it.stringVal == item.weightPrefix }
+                if(prefixEnum == null) {
+                    throw InvalidUnitPrefixException()
+                }
+            }
+            if(unitEnum != WeightUnitEnum.Gram) {
+                item = item.copy(weightPrefix = prefixEnum?.stringVal)
+            } else {
+                if(item.weightPrefix != null) {
+                    LOGGER.info("Prefix specified for non metric unit. Ignoring") //TODO test
+                }
+                item = item.copy( weightPrefix = null)
+
+            }
+
+            val volumeUnitEnum = VolumeUnitEnum.values().find { it.stringVal == item.volumeUnit }
+            if(volumeUnitEnum == null) {
+                throw InvalidVolumeUnitException()
+            }
+            var volumePrefixEnum: UnitPrefixEnum? = null
+            if(item.volumePrefix != null) {
+                prefixEnum = UnitPrefixEnum.values().find { it.stringVal == item.volumePrefix }
+                if(prefixEnum == null) {
+                    throw InvalidUnitPrefixException()
+                }
+            }
+            if(volumeUnitEnum != VolumeUnitEnum.Liter) {
+                item = item.copy(volumePrefix = prefixEnum?.stringVal)
+            } else {
+                if(item.volumePrefix != null) {
+                    LOGGER.info("Prefix specified for non metric unit. Ignoring") //TODO test
+                }
+                item = item.copy(volumePrefix = null)
+
+            }
+            mutable[itPos] = item
+            transactionDraft = transactionDraft.copy(items = mutable)
+
+
+            val jsonString = gson.toJson(transactionDraft)
+            val json = JSON.json(jsonString)
+            userDraftRepository.updateDraftTrx(trxContext, profileId, userDraft!!.id!!, json)
+        }
+    }
+
+    fun modifyDraftItemWeight(profileId: Long, uuid: UUID, weight: BigDecimal, prefix: String?, unit: String) {
+
+        genericRepository.transactionContext { trx ->
+            val trxContext = trx.dsl()
+            val userDraft = userDraftRepository.getDraftByProfileForUpdateTrx(trxContext, profileId)
+            if (userDraft == null) {
+                throw EntityNotFoundException()
+            }
+            LOGGER.info("Acquired lock for profile draft")
+            var transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
+            val itPos = transactionDraft.items.indexOfFirst { it.uuid == uuid }
+            if (itPos == -1) {
+                LOGGER.error("Item not found for draft")
+                throw EntityNotFoundException()
+            }
+            val unitEnum = WeightUnitEnum.values().find { it.stringVal == unit }
+            if(unitEnum == null) {
+                throw InvalidWeightUnitException()
+            }
+            var prefixEnum: UnitPrefixEnum? = null
+            if(prefix != null) {
+                prefixEnum = UnitPrefixEnum.values().find { it.stringVal == prefix }
+                if(prefixEnum == null) {
+                    throw InvalidUnitPrefixException()
+                }
+            }
+
+            val mutable = transactionDraft.items.toMutableList()
+            var item = mutable[itPos]
+            if(unitEnum == WeightUnitEnum.Gram) {
+                item = item.copy(weight = weight, weightPrefix = prefixEnum?.stringVal, weightUnit = unitEnum.stringVal)
+            } else {
+                if(prefix != null) {
+                    LOGGER.info("Prefix specified for non metric unit. Ignoring")
+                }
+                item = item.copy(weight = weight, weightPrefix = null, weightUnit = unitEnum.stringVal)
+
+            }
+            mutable[itPos] = item
+            transactionDraft = transactionDraft.copy(items = mutable)
+
+            val jsonString = gson.toJson(transactionDraft)
+            val json = JSON.json(jsonString)
+            userDraftRepository.updateDraftTrx(trxContext, profileId, userDraft!!.id!!, json)
+        }
+    }
+
+
+    fun removeDraftItemWeight(profileId: Long, uuid: UUID) {
+
+        genericRepository.transactionContext { trx ->
+            val trxContext = trx.dsl()
+            val userDraft = userDraftRepository.getDraftByProfileForUpdateTrx(trxContext, profileId)
+            if (userDraft == null) {
+                throw EntityNotFoundException()
+            }
+            LOGGER.info("Acquired lock for profile draft")
+            var transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
+            val itPos = transactionDraft.items.indexOfFirst { it.uuid == uuid }
+            if (itPos == -1) {
+                LOGGER.error("Item not found for draft")
+                throw EntityNotFoundException()
+            }
+
+            val mutable = transactionDraft.items.toMutableList()
+            var item = mutable[itPos]
+            item = item.copy(weight = null, weightPrefix = null, weightUnit = null)
+
+            mutable[itPos] = item
+            transactionDraft = transactionDraft.copy(items = mutable)
+
+            val jsonString = gson.toJson(transactionDraft)
+            val json = JSON.json(jsonString)
+            userDraftRepository.updateDraftTrx(trxContext, profileId, userDraft!!.id!!, json)
+        }
+    }
+
+
+    fun modifyDraftItemVolume(profileId: Long, uuid: UUID, volume: BigDecimal, prefix: String?, unit: String) {
+
+        genericRepository.transactionContext { trx ->
+            val trxContext = trx.dsl()
+            val userDraft = userDraftRepository.getDraftByProfileForUpdateTrx(trxContext, profileId)
+            if (userDraft == null) {
+                throw EntityNotFoundException()
+            }
+            LOGGER.info("Acquired lock for profile draft")
+            var transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
+            val itPos = transactionDraft.items.indexOfFirst { it.uuid == uuid }
+            if (itPos == -1) {
+                LOGGER.error("Item not found for draft")
+                throw EntityNotFoundException()
+            }
+            val unitEnum = VolumeUnitEnum.values().find { it.stringVal == unit }
+            if(unitEnum == null) {
+                throw InvalidVolumeUnitException()
+            }
+            var prefixEnum: UnitPrefixEnum? = null
+            if(prefix != null) {
+                prefixEnum = UnitPrefixEnum.values().find { it.stringVal == prefix }
+                if(prefixEnum == null) {
+                    throw InvalidUnitPrefixException()
+                }
+            }
+
+            val mutable = transactionDraft.items.toMutableList()
+            var item = mutable[itPos]
+            if(unitEnum == VolumeUnitEnum.Liter) {
+                item = item.copy(volume = volume, volumePrefix = prefixEnum?.stringVal, volumeUnit = unitEnum.stringVal)
+            } else {
+                if(prefix != null) {
+                    LOGGER.info("Prefix specified for non metric unit. Ignoring")
+                }
+                item = item.copy(volume = volume, volumePrefix = null, volumeUnit = unitEnum.stringVal)
+
+            }
+            mutable[itPos] = item
+            transactionDraft = transactionDraft.copy(items = mutable)
+
+            val jsonString = gson.toJson(transactionDraft)
+            val json = JSON.json(jsonString)
+            userDraftRepository.updateDraftTrx(trxContext, profileId, userDraft!!.id!!, json)
+        }
+    }
+
+
+    fun removeDraftItemVolume(profileId: Long, uuid: UUID) {
+
+        genericRepository.transactionContext { trx ->
+            val trxContext = trx.dsl()
+            val userDraft = userDraftRepository.getDraftByProfileForUpdateTrx(trxContext, profileId)
+            if (userDraft == null) {
+                throw EntityNotFoundException()
+            }
+            LOGGER.info("Acquired lock for profile draft")
+            var transactionDraft = gson.fromJson(userDraft!!.draft.toString(), TransactionDraft::class.java)
+            val itPos = transactionDraft.items.indexOfFirst { it.uuid == uuid }
+            if (itPos == -1) {
+                LOGGER.error("Item not found for draft")
+                throw EntityNotFoundException()
+            }
+
+            val mutable = transactionDraft.items.toMutableList()
+            var item = mutable[itPos]
+            item = item.copy(volume = null, volumePrefix = null, volumeUnit = null)
+
             mutable[itPos] = item
             transactionDraft = transactionDraft.copy(items = mutable)
 
