@@ -2,6 +2,7 @@ package com.davidgrath.expensetrackerbackend.service
 
 import com.davidgrath.expensetrackerbackend.configuration.TestRunConfiguration
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
+import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.AccountPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.CategoryPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ProfilePojo
@@ -18,7 +19,10 @@ import com.davidgrath.expensetrackerbackend.service.StatisticsService.ValidateSt
 import com.davidgrath.expensetrackerbackend.service.exceptions.EntityNotFoundException
 import com.davidgrath.expensetrackerbackend.service.exceptions.StatisticsHeterogeneousCurrencyCodeException
 import com.davidgrath.expensetrackerbackend.testutils.DataBuilder
+import com.davidgrath.expensetrackerbackend.testutils.TestConstants
+import com.davidgrath.expensetrackerbackend.testutils.TestData
 import com.davidgrath.expensetrackerbackend.testutils.TestUtilComponent
+import com.davidgrath.expensetrackerbackend.testutils.assertEqualsBD
 import com.davidgrath.expensetrackerbackend.testutils.getDefaultAccountId
 import com.davidgrath.expensetrackerbackend.testutils.getDefaultProfileId
 import com.davidgrath.expensetrackerbackend.testutils.tempInit
@@ -36,6 +40,7 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringRunner
 import java.math.BigDecimal
 import java.nio.file.Files
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.util.UUID
@@ -360,5 +365,81 @@ class StatisticsServiceTest {
         assertThrows(EntityNotFoundException::class.java, {
             statisticsService.validateFilter(user1ProfileId, statisticsFilter)
         })
+
+
+    }
+
+    @Test
+    fun getItemsTest() {
+        val folder = Files.createTempDirectory("temp").toFile()
+        folder.deleteOnExit()
+
+        val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
+        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)
+
+        val dataBuilder = DataBuilder(folder, timeHandler, null, Constants.DEFAULT_PROFILE_ID, testUtilComponent)
+
+
+        val fitness = categoryRepository.findByProfileIdAndStringId(profile!!.id!!, "fitness")!!
+        val food = categoryRepository.findByProfileIdAndStringId(profile.id!!, "food")!!
+        val utilities = categoryRepository.findByProfileIdAndStringId(profile.id!!, "utilities")!!
+        val transportation = categoryRepository.findByProfileIdAndStringId(profile.id!!, "transportation")!!
+
+        val firstDate = LocalDate.parse("2025-01-01") // Wednesday
+        val secondDate = LocalDate.parse("2025-01-02")
+        val thirdDate = LocalDate.parse("2025-01-03")
+        val forthDate = LocalDate.parse("2025-01-04")
+
+        val transactionBuilder = dataBuilder.createTransaction()
+            .atDate(firstDate)
+            .withItem("Bread", "food", BigDecimal(2))
+            .withDetailedItem().mainDetails("Dumbbells", "fitness", BigDecimal(4))
+            .withImages(TestData.Resource.Images.HAMMER).build()
+            .withNewAccount("USD", "Test Account")
+        val newAccountId = transactionBuilder.getAccount().id!!
+        val id = transactionBuilder.commit().first()
+
+        val id2 = dataBuilder.createTransaction()
+            .atDate(secondDate)
+            .withDetailedItem().mainDetails("Hammer", "utilities", BigDecimal(8))
+            .withImages(TestData.Resource.Images.HAMMER).build()
+            .withItem("Sweatpants", "fitness", BigDecimal(16))
+            .commit().first()
+
+        val id3 = dataBuilder.createTransaction()
+            .atDate(thirdDate)
+            .withItem("Fish", "food", BigDecimal(32))
+            .withItem("Red shirt", "clothing", BigDecimal(64))
+            .withItem("Fuel", "transportation", BigDecimal(128))
+            .commit()
+
+        dataBuilder.createTransaction()
+            .atDate(forthDate)
+            .withItem("Medicine", "healthcare", BigDecimal(256))
+            .withNewSeller("Generic Hospital")
+            .withNewAccount("USD", "Test Account 2")
+            .commit()
+
+
+        var statisticsFilter = StatisticsFilter()
+        val transactionsNoFilter = statisticsService.getStatisticsTransactions(profile.id!!, statisticsFilter)
+        assertEquals(4, transactionsNoFilter.size)
+        assertNotNull(transactionsNoFilter[0].items[1].firstImageId)
+        assertNotNull(transactionsNoFilter[1].items[0].firstImageId)
+        val items = transactionsNoFilter.flatMap { it.items }
+        assertEquals(8, items.size)
+
+        statisticsFilter = StatisticsFilter().categories(listOf(utilities.id!!, fitness.id!!, transportation.id!!))
+        val transactionsFilteredByCategory = statisticsService.getStatisticsTransactions(profile.id!!, statisticsFilter)
+        assertEquals(3, transactionsFilteredByCategory.size)
+        assertEqualsBD(BigDecimal(2), transactionsFilteredByCategory[0].excludedItemAmount)
+        assertEqualsBD(BigDecimal(0), transactionsFilteredByCategory[1].excludedItemAmount)
+        assertEqualsBD(BigDecimal(96), transactionsFilteredByCategory[2].excludedItemAmount)
+
+        assertEquals(1, transactionsFilteredByCategory[0].excludedItemCount)
+        assertEquals(0, transactionsFilteredByCategory[1].excludedItemCount)
+        assertEquals(2, transactionsFilteredByCategory[2].excludedItemCount) //TODO Add charges and test as well
+
     }
 }

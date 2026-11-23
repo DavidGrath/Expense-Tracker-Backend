@@ -191,6 +191,15 @@ open class AccountRepository {
         return selectStep.fetch().map { it.value1() }
     }
 
+    fun getAllByIds(profileId: Long, ids: List<Long>): List<AccountPojo> {
+        val selectStep = mainContext.select(ACCOUNT.fields().toList()) //To workaround the generated column
+            .from(ACCOUNT)
+            .where(ACCOUNT.PROFILE_ID.eq(profileId))
+            .and(ACCOUNT.ID.`in`(ids))
+        val result = selectStep.fetch().into(AccountPojo::class.java)
+        LOGGER.info("Result size: {}", result.size)
+        return result
+    }
 
     // endregion
 

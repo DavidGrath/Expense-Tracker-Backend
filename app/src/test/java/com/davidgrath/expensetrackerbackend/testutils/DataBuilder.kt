@@ -7,6 +7,7 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.*
 import com.davidgrath.expensetrackerbackend.repository.*
 import com.davidgrath.expensetrackerbackend.utils.Constants
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.FALSE_BYTE
+import com.davidgrath.expensetrackerbackend.utils.UserImageFile
 import com.davidgrath.expensetrackerbackend.utils.file
 import com.davidgrath.expensetrackerbackend.utils.toByte
 import com.davidgrath.expensetrackerbackend.utils.uuidToBytes
@@ -226,7 +227,10 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
                                 resourceInputStream.close()
                                 outputStream.close()
                                 val newOrdinal = ((imagesRepository.getMaxOrdinal(profile.id!!)?:0) + 1).toShort()
-                                val imageDb = ImagePojo(null, profile.id!!, file.length(), HexFormat.of().parseHex(resource.sha256), "image/jpeg", "", "", newOrdinal, dateTime)
+                                val userImageFile = UserImageFile(UUID.fromString(userUuid), UUID.fromString(profileUuid), UserImageFile.FolderMode.Data, UUID.randomUUID().toString())
+                                val imageDb = ImagePojo(null, profile.id!!, file.length(), HexFormat.of().parseHex(resource.sha256), "image/jpeg", "",
+                                    userImageFile.userScopedPath,
+                                    newOrdinal, dateTime)
                                 val imageId = imagesRepository.insertImage(imageDb)
                                 sha256Map[resource.sha256] = newOrdinal
                                 newOrdinal
@@ -322,7 +326,7 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
 
     private class TransactionItemBuilderImpl(private val xTransactionBuilderImpl: TransactionBuilderImpl, private val categoryRepository: CategoryRepository, private val profileDb: ProfilePojo): TransactionItemBuilder {
 
-        private var item = TransactionItemPojo(null, profileDb.id, -1, -1, "", BigDecimal.ZERO, -1, 0, 0, 0, null, "", null,
+        private var item = TransactionItemPojo(null, profileDb.id, -1, -1, "", BigDecimal.ZERO, -1, 0, 0, 0, null, null, null,
             null, null, null, null, null, null,
             FALSE_BYTE, FALSE_BYTE, LocalDateTime.now())
         private var images = listOf<TestData.Resource>()
@@ -341,7 +345,7 @@ class DataBuilder(private val root: File, private val timeHandler: TimeHandler, 
             if(categoryDb == null) {
                 throw IllegalStateException("Category does not exist")
             }
-            item = TransactionItemPojo(null, profileDb.id, -1, -1, description, amount, categoryDb.ordinal!!, 0, 1, 1, 1, null, "", null,
+            item = TransactionItemPojo(null, profileDb.id, -1, -1, description, amount, categoryDb.ordinal!!, 0, 1, 1, 1, null, null, null,
             null, null, null, null, null, FALSE_BYTE, FALSE_BYTE, LocalDateTime.now())
             mainDetailsSet = true
             return this

@@ -5,12 +5,15 @@ import com.davidgrath.expensetrackerbackend.entities.dtos.*
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.*
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.DEFAULT_FETCH_LIMIT
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.FALSE_BYTE
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.TRUE_BYTE
 import com.davidgrath.expensetrackerbackend.utils.toByte
 import org.jooq.DSLContext
 import org.jooq.impl.DSL
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Repository
+import java.math.BigDecimal
 import java.time.LocalDate
 
 @Repository
@@ -417,6 +420,73 @@ class TransactionRepository {
         val alias = seekStep.asTable()
         val finalSelect = mainContext.selectFrom(alias).where(rank.lessOrEqual(n))
         return finalSelect.fetch().into(TopItemSumByCategory::class.java)
+    }
+
+    fun getAllByIds(profileId: Long, ids: List<Long>): List<TransactionPojo> {
+        val selectStep = mainContext.select(TRANSACTION.asterisk())
+            .from(TRANSACTION)
+            .where(TRANSACTION.PROFILE_ID.eq(profileId))
+            .and(TRANSACTION.ID.`in`(ids))
+            .orderBy(TRANSACTION.DATED_AT, TRANSACTION.ACCOUNT_ORDINAL, TRANSACTION.SORT_KEY, TRANSACTION.ID)
+
+        val result = selectStep.fetch().into(TransactionPojo::class.java)
+        LOGGER.info("Result size: {}", result.size)
+        return result
+    }
+
+
+    fun getDistinctAccountIdsByIds(profileId: Long, ids: List<Long>): List<Long> {
+        val selectStep = mainContext.selectDistinct(ACCOUNT.ID)
+            .from(ACCOUNT)
+            .innerJoin(TRANSACTION).on(accountToTransactionPath)
+            .where(TRANSACTION.PROFILE_ID.eq(profileId))
+            .and(TRANSACTION.ID.`in`(ids))
+
+        val result = selectStep.fetch().map { it.value1() }
+        LOGGER.info("Result size: {}", result.size)
+        return result
+    }
+
+    fun getExcludedTransactionItemStats(profileId: Long, itemIds: List<Long>, excludeCharges: Boolean): List<StatisticsTransactionFilterData> {
+        var itemChargesCondition = DSL.noCondition()
+        var chargesCondition = DSL.noCondition()
+        if(excludeCharges) {
+            itemChargesCondition = TRANSACTION_ITEM.IS_CHARGE.eq(FALSE_BYTE)
+            chargesCondition = TRANSACTION_ITEM.IS_CHARGE.eq(TRUE_BYTE)
+        }
+        val selectStep = mainContext
+            .select(
+                TRANSACTION.PROFILE_ID,
+                TRANSACTION.ID,
+                DSL.table("lat").asterisk(),
+                DSL.table("lat2").asterisk()
+            ).from(TRANSACTION,
+                DSL.lateral(mainContext.select(
+                    DSL.count(TRANSACTION_ITEM.ID).`as`("excludedItemCount"),
+                    DSL.ifnull(DSL.sum(TRANSACTION_ITEM.AMOUNT), BigDecimal.ZERO).`as`("excludedItemAmount")
+                )
+                    .from(TRANSACTION_ITEM)
+                    .where(itemToTransactionPath)
+                    .and(TRANSACTION_ITEM.ID.notIn(itemIds))
+                    .and(TRANSACTION_ITEM.IS_REDUCTION.eq(FALSE_BYTE))
+                    .and(itemChargesCondition)
+                ).`as`("lat"),
+                DSL.lateral(mainContext.select(
+                    DSL.ifnull(DSL.sum(TRANSACTION_ITEM.AMOUNT), BigDecimal.ZERO).`as`("excludedChargesAmount") //TODO This is a prototype. Add a new test when I fully implement charges
+                )
+                    .from(TRANSACTION_ITEM)
+                    .where(itemToTransactionPath)
+                    .and(TRANSACTION_ITEM.IS_CHARGE.eq(TRUE_BYTE))
+                    .and(DSL.condition(excludeCharges))
+                    .and(itemChargesCondition)
+                ).`as`("lat2")
+                )
+
+            .where(TRANSACTION.PROFILE_ID.eq(profileId))
+
+        val result = selectStep.fetch().into(StatisticsTransactionFilterData::class.java)
+        LOGGER.info("Result size: {}", result.size)
+        return result
     }
 
     //endregion
