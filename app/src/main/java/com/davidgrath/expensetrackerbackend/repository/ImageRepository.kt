@@ -59,7 +59,7 @@ open class ImageRepository {
         val selectStep = mainContext.select(
             IMAGE.ID, IMAGE.PROFILE_ID, IMAGE.SIZE_BYTES,
             IMAGE.SHA_256, IMAGE.MIME_TYPE, IMAGE.PATH,
-            mainContext.select(  //TODO Candidate for lateral join rework
+            mainContext.select(  //TODO Candidate for lateral join rework. I need a test, though
                 DSL.countDistinct(TRANSACTION.ID)
             ).from(IMAGE)
                 .innerJoin(TRANSACTION_ITEM_IMAGES).on(imageToItemImagesPath)

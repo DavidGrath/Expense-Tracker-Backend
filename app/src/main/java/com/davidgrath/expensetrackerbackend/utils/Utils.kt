@@ -99,7 +99,7 @@ fun getSha256AsBytes(inputStream: InputStream): ByteArray {
     val md = MessageDigest.getInstance("SHA256")
     var array = ByteArray(bufSize)
     var len = 0
-    var total = 0L //TODO UOM/UCOM
+    var total = 0L //TODO UOM/UCOM display value for logging
     while (len >= 0) {
         len = bufferedStream.read(array)
         if (len >= 0) {

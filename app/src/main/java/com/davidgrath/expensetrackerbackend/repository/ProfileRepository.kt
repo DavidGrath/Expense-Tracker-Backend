@@ -57,9 +57,6 @@ open class ProfileRepository {
         return result
     }
 
-    fun transactionContext(runnable: TransactionalRunnable) {
-        mainContext.transaction(runnable)
-    }
 
     companion object {
         private val LOGGER = LoggerFactory.getLogger(ProfileRepository::class.java)

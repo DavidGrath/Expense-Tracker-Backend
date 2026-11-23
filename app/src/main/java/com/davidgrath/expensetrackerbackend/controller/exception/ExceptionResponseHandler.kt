@@ -2,6 +2,7 @@ package com.davidgrath.expensetrackerbackend.controller.exception
 
 import com.davidgrath.expensetrackerbackend.service.exceptions.CountLimitExceededException
 import com.davidgrath.expensetrackerbackend.service.exceptions.EntityNotFoundException
+import com.davidgrath.expensetrackerbackend.service.exceptions.StatisticsHeterogeneousCurrencyCodeException
 import com.davidgrath.expensetrackerbackend.service.exceptions.InvalidCurrencyCodeException
 import com.davidgrath.expensetrackerbackend.service.exceptions.InvalidDraftException
 import com.davidgrath.expensetrackerbackend.service.exceptions.InvalidUnitPrefixException
@@ -72,10 +73,18 @@ class ExceptionResponseHandler {
         problemDetail.setProperty(CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE, ErrorCode.INVALID_VOLUME_UNIT.code)
         return problemDetail
     }
+
     @ExceptionHandler(InvalidUnitPrefixException::class)
     fun handleInvalidUnitPrefixException(e: InvalidUnitPrefixException): ProblemDetail {
         val problemDetail: ProblemDetail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST)
         problemDetail.setProperty(CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE, ErrorCode.INVALID_UNIT_PREFIX.code)
+        return problemDetail
+    }
+
+    @ExceptionHandler(StatisticsHeterogeneousCurrencyCodeException::class)
+    fun handleHeterogeneousCurrencyCodeException(e: StatisticsHeterogeneousCurrencyCodeException): ProblemDetail {
+        val problemDetail: ProblemDetail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST)
+        problemDetail.setProperty(CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE, ErrorCode.INVALID_STATISTICS_FILTER.code)
         return problemDetail
     }
 }

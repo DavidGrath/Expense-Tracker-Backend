@@ -75,7 +75,7 @@ class StatisticsRepository {
             .innerJoin(CATEGORY).on(categoryToItemPath)
             .leftJoin(SELLER).on(sellerToTransactionPath)
             .leftJoin(SELLER_LOCATION).on(transactionToSellerLocationPath)
-            .where(ACCOUNT.PROFILE_ID.eq(profileId))  //TODO candidate for replacement
+            .where(ACCOUNT.PROFILE_ID.eq(profileId))
         selectStep = applyFilters(selectStep, statisticsFilter)
 
         return selectStep.fetchOne()?.into(TransactionAndItemCount::class.java)!!
@@ -94,7 +94,7 @@ class StatisticsRepository {
             .innerJoin(CATEGORY).on(categoryToItemPath)
             .leftJoin(SELLER).on(sellerToTransactionPath)
             .leftJoin(SELLER_LOCATION).on(sellerLocationToSellerPath)
-            .where(ACCOUNT.PROFILE_ID.eq(profileId)) //TODO candidate for replacement
+            .where(ACCOUNT.PROFILE_ID.eq(profileId))
             .and( TRANSACTION.DEBIT_OR_CREDIT.eq(TRUE_BYTE))
             .and( TRANSACTION_ITEM.IS_REDUCTION.eq(FALSE_BYTE))
 
@@ -115,7 +115,7 @@ class StatisticsRepository {
             .innerJoin(CATEGORY).on(categoryToItemPath)
             .leftJoin(SELLER).on(sellerToTransactionPath)
             .leftJoin(SELLER_LOCATION).on(sellerLocationToSellerPath)
-            .where(ACCOUNT.PROFILE_ID.eq(profileId)) //TODO candidate for removal
+            .where(ACCOUNT.PROFILE_ID.eq(profileId))
             .and( TRANSACTION.DEBIT_OR_CREDIT.eq(FALSE_BYTE))
             .and( TRANSACTION_ITEM.IS_REDUCTION.eq(FALSE_BYTE))
 

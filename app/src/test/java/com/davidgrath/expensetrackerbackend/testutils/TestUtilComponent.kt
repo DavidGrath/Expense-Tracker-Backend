@@ -26,6 +26,7 @@ import com.davidgrath.expensetrackerbackend.service.TransactionDraftServiceTest.
 import com.davidgrath.expensetrackerbackend.utils.Constants
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.FALSE_BYTE
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.TRUE_BYTE
+import com.davidgrath.expensetrackerbackend.utils.UserImageFile
 import com.davidgrath.expensetrackerbackend.utils.bytesToUUID
 import com.davidgrath.expensetrackerbackend.utils.file
 import com.davidgrath.expensetrackerbackend.utils.getSha256AsBytes
@@ -105,28 +106,20 @@ class TestUtilComponent {
         val transactionId = transactionRepository.insertTransaction(transaction)
         val misc = categoryRepository.findByProfileIdAndStringId(profileId, "miscellaneous")!!
 
-        val userUuidString = bytesToUUID(userUuid).toString()
-        val profileUuidString = bytesToUUID(profileUuid).toString()
 
         val itemOrdinal: Short = 1
         val item = TransactionItemPojo(null, profileId, account.ordinal, nextOrdinal, "Basic", amount, misc.ordinal!!, itemOrdinal, 1_000, 1, 1, null,
             null, null, null, null, null, null, null, FALSE_BYTE,FALSE_BYTE,
             MOCKED_DATE.atTime(MOCKED_TIME))
         val itemId = transactionItemRepository.insertTransactionItem(item)
-        //TODO make this more convenient
+
         val newFileName = "${UUID.randomUUID()}.jpg"
-        val newPath = "${Constants.FOLDER_NAME_PROFILES}/$profileUuidString/${Constants.FOLDER_NAME_DATA}/${Constants.SUBFOLDER_NAME_IMAGES}/${newFileName}"
-        val destinationFolder = file(
-            timeHandler.getRoot(),
-            Constants.FOLDER_NAME_USERS,
-            userUuidString,
-            Constants.FOLDER_NAME_PROFILES,
-            profileUuidString,
-            Constants.FOLDER_NAME_DATA,
-            Constants.SUBFOLDER_NAME_IMAGES
+        val userImageFile = UserImageFile(bytesToUUID(userUuid), bytesToUUID(profileUuid), UserImageFile.FolderMode.Data, newFileName)
+        val destination = File(
+            timeHandler.getRoot(), userImageFile.appRootScopedPath
         )
+        val destinationFolder = destination.parentFile
         destinationFolder.mkdirs()
-        val destination = File(destinationFolder, newFileName)
 
         val inputStream = classLoader.getResourceAsStream(resource.resourceName)
         val outputStream = destination.outputStream()
@@ -139,7 +132,7 @@ class TestUtilComponent {
         hashStream.close()
 
         val imageOrdinal: Short = 1
-        val image = ImagePojo(null, profileId, destination.length(), hash, "image/jpeg", "", newPath, imageOrdinal, MOCKED_DATE.atTime(MOCKED_TIME))
+        val image = ImagePojo(null, profileId, destination.length(), hash, "image/jpeg", "", userImageFile.userScopedPath, imageOrdinal, MOCKED_DATE.atTime(MOCKED_TIME))
         val imageId = imageRepository.insertImage(image)
         val itemImage = TransactionItemImagesPojo(null, profileId, account.ordinal, nextOrdinal, itemOrdinal, imageOrdinal, 1_000, 1, MOCKED_DATE.atTime(MOCKED_TIME))
         itemImagesRepository.insertItemImage(itemImage)

@@ -132,6 +132,58 @@ class StatisticsRepositoryTest {
 
         assertEqualsBD(BigDecimal(2_500), foodSum)
         assertEqualsBD(BigDecimal(7_500), fitnessSum)
+
+//        var statisticsFilter = StatisticsFilterDb()
+//
+//        val countsNoFilter = statisticsRepository.getTransactionAndItemCount(profile!!.id!!, statisticsFilter)
+//
+//
+//
+//        val categories = listOf(food, clothing, transport).map { it.id!! }
+//        statisticsFilter = StatisticsFilterDb(categoryIds = categories)
+//        val countsFilteredByCategory = statisticsRepository.getTransactionAndItemCount(profile.id!!, statisticsFilter)
+//
+//        statisticsFilter = StatisticsFilterDb(currencyCode = Currency.getInstance("USD"))
+//        val countsFilteredByCurrency = statisticsRepository.getTransactionAndItemCount(profile.id!!, statisticsFilter)
+//
+//        statisticsFilter = StatisticsFilterDb(currencyCode = Currency.getInstance("EUR"))
+//        val countsFilteredByCurrencyNotOwnedByOwner = statisticsRepository.getTransactionAndItemCount(profile.id!!, statisticsFilter)
+//
+//        statisticsFilter = StatisticsFilterDb(currencyCode = Currency.getInstance("USD"), accountIds = listOf(newAccountId))
+//        val countsFilteredByCurrencyWithOverlappingAccounts = statisticsRepository.getTransactionAndItemCount(profile.id!!, statisticsFilter)
+//
+//        statisticsFilter = StatisticsFilterDb(accountIds = listOf(accountId))
+//        val countsFilteredByAccount = statisticsRepository.getTransactionAndItemCount(profile.id!!, statisticsFilter)
+//
+//        statisticsFilter = StatisticsFilterDb(weekDays = listOf(DayOfWeek.WEDNESDAY))
+//        val countsFilteredByWeekday = statisticsRepository.getTransactionAndItemCount(profile.id!!, statisticsFilter)
+//        statisticsFilter = StatisticsFilterDb(transactionModes = listOf(TransactionMode.Card))
+//        val countsFilteredByMode = statisticsRepository.getTransactionAndItemCount(profile.id!!, statisticsFilter)
+//        val firstSellerFirstLocationId = sellerLocationRepository.getByProfileIdAndSellerId(profile.id!!, firstSellerId).first().id!!
+//        val firstSellerSecondLocationId = sellerLocationRepository.getByProfileIdAndSellerId(profile.id!!, firstSellerId)[1].id!!
+//
+//        val secondSellerLocationId =  sellerLocationRepository.getByProfileIdAndSellerId(profile.id!!, secondSellerId).first().id!!
+//        statisticsFilter = StatisticsFilterDb(sellerIds = listOf(firstSellerId))
+//        val countsFilteredBySeller = statisticsRepository.getTransactionAndItemCount(profile.id!!, statisticsFilter)
+//
+//        statisticsFilter = StatisticsFilterDb(sellerIds = listOf(firstSellerId), sellerLocationIds = listOf(secondSellerLocationId))
+//        val countsFilteredBySellerWithOverlappingLocations = statisticsRepository.getTransactionAndItemCount(profile.id!!, statisticsFilter)
+//
+//        statisticsFilter = StatisticsFilterDb(sellerLocationIds = listOf(firstSellerFirstLocationId, secondSellerLocationId))
+//        val countsFilteredByLocation = statisticsRepository.getTransactionAndItemCount(profile.id!!, statisticsFilter)
+//
+//        assertEquals(BigDecimal(0), countsNoFilter)
+//        assertEquals(BigDecimal(0), countsFilteredByCategory)
+//        assertEquals(BigDecimal(0), countsFilteredByWeekday)
+//        assertEquals(BigDecimal(0), countsFilteredByCurrency)
+//        assertEquals(BigDecimal(0), countsFilteredByAccount)
+//        assertEquals(BigDecimal(0), countsFilteredByMode)
+//        assertEquals(BigDecimal(0), countsFilteredBySeller)
+//        assertEquals(BigDecimal(0), countsFilteredByLocation)
+//
+//        assertEquals(BigDecimal(0), countsFilteredByCurrencyWithOverlappingAccounts)
+//        assertEquals(BigDecimal(0), countsFilteredBySellerWithOverlappingLocations)
+//        assertEquals(BigDecimal(0), countsFilteredByCurrencyNotOwnedByOwner)
     }
 
 

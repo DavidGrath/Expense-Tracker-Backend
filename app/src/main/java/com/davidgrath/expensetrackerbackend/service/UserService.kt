@@ -7,6 +7,7 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ProfileP
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.UserPojo
 import com.davidgrath.expensetrackerbackend.repository.AccountRepository
 import com.davidgrath.expensetrackerbackend.repository.CategoryRepository
+import com.davidgrath.expensetrackerbackend.repository.GenericRepository
 import com.davidgrath.expensetrackerbackend.repository.ProfileRepository
 import com.davidgrath.expensetrackerbackend.repository.UserRepository
 import com.davidgrath.expensetrackerbackend.utils.CATEGORY_IDS_ICONS_DEFAULT
@@ -36,6 +37,8 @@ class UserService {
     @Autowired
     lateinit var accountRepository: AccountRepository
     @Autowired
+    lateinit var genericRepository: GenericRepository
+    @Autowired
     lateinit var timeHandler: TimeHandler
     @Autowired
     lateinit var passwordEncoder: PasswordEncoder
@@ -51,7 +54,7 @@ class UserService {
         val uuidX = UUID.randomUUID()
         val uuid = uuidToBytes(uuidX) //TODO JUG UUIDv7
         var userIdRet = -1L
-        profileRepository.transactionContext { trx ->
+        genericRepository.transactionContext { trx ->
             val trxContext = trx.dsl()
             val user = UserPojo(null, uuid, username, encryptedPassword, "", utcDate)
             val userId = userRepository.insertUserTrx(trxContext, user)

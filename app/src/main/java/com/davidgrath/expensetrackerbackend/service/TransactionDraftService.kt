@@ -627,10 +627,10 @@ class TransactionDraftService {
                         draftItem.brand,
                         draftItem.variation,
                         draftItem.weight,
-                        null, // TODO Add to draft
+                        draftItem.weightPrefix,
                         draftItem.weightUnit,
                         draftItem.volume,
-                        null, // TODO Add to draft
+                        draftItem.volumePrefix,
                         draftItem.volumeUnit,
                         draftItem.isReduction.toByte(),
                         FALSE_BYTE, // TODO Add to draft
@@ -927,17 +927,14 @@ class TransactionDraftService {
             if (im == null) {
                 LOGGER.info("File does not exist for image")
                 if (draftPath == null) {
-                    val userUuidString = bytesToUUID(userUuid).toString()
-                    val profileUuidString = bytesToUUID(profileUuid).toString()
-                    val filename = copyFileToDraft(
+                    val userUuid = bytesToUUID(userUuid)
+                    val profileUuid = bytesToUUID(profileUuid)
+                    val userImageFile = copyImageToDraft(
                         tempFile,
                         mimeType,
-                        Constants.SUBFOLDER_NAME_IMAGES,
-                        userUuidString,
-                        profileUuidString
+                        userUuid, profileUuid,
                     )
-                    val path =
-                        "profiles/${profileUuidString}/${Constants.FOLDER_NAME_DRAFT}/${Constants.SUBFOLDER_NAME_IMAGES}/${filename}"
+                    val path = userImageFile.userScopedPath
                     draftFile = TransactionDraftFile(null, null, path, mimeType, hash, tempFile.length(), null, false)
                 } else {
                     LOGGER.info("Image already exists in draft. Adding to item {}", uuid)
@@ -979,7 +976,7 @@ class TransactionDraftService {
     }
 
     fun addDocumentToDraft(profileId: Long, type: DocumentType, tempFile: File, mimeType: String,
-        userUuid: String, profileStringId: String
+        userUuid: UUID, profileUuid: UUID
     ): String? {
 
         var ret: String? = null
@@ -1017,10 +1014,8 @@ class TransactionDraftService {
 
             if (draftPath == null) {
                 LOGGER.info("File does not exist in draft for document")
-                val filename =
-                    copyFileToDraft(tempFile, mimeType, Constants.SUBFOLDER_NAME_DOCUMENTS, userUuid, profileStringId)
-                path =
-                    "profiles/${profileStringId}/${Constants.FOLDER_NAME_DRAFT}/${Constants.SUBFOLDER_NAME_DOCUMENTS}/${filename}"
+                val userDocumentFile = copyDocumentToDraft(tempFile, mimeType,  userUuid, profileUuid)
+                path = userDocumentFile.userScopedPath
                 draftFile = TransactionDraftFile(null, null, path, mimeType, hash, tempFile.length(), type, false)
 
                 newHashes[hash] = path
@@ -1147,20 +1142,12 @@ class TransactionDraftService {
         return ret
     }
 
-    private fun copyFileToDraft(
+    private fun copyDocumentToDraft(
         file: File,
         mimeType: String,
-        subfolder: String,
-        userUuid: String,
-        profileUuid: String
-    ): String {
-        val folder = file(
-            timeHandler.getRoot(),
-            Constants.FOLDER_NAME_USERS, userUuid,
-            Constants.FOLDER_NAME_PROFILES, profileUuid,
-            Constants.FOLDER_NAME_DRAFT, subfolder
-        )
-        folder.mkdirs()
+        userUuid: UUID,
+        profileUuid: UUID
+    ): UserDocumentFile {
         val filename = UUID.randomUUID().toString()
         val extension = when (mimeType) {
             "image/jpeg" -> ".jpg"
@@ -1169,15 +1156,53 @@ class TransactionDraftService {
             else -> ""
         }
         val filenameExt = "$filename$extension"
+        val userDocumentFile = UserDocumentFile(userUuid, profileUuid, UserDocumentFile.FolderMode.Draft, null, filenameExt)
+        val destination = File(
+            timeHandler.getRoot(), userDocumentFile.appRootScopedPath
+        )
+
+        destination.parentFile.mkdirs()
+
 
         val inputStream = file.inputStream()
-        val destination = File(folder, filenameExt)
         val outputStream = destination.outputStream()
         inputStream.copyTo(outputStream) //TODO I plan on using bucket storage eventually
         inputStream.close()
         outputStream.close()
         LOGGER.info("Created file {}", destination.path)
-        return filenameExt
+        return userDocumentFile
+    }
+
+
+    private fun copyImageToDraft(
+        file: File,
+        mimeType: String,
+        userUuid: UUID,
+        profileUuid: UUID
+    ): UserImageFile {
+        val filename = UUID.randomUUID().toString()
+        val extension = when (mimeType) {
+            "image/jpeg" -> ".jpg"
+            "image/png" -> ".png"
+            "application/pdf" -> ".pdf"
+            else -> ""
+        }
+        val filenameExt = "$filename$extension"
+        val userImageFile = UserImageFile(userUuid, profileUuid, UserImageFile.FolderMode.Draft, filenameExt)
+        val destination = File(
+            timeHandler.getRoot(), userImageFile.appRootScopedPath
+        )
+        LOGGER.debug("Parent file: {}", destination.parentFile.absolutePath)
+        destination.parentFile.mkdirs()
+
+
+        val inputStream = file.inputStream()
+        val outputStream = destination.outputStream()
+        inputStream.copyTo(outputStream) //TODO I plan on using bucket storage eventually
+        inputStream.close()
+        outputStream.close()
+        LOGGER.info("Created file {}", destination.path)
+        return userImageFile
     }
 
     companion object {

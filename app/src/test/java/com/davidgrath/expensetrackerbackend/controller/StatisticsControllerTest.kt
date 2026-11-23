@@ -154,7 +154,7 @@ class StatisticsControllerTest {
     }
 
     @Test
-    fun givenFilterAccountDoesNotBelongToUserWhenStatisticsEndpointThenBadRequest() {
+    fun givenFilterAccountDoesNotBelongToUserWhenStatisticsEndpointThenNotFound() {
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
         val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 
@@ -191,7 +191,7 @@ class StatisticsControllerTest {
     }
 
     @Test
-    fun givenFilterSellerDoesNotBelongToUserWhenStatisticsEndpointThenBadRequest() {
+    fun givenFilterSellerDoesNotBelongToUserWhenStatisticsEndpointThenNotFound() {
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
         val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 
@@ -245,7 +245,7 @@ class StatisticsControllerTest {
     }
 
     @Test
-    fun givenFilterSellerLocationDoesNotBelongToUserWhenStatisticsEndpointThenBadRequest() {
+    fun givenFilterSellerLocationDoesNotBelongToUserWhenStatisticsEndpointThenNotFound() {
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
         val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 
@@ -303,7 +303,7 @@ class StatisticsControllerTest {
     }
 
     @Test
-    fun givenFilterCategoryDoesNotBelongToUserWhenStatisticsEndpointThenBadRequest() {
+    fun givenFilterCategoryDoesNotBelongToUserWhenStatisticsEndpointThenNotFound() {
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
         val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 

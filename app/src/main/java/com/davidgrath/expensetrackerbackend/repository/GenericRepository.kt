@@ -16,7 +16,7 @@ class GenericRepository {
     @Autowired
     lateinit var mainContext: DSLContext
 
-    //TODO Remove this method from the other repositories
+
     fun transactionContext(runnable: TransactionalRunnable) {
         mainContext.transaction(runnable)
     }

@@ -18,6 +18,7 @@ import com.davidgrath.expensetrackerbackend.utils.Constants
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.FALSE_BYTE
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.JWT_ALG
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.TRUE_BYTE
+import com.davidgrath.expensetrackerbackend.utils.UserDocumentFile
 import com.davidgrath.expensetrackerbackend.utils.bytesToUUID
 import com.davidgrath.expensetrackerbackend.utils.file
 import com.davidgrath.expensetrackerbackend.utils.toByte
@@ -179,8 +180,6 @@ class DocumentsControllerTest {
     }
 
     fun createTransactionWithDocument(profileId: Long, userUuid: ByteArray, profileUuid: ByteArray, accountId: Long, tempFolder: File, resource: TestData.Resource): Long {
-        val userUuidString = bytesToUUID(userUuid).toString()
-        val profileUuidString = bytesToUUID(profileUuid).toString()
         val amount = BigDecimal.TEN
         val account = accountRepository.findByProfileIdAndId(profileId, accountId)!!
 
@@ -201,14 +200,14 @@ class DocumentsControllerTest {
         val itemId = transactionItemRepository.insertTransactionItem(item)
         //TODO make this more convenient
         val newFileName = "${UUID.randomUUID()}.jpg"
-        val newPath = "${Constants.FOLDER_NAME_PROFILES}/$profileUuidString/${Constants.FOLDER_NAME_DATA}/${Constants.SUBFOLDER_NAME_DOCUMENTS}/${newFileName}"
-        val destination = file(timeHandler.getRoot(), Constants.FOLDER_NAME_USERS, userUuidString, Constants.FOLDER_NAME_PROFILES, profileUuidString, Constants.FOLDER_NAME_DATA, Constants.SUBFOLDER_NAME_DOCUMENTS, newFileName)
+        val userDocumentFile = UserDocumentFile(bytesToUUID(userUuid), bytesToUUID(profileUuid), UserDocumentFile.FolderMode.Data, MOCKED_DATE, newFileName)
+        val destination = File(timeHandler.getRoot(), userDocumentFile.appRootScopedPath)
 
         val tempFile = File(tempFolder, resource.fileName)
         val length = tempFile.length()
         tempFile.copyTo(destination)
         tempFile.delete()
-        val document = DocumentPojo(null, transactionId, DocumentType.Other, length, HexFormat.of().parseHex(resource.sha256), "image/jpeg", "", newPath, 1_000, 1, MOCKED_DATE.atTime(MOCKED_TIME))
+        val document = DocumentPojo(null, transactionId, DocumentType.Other, length, HexFormat.of().parseHex(resource.sha256), "image/jpeg", "", userDocumentFile.userScopedPath, 1_000, 1, MOCKED_DATE.atTime(MOCKED_TIME))
         val documentId = documentRepository.insertDocument(document)
         return documentId
     }

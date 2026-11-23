@@ -48,9 +48,8 @@ open class DocumentRepository {
         val selectStep = dslContext.select(DOCUMENT.fields().toList()) //To work around the excluded generated fields
             .from(DOCUMENT)
             .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(DOCUMENT.TRANSACTION_ID))
-            .innerJoin(ACCOUNT).on(accountToTransactionPath)
             .where(DOCUMENT.TRANSACTION_ID.eq(transactionId))
-            .and(ACCOUNT.PROFILE_ID.eq(profileId)) //TODO with the reworks I've done, I don't think I have to join back through account for most of my queries anymore since profileId is now in the composite key, but I'll save that for later
+            .and(TRANSACTION.PROFILE_ID.eq(profileId)) //TODO with the reworks I've done, I don't think I have to join back through account for most of my queries anymore since profileId is now in the composite key, but I'll save that for later
             .limit(DEFAULT_FETCH_LIMIT)
 
         val result = selectStep.fetch().into(DocumentPojo::class.java)
@@ -69,9 +68,8 @@ open class DocumentRepository {
             .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(DOCUMENT.TRANSACTION_ID))
             .innerJoin(TRANSACTION_ITEM).on(itemToTransactionPath)
             .innerJoin(CATEGORY).on(categoryToItemPath)
-            .innerJoin(ACCOUNT).on(accountToTransactionPath)
             .leftJoin(SELLER).on(sellerToTransactionPath)
-            .where(ACCOUNT.PROFILE_ID.eq(profileId)) //TODO deletion candidate
+            .where(TRANSACTION.PROFILE_ID.eq(profileId))
         if(fromDate != null) {
             selectStep = selectStep.and(TRANSACTION.DATED_AT.greaterOrEqual(fromDate))
         }
@@ -131,7 +129,7 @@ open class DocumentRepository {
         val selectStep = dslContext.select(
             DOCUMENT.ID, TRANSACTION.ID.`as`("transactionId"), DOCUMENT.TYPE,
             DOCUMENT.SIZE_BYTES, DOCUMENT.SHA_256, DOCUMENT.MIME_TYPE, DOCUMENT.PATH,
-            TRANSACTION.DATED_AT.`as`("transactionDatedAt"), inline(1).`as`("transactionOrdinal") //TODO remove when confirmed not needed
+            TRANSACTION.DATED_AT.`as`("transactionDatedAt"), inline(1).`as`("transactionOrdinal") //TODO remove when confirmed not needed. IIRC, this is because I sort first by transaction date, then by transaction ordinal. However, ordinal still served the dual purpose of being a sort_key back then, so it should be removable
         )
             .from(DOCUMENT)
             .innerJoin(TRANSACTION).on(TRANSACTION.ID.eq(DOCUMENT.TRANSACTION_ID))

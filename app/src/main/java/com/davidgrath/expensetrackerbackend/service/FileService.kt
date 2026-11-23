@@ -49,6 +49,9 @@ class FileService {
         }
     }
 
+    /**
+     * TODO Rework this method such that I copy during the transaction then delete AFTER the transaction commits, and delete the target folder/file if it exists on rollback
+     */
     fun moveFileToMain(root: File, userUuid: String, profileUuid: String, sourceFile: File, subfolder: String, date: LocalDate?): String {
         var path: String? = null
         var destination: File? = null

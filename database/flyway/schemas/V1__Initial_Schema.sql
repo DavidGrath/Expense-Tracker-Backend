@@ -215,7 +215,7 @@ CREATE TABLE transaction_item (
     CONSTRAINT chk_transaction_item_volume_unit_valid CHECK (volume_unit IS NULL OR volume_unit IN ('l', '[foz_us]', '[gal_us]')),
     CONSTRAINT chk_transaction_item_weight_prefix_valid CHECK (weight_prefix IS NULL OR (weight_unit = 'g' AND weight_prefix IN ('m', 'c', 'k', 'M')) OR (weight_unit != 'g' AND weight_prefix IS NULL)),
     CONSTRAINT chk_transaction_item_volume_prefix_valid CHECK (volume_prefix IS NULL OR (volume_unit = 'l' AND volume_prefix IN ('m', 'c', 'k', 'M')) OR (volume_unit != 'l' AND volume_prefix IS NULL)),
-    CONSTRAINT chk_transaction_item_reduction_charge_valid CHECK (NOT (is_reduction AND is_charge)), #--TODO test
+    CONSTRAINT chk_transaction_item_reduction_charge_valid CHECK (NOT (is_reduction AND is_charge)),
     CONSTRAINT chk_transaction_item_ordinal_valid CHECK (ordinal > 0),
     CONSTRAINT chk_transaction_item_sort_key_valid CHECK (sort_key > 0),
     CONSTRAINT chk_transaction_item_occupancy_slot_valid CHECK (1 <= occupancy_slot AND occupancy_slot <= 30)

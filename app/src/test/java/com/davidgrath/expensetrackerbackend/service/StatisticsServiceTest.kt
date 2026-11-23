@@ -2,7 +2,6 @@ package com.davidgrath.expensetrackerbackend.service
 
 import com.davidgrath.expensetrackerbackend.configuration.TestRunConfiguration
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
-import com.davidgrath.expensetrackerbackend.entities.StatisticsFilterDb
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.AccountPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.CategoryPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ProfilePojo
@@ -16,8 +15,9 @@ import com.davidgrath.expensetrackerbackend.repository.SellerRepository
 import com.davidgrath.expensetrackerbackend.repository.TransactionRepository
 import com.davidgrath.expensetrackerbackend.repository.UserRepository
 import com.davidgrath.expensetrackerbackend.service.StatisticsService.ValidateStatisticsFilterResult
+import com.davidgrath.expensetrackerbackend.service.exceptions.EntityNotFoundException
+import com.davidgrath.expensetrackerbackend.service.exceptions.StatisticsHeterogeneousCurrencyCodeException
 import com.davidgrath.expensetrackerbackend.testutils.DataBuilder
-import com.davidgrath.expensetrackerbackend.testutils.TestConstants
 import com.davidgrath.expensetrackerbackend.testutils.TestUtilComponent
 import com.davidgrath.expensetrackerbackend.testutils.getDefaultAccountId
 import com.davidgrath.expensetrackerbackend.testutils.getDefaultProfileId
@@ -151,7 +151,9 @@ class StatisticsServiceTest {
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
         val statisticsFilter = StatisticsFilter().accounts(listOf(accountId, newAccountId))
 
-        assertEquals(ValidateStatisticsFilterResult.CurrencyOrAccountIssue, statisticsService.validateFilter(profileId, statisticsFilter))
+        assertThrows(StatisticsHeterogeneousCurrencyCodeException::class.java, {
+            statisticsService.validateFilter(profileId, statisticsFilter)
+        })
     }
 
     /**
@@ -226,7 +228,9 @@ class StatisticsServiceTest {
         val user2Seller = sellerRepository.getAllByProfileId(user2ProfileId).first()!!.id!!
 
         val statisticsFilter = StatisticsFilter().sellers(listOf(user1Seller, user2Seller)).accounts(listOf(defaultUserAccount))
-        assertEquals(ValidateStatisticsFilterResult.EntityDoesNotBelongToOwner, statisticsService.validateFilter(user1ProfileId, statisticsFilter))
+        assertThrows(EntityNotFoundException::class.java, {
+            statisticsService.validateFilter(user1ProfileId, statisticsFilter)
+        })
     }
 
 
@@ -266,7 +270,9 @@ class StatisticsServiceTest {
 
 
         val statisticsFilter = StatisticsFilter().accounts(listOf(defaultUserAccount, user2AccountId))
-        assertEquals(ValidateStatisticsFilterResult.EntityDoesNotBelongToOwner, statisticsService.validateFilter(user1ProfileId, statisticsFilter))
+        assertThrows(EntityNotFoundException::class.java, {
+            statisticsService.validateFilter(user1ProfileId, statisticsFilter)
+        })
     }
 
 
@@ -306,7 +312,9 @@ class StatisticsServiceTest {
 
 
         val statisticsFilter = StatisticsFilter().accounts(listOf(defaultUserAccount)).categories(listOf(user2CategoryId))
-        assertEquals(ValidateStatisticsFilterResult.EntityDoesNotBelongToOwner, statisticsService.validateFilter(user1ProfileId, statisticsFilter))
+        assertThrows(EntityNotFoundException::class.java, {
+            statisticsService.validateFilter(user1ProfileId, statisticsFilter)
+        })
     }
 
 
@@ -349,6 +357,8 @@ class StatisticsServiceTest {
         val user2SellerFirstLocation = sellerLocationRepository.getByProfileIdAndSellerId(user2ProfileId, user2Seller).first()!!.id!!
 
         val statisticsFilter = StatisticsFilter().accounts(listOf(defaultUserAccount)).sellerLocations(listOf(user2SellerFirstLocation))
-        assertEquals(ValidateStatisticsFilterResult.EntityDoesNotBelongToOwner, statisticsService.validateFilter(user1ProfileId, statisticsFilter))
+        assertThrows(EntityNotFoundException::class.java, {
+            statisticsService.validateFilter(user1ProfileId, statisticsFilter)
+        })
     }
 }

@@ -152,7 +152,6 @@ class SellerLocationRepository @Autowired constructor(open var mainContext: DSLC
     }
 
 
-    //TODO Document this "...Trx" convention formally
     fun moveSortKeyTrx(trxContext: DSLContext, profileId: Long, categoryId: Long, sortKey: Short): Int {
 
         val updateStep = trxContext.update(SELLER_LOCATION)

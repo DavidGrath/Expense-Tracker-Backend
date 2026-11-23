@@ -740,21 +740,21 @@ class TransactionDraftServiceTest {
         val json = JSON.json(jsonString)
         userDraftRepository.updateDraft(profileId, userDraft.id!!, json)
 
-        val userUuidString = bytesToUUID(user.uuid!!).toString()
-        val profileUuidString = bytesToUUID(profile.uuid!!).toString()
+        val userUuid = bytesToUUID(user.uuid!!)
+        val profileUuid = bytesToUUID(profile.uuid!!)
 
 
-        transactionDraftService.addDocumentToDraft(profileId, DocumentType.Other, tempFile, "image/jpeg",  userUuidString, profileUuidString!!)
+        transactionDraftService.addDocumentToDraft(profileId, DocumentType.Other, tempFile, "image/jpeg",  userUuid, profileUuid!!)
 
         transactionDraftService.finishDraft(profileId, user.uuid!!, profile.uuid!!, ZoneId.of("UTC"))
 
         val draftDocumentsFolder = file(timeHandler.getRoot(),
-            Constants.FOLDER_NAME_USERS,userUuidString,
-            Constants.FOLDER_NAME_PROFILES, profileUuidString,
+            Constants.FOLDER_NAME_USERS,userUuid.toString(),
+            Constants.FOLDER_NAME_PROFILES, profileUuid.toString(),
             Constants.FOLDER_NAME_DRAFT, Constants.SUBFOLDER_NAME_DOCUMENTS)
         val mainDocumentsFolder = file(timeHandler.getRoot(),
-            Constants.FOLDER_NAME_USERS,userUuidString,
-            Constants.FOLDER_NAME_PROFILES, profileUuidString,
+            Constants.FOLDER_NAME_USERS,userUuid.toString(),
+            Constants.FOLDER_NAME_PROFILES, profileUuid.toString(),
             Constants.FOLDER_NAME_DATA, Constants.SUBFOLDER_NAME_DOCUMENTS,
             "2025","06","30")
 
@@ -781,17 +781,17 @@ class TransactionDraftServiceTest {
 
         transactionDraftService.createDraft(profileId, accountId)
         val draft = transactionDraftService.getDraft(profileId)!!
-        val userUuidString = bytesToUUID(user.uuid!!).toString()
-        val profileUuidString = bytesToUUID(profile.uuid!!).toString()
+        val userUuid = bytesToUUID(user.uuid!!)
+        val profileUuid = bytesToUUID(profile.uuid!!)
 
-        transactionDraftService.addDocumentToDraft(profileId, DocumentType.Other, tempFile, "image/jpeg",  userUuidString, profileUuidString)
-        transactionDraftService.addDocumentToDraft(profileId, DocumentType.Other, tempFile, "image/jpeg",  userUuidString, profileUuidString)
+        transactionDraftService.addDocumentToDraft(profileId, DocumentType.Other, tempFile, "image/jpeg",  userUuid, profileUuid)
+        transactionDraftService.addDocumentToDraft(profileId, DocumentType.Other, tempFile, "image/jpeg",  userUuid, profileUuid)
 
 
         val newDraft = transactionDraftService.getDraft(profileId)!!
         val draftDocumentsFolder = file(timeHandler.getRoot(),
-            Constants.FOLDER_NAME_USERS,userUuidString,
-            Constants.FOLDER_NAME_PROFILES, profileUuidString,
+            Constants.FOLDER_NAME_USERS,userUuid.toString(),
+            Constants.FOLDER_NAME_PROFILES, profileUuid.toString(),
             Constants.FOLDER_NAME_DRAFT, Constants.SUBFOLDER_NAME_DOCUMENTS)
 
         val documents = newDraft.documents

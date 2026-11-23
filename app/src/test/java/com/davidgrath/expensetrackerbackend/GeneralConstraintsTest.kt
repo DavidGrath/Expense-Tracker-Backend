@@ -1185,7 +1185,7 @@ class GeneralConstraintsTest {
             e
         }
 
-        assertSQLCheckConstraint(exception, CONSTRAINT_NAME_TRANSACTION_ITEM_IS_REDUCTION_VALID) //TODO Add weight and volume unit
+        assertSQLCheckConstraint(exception, CONSTRAINT_NAME_TRANSACTION_ITEM_IS_REDUCTION_VALID)
 
         quantity = 1
         brand = "Brand"

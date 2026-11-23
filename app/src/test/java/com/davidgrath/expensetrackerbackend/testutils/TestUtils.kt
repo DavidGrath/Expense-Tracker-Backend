@@ -35,11 +35,15 @@ fun file(vararg segments: String): File {
     return File(fullPath)
 }
 
-//TODO This should search for the is_default and then fallback to the first
 fun getDefaultAccountId(userRepository: UserRepository, profileRepository: ProfileRepository, accountRepository: AccountRepository): Long {
 
     val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
     val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+    val defaultAccountId = accountRepository.findDefaultAccountId(profile.id!!)
+    if(defaultAccountId != null) {
+        return defaultAccountId
+    }
+    LOGGER.warn("Could not find default account ID for profile {}", bytesToUUID(profile.uuid!!))
     val accountId = accountRepository.getAllByProfileId(profile.id!!).firstOrNull()!!.id
     return accountId!!
 }
