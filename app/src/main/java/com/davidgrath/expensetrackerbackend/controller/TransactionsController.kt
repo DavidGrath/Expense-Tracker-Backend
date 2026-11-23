@@ -3,7 +3,6 @@ package com.davidgrath.expensetrackerbackend.controller
 import com.davidgrath.expensetrackerbackend.controller.exception.CustomHttpException
 import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ImagePojo
 import com.davidgrath.expensetrackerbackend.generatedapi.api.TransactionsApi
 import com.davidgrath.expensetrackerbackend.generatedapi.model.*
 import com.davidgrath.expensetrackerbackend.service.*

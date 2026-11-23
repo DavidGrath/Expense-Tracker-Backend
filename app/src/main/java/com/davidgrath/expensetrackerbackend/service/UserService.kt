@@ -5,16 +5,9 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.AccountP
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.CategoryPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ProfilePojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.UserPojo
-import com.davidgrath.expensetrackerbackend.repository.AccountRepository
-import com.davidgrath.expensetrackerbackend.repository.CategoryRepository
-import com.davidgrath.expensetrackerbackend.repository.GenericRepository
-import com.davidgrath.expensetrackerbackend.repository.ProfileRepository
-import com.davidgrath.expensetrackerbackend.repository.UserRepository
-import com.davidgrath.expensetrackerbackend.utils.CATEGORY_IDS_ICONS_DEFAULT
-import com.davidgrath.expensetrackerbackend.utils.CORE_CATEGORIES
-import com.davidgrath.expensetrackerbackend.utils.Constants
-import com.davidgrath.expensetrackerbackend.utils.toByte
-import com.davidgrath.expensetrackerbackend.utils.uuidToBytes
+import com.davidgrath.expensetrackerbackend.repository.*
+import com.davidgrath.expensetrackerbackend.utils.*
+import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.TRUE_BYTE
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -22,8 +15,6 @@ import org.springframework.stereotype.Service
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.util.*
-import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.FALSE_BYTE
-import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.TRUE_BYTE
 
 @Service
 class UserService {

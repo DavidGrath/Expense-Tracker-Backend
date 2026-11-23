@@ -2,7 +2,7 @@ package com.davidgrath.expensetrackerbackend.entities
 
 import java.time.DayOfWeek
 import java.time.LocalDate
-import java.util.Currency
+import java.util.*
 
 /**
  * TODO I'll need to add sort criteria eventually

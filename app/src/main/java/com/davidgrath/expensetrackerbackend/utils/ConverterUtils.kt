@@ -1,13 +1,14 @@
 package com.davidgrath.expensetrackerbackend.utils
 
+import com.davidgrath.expensetrackerbackend.entities.*
 import com.davidgrath.expensetrackerbackend.entities.DocumentType
-import com.davidgrath.expensetrackerbackend.entities.StatisticsFilterDb
 import com.davidgrath.expensetrackerbackend.entities.TransactionDraft
 import com.davidgrath.expensetrackerbackend.entities.TransactionDraftItem
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import com.davidgrath.expensetrackerbackend.entities.dtos.*
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.*
 import com.davidgrath.expensetrackerbackend.generatedapi.model.*
+import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionDraftFile
 import java.net.URI
 import java.time.DayOfWeek
 import java.util.*

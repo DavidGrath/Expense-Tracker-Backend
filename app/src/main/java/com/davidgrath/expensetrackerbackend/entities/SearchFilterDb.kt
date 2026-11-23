@@ -2,7 +2,7 @@ package com.davidgrath.expensetrackerbackend.entities
 
 import java.time.DayOfWeek
 import java.time.LocalDate
-import java.util.Currency
+import java.util.*
 
 /**
  * TODO Contemplate using deny and allowlists where deny takes precedence over allow. May not actually do it

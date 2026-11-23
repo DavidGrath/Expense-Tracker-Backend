@@ -5,12 +5,7 @@ import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import com.davidgrath.expensetrackerbackend.entities.dtos.DateAmountSummary
 import com.davidgrath.expensetrackerbackend.entities.dtos.StringFieldWithTimestamp
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionItemPojo
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.ACCOUNT
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.CATEGORY
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.SELLER
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.SELLER_LOCATION
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION_ITEM
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.*
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.DEFAULT_FETCH_LIMIT
 import com.davidgrath.expensetrackerbackend.utils.toByte
 import org.jooq.DSLContext

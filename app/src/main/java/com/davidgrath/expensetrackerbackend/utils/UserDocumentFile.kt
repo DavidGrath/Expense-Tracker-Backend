@@ -2,7 +2,7 @@ package com.davidgrath.expensetrackerbackend.utils
 
 import java.io.File
 import java.time.LocalDate
-import java.util.UUID
+import java.util.*
 
 class UserDocumentFile(val userUuid: UUID, val profileUuid: UUID, folderMode: FolderMode, date: LocalDate?, documentName: String) {
 

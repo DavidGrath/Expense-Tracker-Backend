@@ -1,37 +1,16 @@
 package com.davidgrath.expensetrackerbackend.service
 
-import com.davidgrath.expensetrackerbackend.entities.dtos.StatisticsTransactionItem
-import com.davidgrath.expensetrackerbackend.generatedapi.model.Image
-import com.davidgrath.expensetrackerbackend.generatedapi.model.StatisticsFilter
-import com.davidgrath.expensetrackerbackend.generatedapi.model.StatisticsTransaction
-import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionItemSummary
-import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionItemVolume
-import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionItemWeight
-import com.davidgrath.expensetrackerbackend.generatedapi.model.UnitPrefix
-import com.davidgrath.expensetrackerbackend.generatedapi.model.VolumeUnit
-import com.davidgrath.expensetrackerbackend.generatedapi.model.WeightUnit
-import com.davidgrath.expensetrackerbackend.repository.AccountRepository
-import com.davidgrath.expensetrackerbackend.repository.CategoryRepository
-import com.davidgrath.expensetrackerbackend.repository.ImageRepository
-import com.davidgrath.expensetrackerbackend.repository.ItemImagesRepository
-import com.davidgrath.expensetrackerbackend.repository.SellerLocationRepository
-import com.davidgrath.expensetrackerbackend.repository.SellerRepository
-import com.davidgrath.expensetrackerbackend.repository.StatisticsRepository
-import com.davidgrath.expensetrackerbackend.repository.TransactionRepository
+import com.davidgrath.expensetrackerbackend.generatedapi.model.*
+import com.davidgrath.expensetrackerbackend.repository.*
 import com.davidgrath.expensetrackerbackend.service.exceptions.EntityNotFoundException
-import com.davidgrath.expensetrackerbackend.service.exceptions.StatisticsHeterogeneousCurrencyCodeException
 import com.davidgrath.expensetrackerbackend.service.exceptions.InvalidCurrencyCodeException
-import com.davidgrath.expensetrackerbackend.utils.accountPojoToAccount
-import com.davidgrath.expensetrackerbackend.utils.categoryPojoToCategory
-import com.davidgrath.expensetrackerbackend.utils.imagePojoToImage
-import com.davidgrath.expensetrackerbackend.utils.statisticsFilterToStatisticsFilterDb
-import com.davidgrath.expensetrackerbackend.utils.toApiMode
-import com.davidgrath.expensetrackerbackend.utils.toBoolean
+import com.davidgrath.expensetrackerbackend.service.exceptions.StatisticsHeterogeneousCurrencyCodeException
+import com.davidgrath.expensetrackerbackend.utils.*
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
-import java.util.Currency
+import java.util.*
 
 @Service
 class StatisticsService {

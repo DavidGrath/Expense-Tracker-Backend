@@ -1,13 +1,12 @@
 package com.davidgrath.expensetrackerbackend.controller
 
-import com.davidgrath.expensetrackerbackend.controller.exception.CustomHttpException
-import com.davidgrath.expensetrackerbackend.controller.exception.ErrorCode
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ImagePojo
 import com.davidgrath.expensetrackerbackend.generatedapi.api.StatisticsApi
 import com.davidgrath.expensetrackerbackend.generatedapi.model.*
 import com.davidgrath.expensetrackerbackend.service.*
-import com.davidgrath.expensetrackerbackend.utils.*
+import com.davidgrath.expensetrackerbackend.utils.doTheOtelThing
+import com.davidgrath.expensetrackerbackend.utils.statisticsFilterToStatisticsFilterDb
+import com.davidgrath.expensetrackerbackend.utils.toDbMode
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Max
@@ -15,7 +14,6 @@ import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotNull
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.oauth2.jwt.Jwt

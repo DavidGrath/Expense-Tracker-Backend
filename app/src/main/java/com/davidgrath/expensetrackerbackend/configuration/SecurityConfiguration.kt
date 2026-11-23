@@ -1,9 +1,6 @@
 package com.davidgrath.expensetrackerbackend.configuration
 
 import com.davidgrath.expensetrackerbackend.configuration.filter.TokenTypeFilter
-import io.github.bucket4j.Bucket
-import io.github.bucket4j.BucketListener
-import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.annotation.Bean
@@ -15,9 +12,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.AnonymousAuthenticationFilter
-import org.springframework.security.web.authentication.logout.LogoutFilter
 import org.springframework.web.servlet.HandlerExceptionResolver
-import java.time.Duration
 
 @Configuration
 @EnableWebSecurity

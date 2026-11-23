@@ -1,12 +1,7 @@
 package com.davidgrath.expensetrackerbackend.utils
 
 import com.davidgrath.expensetrackerbackend.entities.StatisticsFilterDb
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.ACCOUNT
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.CATEGORY
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.SELLER
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.SELLER_LOCATION
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION_ITEM
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.*
 import com.google.gson.Gson
 import io.opentelemetry.api.trace.Span
 import org.jooq.Record
@@ -18,9 +13,8 @@ import java.io.File
 import java.io.InputStream
 import java.math.BigDecimal
 import java.math.BigInteger
-import java.math.MathContext
 import java.security.MessageDigest
-import java.util.UUID
+import java.util.*
 import kotlin.math.floor
 import kotlin.math.min
 

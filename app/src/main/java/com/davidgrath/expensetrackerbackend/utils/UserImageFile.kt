@@ -1,7 +1,7 @@
 package com.davidgrath.expensetrackerbackend.utils
 
 import java.io.File
-import java.util.UUID
+import java.util.*
 
 class UserImageFile(val userUuid: UUID, val profileUuid: UUID, folderMode: FolderMode, imageName: String) {
     enum class FolderMode {

@@ -1,13 +1,6 @@
 package com.davidgrath.expensetrackerbackend.repository
 
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.ACCOUNT
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.CATEGORY
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.IMAGE
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.SELLER
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.SELLER_LOCATION
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION_ITEM
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION_ITEM_IMAGES
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.*
 
 /**
  * In general, it's a good sign if the last portion of the path is based on profileId, a.k.a. you didn't omit the most important part

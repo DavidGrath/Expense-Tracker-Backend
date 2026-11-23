@@ -5,11 +5,10 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ProfileP
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.DEFAULT_FETCH_LIMIT
 import com.davidgrath.expensetrackerbackend.utils.uuidToBytes
 import org.jooq.DSLContext
-import org.jooq.TransactionalRunnable
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Repository
-import java.util.UUID
+import java.util.*
 
 @Repository
 open class ProfileRepository {

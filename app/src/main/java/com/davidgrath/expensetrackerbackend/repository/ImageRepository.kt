@@ -4,7 +4,6 @@ import com.davidgrath.expensetrackerbackend.entities.dtos.ImageDocumentStats
 import com.davidgrath.expensetrackerbackend.entities.dtos.ImageWithStats
 import com.davidgrath.expensetrackerbackend.entities.dtos.TransactionAndItemCount
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.Image
-import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.CategoryPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ImagePojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.PROFILE
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION
