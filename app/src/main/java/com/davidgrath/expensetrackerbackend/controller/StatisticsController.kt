@@ -57,21 +57,7 @@ class StatisticsController: StatisticsApi {
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
         doTheOtelThing(user.uuid!!, profile.uuid!!)
 
-        val filterValidationResult = statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
-        when(filterValidationResult) {
-            StatisticsService.ValidateStatisticsFilterResult.Valid -> {}
-            StatisticsService.ValidateStatisticsFilterResult.EntityDoesNotBelongToOwner -> {
-                //TODO Maybe move this code to the service layer and actually follow up on my idea to create custom service layer exceptions
-                val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
-                LOGGER.error("An entity was not found", exception)
-                throw exception
-            }
-            StatisticsService.ValidateStatisticsFilterResult.CurrencyOrAccountIssue -> {
-                val exception = CustomHttpException(ErrorCode.INVALID_STATISTICS_FILTER, HttpStatus.BAD_REQUEST)
-                LOGGER.error("Statistics filter is invalid", exception)
-                throw exception
-            }
-        }
+        statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
 
         val total = transactionService.getTransactionDebitSumByCategory(profile.id!!, statisticsFilter!!)
         val mapped = total.map { TotalAmountByCategory(Category(it.categoryId, it.name, it.isCustom, it.stringId, it.categoryIcon), it.sum) }
@@ -89,21 +75,7 @@ class StatisticsController: StatisticsApi {
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
         doTheOtelThing(user.uuid!!, profile.uuid!!)
 
-        val filterValidationResult = statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
-        when(filterValidationResult) {
-            StatisticsService.ValidateStatisticsFilterResult.Valid -> {}
-            StatisticsService.ValidateStatisticsFilterResult.EntityDoesNotBelongToOwner -> {
-                //TODO Maybe move this code to the service layer and actually follow up on my idea to create custom service layer exceptions
-                val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
-                LOGGER.error("An entity was not found", exception)
-                throw exception
-            }
-            StatisticsService.ValidateStatisticsFilterResult.CurrencyOrAccountIssue -> {
-                val exception = CustomHttpException(ErrorCode.INVALID_STATISTICS_FILTER, HttpStatus.BAD_REQUEST)
-                LOGGER.error("Statistics filter is invalid", exception)
-                throw exception
-            }
-        }
+        statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
 
         val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
         val total = transactionService.getTotalAmountByDate(profile.id!!, true, statisticsFilter.from,
@@ -124,21 +96,7 @@ class StatisticsController: StatisticsApi {
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
         doTheOtelThing(user.uuid!!, profile.uuid!!)
 
-        val filterValidationResult = statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
-        when(filterValidationResult) {
-            StatisticsService.ValidateStatisticsFilterResult.Valid -> {}
-            StatisticsService.ValidateStatisticsFilterResult.EntityDoesNotBelongToOwner -> {
-                //TODO Maybe move this code to the service layer and actually follow up on my idea to create custom service layer exceptions
-                val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
-                LOGGER.error("An entity was not found", exception)
-                throw exception
-            }
-            StatisticsService.ValidateStatisticsFilterResult.CurrencyOrAccountIssue -> {
-                val exception = CustomHttpException(ErrorCode.INVALID_STATISTICS_FILTER, HttpStatus.BAD_REQUEST)
-                LOGGER.error("Statistics filter is invalid", exception)
-                throw exception
-            }
-        }
+        statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
 
         val total = transactionService.getTransactionDebitSum(profile.id!!, statisticsFilter!!)
         return ResponseEntity.ok(total)
@@ -155,21 +113,7 @@ class StatisticsController: StatisticsApi {
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
         doTheOtelThing(user.uuid!!, profile.uuid!!)
 
-        val filterValidationResult = statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
-        when(filterValidationResult) {
-            StatisticsService.ValidateStatisticsFilterResult.Valid -> {}
-            StatisticsService.ValidateStatisticsFilterResult.EntityDoesNotBelongToOwner -> {
-                //TODO Maybe move this code to the service layer and actually follow up on my idea to create custom service layer exceptions
-                val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
-                LOGGER.error("An entity was not found", exception)
-                throw exception
-            }
-            StatisticsService.ValidateStatisticsFilterResult.CurrencyOrAccountIssue -> {
-                val exception = CustomHttpException(ErrorCode.INVALID_STATISTICS_FILTER, HttpStatus.BAD_REQUEST)
-                LOGGER.error("Statistics filter is invalid", exception)
-                throw exception
-            }
-        }
+        statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
 
         val total = transactionService.getTransactionCreditSumByCategory(profile.id!!, statisticsFilter!!)
         val mapped = total.map { TotalAmountByCategory(Category(it.categoryId, it.name, it.isCustom, it.stringId, it.categoryIcon), it.sum) }
@@ -187,21 +131,7 @@ class StatisticsController: StatisticsApi {
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
         doTheOtelThing(user.uuid!!, profile.uuid!!)
 
-        val filterValidationResult = statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
-        when(filterValidationResult) {
-            StatisticsService.ValidateStatisticsFilterResult.Valid -> {}
-            StatisticsService.ValidateStatisticsFilterResult.EntityDoesNotBelongToOwner -> {
-                //TODO Maybe move this code to the service layer and actually follow up on my idea to create custom service layer exceptions
-                val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
-                LOGGER.error("An entity was not found", exception)
-                throw exception
-            }
-            StatisticsService.ValidateStatisticsFilterResult.CurrencyOrAccountIssue -> {
-                val exception = CustomHttpException(ErrorCode.INVALID_STATISTICS_FILTER, HttpStatus.BAD_REQUEST)
-                LOGGER.error("Statistics filter is invalid", exception)
-                throw exception
-            }
-        }
+        statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
 
         val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
         val total = transactionService.getTotalAmountByDate(profile.id!!, false, statisticsFilter.from,
@@ -221,21 +151,7 @@ class StatisticsController: StatisticsApi {
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
         doTheOtelThing(user.uuid!!, profile.uuid!!)
 
-        val filterValidationResult = statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
-        when(filterValidationResult) {
-            StatisticsService.ValidateStatisticsFilterResult.Valid -> {}
-            StatisticsService.ValidateStatisticsFilterResult.EntityDoesNotBelongToOwner -> {
-                //TODO Maybe move this code to the service layer and actually follow up on my idea to create custom service layer exceptions
-                val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
-                LOGGER.error("An entity was not found", exception)
-                throw exception
-            }
-            StatisticsService.ValidateStatisticsFilterResult.CurrencyOrAccountIssue -> {
-                val exception = CustomHttpException(ErrorCode.INVALID_STATISTICS_FILTER, HttpStatus.BAD_REQUEST)
-                LOGGER.error("Statistics filter is invalid", exception)
-                throw exception
-            }
-        }
+        statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
 
         val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
         val total = transactionService.getTransactionCreditSum(profile.id!!, statisticsFilter)
@@ -253,11 +169,7 @@ class StatisticsController: StatisticsApi {
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
         doTheOtelThing(user.uuid!!, profile.uuid!!)
 
-        val filterValidationResult = statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
-        when(filterValidationResult) {
-            StatisticsService.ValidateStatisticsFilterResult.Valid -> {}
-            else -> {}
-        }
+        statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
 
         val scheme = httpServletRequest.scheme
         val host = httpServletRequest.serverName
@@ -338,21 +250,7 @@ class StatisticsController: StatisticsApi {
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
         doTheOtelThing(user.uuid!!, profile.uuid!!)
 
-        val filterValidationResult = statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
-        when(filterValidationResult) {
-            StatisticsService.ValidateStatisticsFilterResult.Valid -> {}
-            StatisticsService.ValidateStatisticsFilterResult.EntityDoesNotBelongToOwner -> {
-                //TODO Maybe move this code to the service layer and actually follow up on my idea to create custom service layer exceptions
-                val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
-                LOGGER.error("An entity was not found", exception)
-                throw exception
-            }
-            StatisticsService.ValidateStatisticsFilterResult.CurrencyOrAccountIssue -> {
-                val exception = CustomHttpException(ErrorCode.INVALID_STATISTICS_FILTER, HttpStatus.BAD_REQUEST)
-                LOGGER.error("Statistics filter is invalid", exception)
-                throw exception
-            }
-        }
+        statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
 
         val counts = transactionService.getTransactionAndItemCount(profile.id!!, statisticsFilterToStatisticsFilterDb(statisticsFilter!!))
         return ResponseEntity.ok(StatsTransactionAndItemCount(counts.transactionCount, counts.itemCount))
@@ -369,21 +267,7 @@ class StatisticsController: StatisticsApi {
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
         doTheOtelThing(user.uuid!!, profile.uuid!!)
 
-        val filterValidationResult = statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
-        when(filterValidationResult) {
-            StatisticsService.ValidateStatisticsFilterResult.Valid -> {}
-            StatisticsService.ValidateStatisticsFilterResult.EntityDoesNotBelongToOwner -> {
-                //TODO Maybe move this code to the service layer and actually follow up on my idea to create custom service layer exceptions
-                val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
-                LOGGER.error("An entity was not found", exception)
-                throw exception
-            }
-            StatisticsService.ValidateStatisticsFilterResult.CurrencyOrAccountIssue -> {
-                val exception = CustomHttpException(ErrorCode.INVALID_STATISTICS_FILTER, HttpStatus.BAD_REQUEST)
-                LOGGER.error("Statistics filter is invalid", exception)
-                throw exception
-            }
-        }
+        statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
 
         val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
         val total = transactionService.getCumSumByDate(profile.id!!, true, statisticsFilter.from,
@@ -403,21 +287,7 @@ class StatisticsController: StatisticsApi {
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
         doTheOtelThing(user.uuid!!, profile.uuid!!)
 
-        val filterValidationResult = statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
-        when(filterValidationResult) {
-            StatisticsService.ValidateStatisticsFilterResult.Valid -> {}
-            StatisticsService.ValidateStatisticsFilterResult.EntityDoesNotBelongToOwner -> {
-                //TODO Maybe move this code to the service layer and actually follow up on my idea to create custom service layer exceptions
-                val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
-                LOGGER.error("An entity was not found", exception)
-                throw exception
-            }
-            StatisticsService.ValidateStatisticsFilterResult.CurrencyOrAccountIssue -> {
-                val exception = CustomHttpException(ErrorCode.INVALID_STATISTICS_FILTER, HttpStatus.BAD_REQUEST)
-                LOGGER.error("Statistics filter is invalid", exception)
-                throw exception
-            }
-        }
+        statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
 
         val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
         val total = transactionService.getCumSumByDate(profile.id!!, false, statisticsFilter.from,
@@ -440,21 +310,7 @@ class StatisticsController: StatisticsApi {
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
         doTheOtelThing(user.uuid!!, profile.uuid!!)
 
-        val filterValidationResult = statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
-        when(filterValidationResult) {
-            StatisticsService.ValidateStatisticsFilterResult.Valid -> {}
-            StatisticsService.ValidateStatisticsFilterResult.EntityDoesNotBelongToOwner -> {
-                //TODO Maybe move this code to the service layer and actually follow up on my idea to create custom service layer exceptions
-                val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
-                LOGGER.error("An entity was not found", exception)
-                throw exception
-            }
-            StatisticsService.ValidateStatisticsFilterResult.CurrencyOrAccountIssue -> {
-                val exception = CustomHttpException(ErrorCode.INVALID_STATISTICS_FILTER, HttpStatus.BAD_REQUEST)
-                LOGGER.error("Statistics filter is invalid", exception)
-                throw exception
-            }
-        }
+        statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
 
         val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
         val total = transactionService.getTopNDebitPerCategory(profile.id!!, n,statisticsFilter.from,
@@ -480,21 +336,7 @@ class StatisticsController: StatisticsApi {
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
         doTheOtelThing(user.uuid!!, profile.uuid!!)
 
-        val filterValidationResult = statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
-        when(filterValidationResult) {
-            StatisticsService.ValidateStatisticsFilterResult.Valid -> {}
-            StatisticsService.ValidateStatisticsFilterResult.EntityDoesNotBelongToOwner -> {
-                //TODO Maybe move this code to the service layer and actually follow up on my idea to create custom service layer exceptions
-                val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
-                LOGGER.error("An entity was not found", exception)
-                throw exception
-            }
-            StatisticsService.ValidateStatisticsFilterResult.CurrencyOrAccountIssue -> {
-                val exception = CustomHttpException(ErrorCode.INVALID_STATISTICS_FILTER, HttpStatus.BAD_REQUEST)
-                LOGGER.error("Statistics filter is invalid", exception)
-                throw exception
-            }
-        }
+        statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
 
         val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
         val total = transactionService.getTopNCreditPerCategory(profile.id!!, n,statisticsFilter.from,

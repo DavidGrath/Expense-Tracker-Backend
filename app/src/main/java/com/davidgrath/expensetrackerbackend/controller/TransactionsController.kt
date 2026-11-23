@@ -135,6 +135,7 @@ open class TransactionsController: TransactionsApi {
 
         val length = transactions.size
         var items = arrayListOf<TransactionItem>()
+        //TODO Rework this to be more like StatisticsService.getStatisticsTransaction: prefer using groupBy, it looks cleaner
         transactions.forEachIndexed { i, t ->
 
             val account = accountPojoToAccount(t)
