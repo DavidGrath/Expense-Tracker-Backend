@@ -245,7 +245,7 @@ class StatisticsController: StatisticsApi {
     override fun statisticsTransactionsPost(
         profileId: @NotNull String,
         statisticsFilter: @Valid StatisticsFilter?
-    ): ResponseEntity<List<TransactionDetails?>?>? {
+    ): ResponseEntity<List<StatisticsTransaction?>?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
 
@@ -256,21 +256,17 @@ class StatisticsController: StatisticsApi {
         val filterValidationResult = statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
         when(filterValidationResult) {
             StatisticsService.ValidateStatisticsFilterResult.Valid -> {}
-            StatisticsService.ValidateStatisticsFilterResult.EntityDoesNotBelongToOwner -> {
-                //TODO Maybe move this code to the service layer and actually follow up on my idea to create custom service layer exceptions
-                val exception = CustomHttpException(ErrorCode.ENTITY_NOT_FOUND, HttpStatus.NOT_FOUND)
-                LOGGER.error("An entity was not found", exception)
-                throw exception
-            }
-            StatisticsService.ValidateStatisticsFilterResult.CurrencyOrAccountIssue -> {
-                val exception = CustomHttpException(ErrorCode.INVALID_STATISTICS_FILTER, HttpStatus.BAD_REQUEST)
-                LOGGER.error("Statistics filter is invalid", exception)
-                throw exception
-            }
+            else -> {}
         }
 
-        val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
-        val transactions = transactionService.getTransactionsWithItems(profile.id!!, statisticsFilter.from,
+        val scheme = httpServletRequest.scheme
+        val host = httpServletRequest.serverName
+        val port = httpServletRequest.serverPort
+        val triple = Triple(scheme, host, port)
+
+        val transactions = statisticsService.getStatisticsTransactions(profile.id!!, statisticsFilter, triple)
+        return ResponseEntity.ok(transactions)
+        /*val transactions = transactionService.getTransactionsWithItems(profile.id!!, statisticsFilter.from,
             statisticsFilter.to, statisticsFilter.accounts, emptyList(), statisticsFilter.categories, modes, statisticsFilter.sellers)
 
         val documentPojos = documentService.getDocumentsFiltered(profile.id!!, statisticsFilter.from,
@@ -282,10 +278,7 @@ class StatisticsController: StatisticsApi {
             statisticsFilter.to, statisticsFilter.accounts, emptyList(), statisticsFilter.categories, modes, statisticsFilter.sellers)
         val imagesMap = imagePojos.groupBy { it.itemId }
 
-        val scheme = httpServletRequest.scheme
-        val host = httpServletRequest.serverName
-        val port = httpServletRequest.serverPort
-        val triple = Triple(scheme, host, port)
+
 
         val details = arrayListOf<TransactionDetails>()
 
@@ -298,21 +291,21 @@ class StatisticsController: StatisticsApi {
 
 
             val imagePojos = imagesMap[t.itemId]?:emptyList()
-            /*val images = if(t.itemImageCount > 0) {
+            *//*val images = if(t.itemImageCount > 0) {
                 imageService.getImagesForItem(profile.id!!, t.itemId!!)
             } else {
                 emptyList()
-            }*/
+            }*//*
             val images = imagePojos
 
             items.add(transactionWithItemToTransactionItem(t, triple, images))
 
             val mode = t.transactionMode.toApiMode()
-            /*val documentsPojo = if(t.documentCount > 0) {
+            *//*val documentsPojo = if(t.documentCount > 0) {
                 documentService.getDocumentsByTransactionId(profile.id!!, t.transactionId!!)
             } else {
                 emptyList()
-            }*/
+            }*//*
 
             val documentsPojo = documentsMap[t.transactionId]?: emptyList()
             val documents = documentsPojo.map { documentPojoToDocument(it, triple) }
@@ -331,7 +324,7 @@ class StatisticsController: StatisticsApi {
             }
         }
 
-        return ResponseEntity.ok(details)
+        return ResponseEntity.ok(details)*/
     }
 
     override fun statisticsTransactionAndItemCountPost(

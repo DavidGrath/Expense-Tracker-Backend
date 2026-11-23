@@ -4,6 +4,7 @@ import com.davidgrath.expensetrackerbackend.entities.dtos.CategoryWithStats
 import com.davidgrath.expensetrackerbackend.entities.dtos.OrdinalSortKeyOccupancySlot
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.Category
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.CategoryPojo
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.PROFILE
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION_ITEM
@@ -156,6 +157,17 @@ open class CategoryRepository {
             .where(CATEGORY.PROFILE_ID.eq(profileId))
 
         return selectStep.fetch().map { it.value1() }
+    }
+
+    fun getAllByIds(profileId: Long, ids: List<Long>): List<CategoryPojo> {
+        val selectStep = mainContext.select(CATEGORY.asterisk())
+            .from(CATEGORY)
+            .where(CATEGORY.PROFILE_ID.eq(profileId))
+            .and(CATEGORY.ID.`in`(ids))
+
+        val result = selectStep.fetch().into(CategoryPojo::class.java)
+        LOGGER.info("Result size: {}", result.size)
+        return result
     }
 
 

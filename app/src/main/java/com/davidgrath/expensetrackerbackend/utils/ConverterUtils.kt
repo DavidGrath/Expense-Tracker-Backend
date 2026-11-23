@@ -207,3 +207,8 @@ fun statisticsFilterToStatisticsFilterDb(statisticsFilter: StatisticsFilter): St
     val weekdays = statisticsFilter.weekdays.map { DayOfWeek.of(it) }
     return StatisticsFilterDb(sf.from, sf.to, currency, sf.accounts, sf.categories, modes, weekdays, sf.sellers, sf.sellerLocations)
 }
+
+fun imagePojoToImage(imagePojo: ImagePojo, baseUrl: Triple<String, String, Int>): Image {
+    val imageUrl = URI(baseUrl.first, null, baseUrl.second, baseUrl.third, "/files/" + imagePojo.path, null, null)
+    return Image(imagePojo.id, imagePojo.sizeBytes, imageUrl, imagePojo.mimeType)
+}

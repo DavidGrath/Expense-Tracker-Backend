@@ -4,6 +4,7 @@ import com.davidgrath.expensetrackerbackend.entities.dtos.ImageDocumentStats
 import com.davidgrath.expensetrackerbackend.entities.dtos.ImageWithStats
 import com.davidgrath.expensetrackerbackend.entities.dtos.TransactionAndItemCount
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.Image
+import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.CategoryPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.ImagePojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.PROFILE
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRANSACTION
@@ -150,6 +151,17 @@ open class ImageRepository {
             .where(IMAGE.PROFILE_ID.eq(profileId))
 
         return selectStep.fetchOne()?.value1()
+    }
+
+    fun getAllByIds(profileId: Long, ids: List<Long>): List<ImagePojo> {
+        val selectStep = mainContext.select(IMAGE.fields().toList())
+            .from(IMAGE)
+            .where(IMAGE.PROFILE_ID.eq(profileId))
+            .and(IMAGE.ID.`in`(ids))
+
+        val result = selectStep.fetch().into(ImagePojo::class.java)
+        LOGGER.info("Result size: {}", result.size)
+        return result
     }
 
 

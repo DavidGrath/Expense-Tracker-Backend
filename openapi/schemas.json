@@ -10,9 +10,8 @@
             "type": "integer",
             "format": "int64"
           },
-          "accountId": {
-            "type": "integer",
-            "format": "int64"
+          "account": {
+            "$ref": "#/components/schemas/Account"
           },
           "amount": {
             "type": "number"
@@ -20,15 +19,84 @@
           "debitOrCredit": {
             "type": "boolean"
           },
-          "currencyCode": {
+          "date": {
             "type": "string",
-            "description": "An ISO 4217 Currency Code"
+            "format": "date"
           },
-          "note": {
-            "type": "string"
+          "time": {
+            "type": "string",
+            "format": "time",
+            "nullable": true
           },
           "mode": {
             "$ref": "#/components/schemas/TransactionMode"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransactionItemSummary"
+            }
+          }
+        }
+      },
+      "TransactionItemSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "description": {
+            "type": "string"
+          },
+          "category": {
+            "$ref": "#/components/schemas/Category"
+          },
+          "quantity": {
+            "type": "integer"
+          },
+          "isReduction": {
+            "type": "boolean"
+          },
+          "brand": {
+            "type": "string"
+          },
+          "variation": {
+            "type": "string"
+          },
+          "weight": {
+            "type": "object",
+            "properties": {
+              "amount": {
+                "type": "number"
+              },
+              "unit": {
+                "$ref": "#/components/schemas/WeightUnit"
+              },
+              "prefix": {
+                "$ref": "#/components/schemas/UnitPrefix"
+              }
+            }
+          },
+          "volume": {
+            "type": "object",
+            "properties": {
+              "amount": {
+                "type": "number"
+              },
+              "unit": {
+                "$ref": "#/components/schemas/VolumeUnit"
+              },
+              "prefix": {
+                "$ref": "#/components/schemas/UnitPrefix"
+              }
+            }
+          },
+          "firstImage": {
+            "$ref": "#/components/schemas/Image"
           }
         }
       },
@@ -1343,6 +1411,51 @@
             "description": "Null if user status is new",
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "StatisticsTransaction": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "account": {
+            "$ref": "#/components/schemas/Account"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "debitOrCredit": {
+            "type": "boolean"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "time": {
+            "type": "string",
+            "format": "time",
+            "nullable": true
+          },
+          "mode": {
+            "$ref": "#/components/schemas/TransactionMode"
+          },
+          "excludedItemCount": {
+            "type": "integer"
+          },
+          "excludedItemAmount": {
+            "type": "number"
+          },
+          "excludedChargesAmount": {
+            "type": "number"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransactionItemSummary"
+            }
           }
         }
       }

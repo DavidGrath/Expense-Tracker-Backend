@@ -423,19 +423,20 @@ class StatisticsServiceTest {
 
 
         var statisticsFilter = StatisticsFilter()
-        val transactionsNoFilter = statisticsService.getStatisticsTransactions(profile.id!!, statisticsFilter)
+        val baseUrl = Triple("http", "localhost", 8080)
+        val transactionsNoFilter = statisticsService.getStatisticsTransactions(profile.id!!, statisticsFilter, baseUrl)
         assertEquals(4, transactionsNoFilter.size)
-        assertNotNull(transactionsNoFilter[0].items[1].firstImageId)
-        assertNotNull(transactionsNoFilter[1].items[0].firstImageId)
+        assertNotNull(transactionsNoFilter[0].items[1].firstImage)
+        assertNotNull(transactionsNoFilter[1].items[0].firstImage)
         val items = transactionsNoFilter.flatMap { it.items }
         assertEquals(8, items.size)
 
         statisticsFilter = StatisticsFilter().categories(listOf(utilities.id!!, fitness.id!!, transportation.id!!))
-        val transactionsFilteredByCategory = statisticsService.getStatisticsTransactions(profile.id!!, statisticsFilter)
+        val transactionsFilteredByCategory = statisticsService.getStatisticsTransactions(profile.id!!, statisticsFilter, baseUrl)
         assertEquals(3, transactionsFilteredByCategory.size)
-        assertEqualsBD(BigDecimal(2), transactionsFilteredByCategory[0].excludedItemAmount)
-        assertEqualsBD(BigDecimal(0), transactionsFilteredByCategory[1].excludedItemAmount)
-        assertEqualsBD(BigDecimal(96), transactionsFilteredByCategory[2].excludedItemAmount)
+        assertEqualsBD(BigDecimal(2), transactionsFilteredByCategory[0].excludedItemAmount!!)
+        assertEqualsBD(BigDecimal(0), transactionsFilteredByCategory[1].excludedItemAmount!!)
+        assertEqualsBD(BigDecimal(96), transactionsFilteredByCategory[2].excludedItemAmount!!)
 
         assertEquals(1, transactionsFilteredByCategory[0].excludedItemCount)
         assertEquals(0, transactionsFilteredByCategory[1].excludedItemCount)

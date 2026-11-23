@@ -1,10 +1,19 @@
 package com.davidgrath.expensetrackerbackend.service
 
 import com.davidgrath.expensetrackerbackend.entities.dtos.StatisticsTransactionItem
-import com.davidgrath.expensetrackerbackend.entities.service.StatisticsTransaction
+import com.davidgrath.expensetrackerbackend.generatedapi.model.Image
 import com.davidgrath.expensetrackerbackend.generatedapi.model.StatisticsFilter
+import com.davidgrath.expensetrackerbackend.generatedapi.model.StatisticsTransaction
+import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionItemSummary
+import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionItemVolume
+import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionItemWeight
+import com.davidgrath.expensetrackerbackend.generatedapi.model.UnitPrefix
+import com.davidgrath.expensetrackerbackend.generatedapi.model.VolumeUnit
+import com.davidgrath.expensetrackerbackend.generatedapi.model.WeightUnit
 import com.davidgrath.expensetrackerbackend.repository.AccountRepository
 import com.davidgrath.expensetrackerbackend.repository.CategoryRepository
+import com.davidgrath.expensetrackerbackend.repository.ImageRepository
+import com.davidgrath.expensetrackerbackend.repository.ItemImagesRepository
 import com.davidgrath.expensetrackerbackend.repository.SellerLocationRepository
 import com.davidgrath.expensetrackerbackend.repository.SellerRepository
 import com.davidgrath.expensetrackerbackend.repository.StatisticsRepository
@@ -12,7 +21,11 @@ import com.davidgrath.expensetrackerbackend.repository.TransactionRepository
 import com.davidgrath.expensetrackerbackend.service.exceptions.EntityNotFoundException
 import com.davidgrath.expensetrackerbackend.service.exceptions.StatisticsHeterogeneousCurrencyCodeException
 import com.davidgrath.expensetrackerbackend.service.exceptions.InvalidCurrencyCodeException
+import com.davidgrath.expensetrackerbackend.utils.accountPojoToAccount
+import com.davidgrath.expensetrackerbackend.utils.categoryPojoToCategory
+import com.davidgrath.expensetrackerbackend.utils.imagePojoToImage
 import com.davidgrath.expensetrackerbackend.utils.statisticsFilterToStatisticsFilterDb
+import com.davidgrath.expensetrackerbackend.utils.toApiMode
 import com.davidgrath.expensetrackerbackend.utils.toBoolean
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -35,6 +48,8 @@ class StatisticsService {
     lateinit var statisticsRepository: StatisticsRepository
     @Autowired
     lateinit var transactionRepository: TransactionRepository
+    @Autowired
+    lateinit var imageRepository: ImageRepository
 
     enum class ValidateStatisticsFilterResult {
         Valid,
@@ -101,10 +116,15 @@ class StatisticsService {
         return ret
     }
 
-    fun getStatisticsTransactions(profileId: Long, statisticsFilter: StatisticsFilter): List<StatisticsTransaction> {
+    fun getStatisticsTransactions(profileId: Long, statisticsFilter: StatisticsFilter, baseUrl: Triple<String, String, Int>): List<StatisticsTransaction> {
         validateFilter(profileId, statisticsFilter)
         val converted = statisticsFilterToStatisticsFilterDb(statisticsFilter)
         val items = statisticsRepository.getItems(profileId, converted)
+        val imageIds = items.filter { it.firstImageId != null }.map { it.firstImageId!! }.distinct()
+        val categoryIds = items.map { it.categoryId }.distinct()
+
+        val images = imageRepository.getAllByIds(profileId, imageIds).associateBy { it.id }
+        val categories = categoryRepository.getAllByIds(profileId, categoryIds).associateBy { it.id }
         val itemsGroupedByTransactionId = items.groupBy { it.transactionId }
         val transactionIds = items.map { it.transactionId }.distinct()
         val transactions = transactionRepository.getAllByIds(profileId, transactionIds)
@@ -115,12 +135,41 @@ class StatisticsService {
         val exclusionStatsGroupedByTransactionId = exclusionStats.associateBy { it.id }
 
         return transactions.map { t ->
-            val items = itemsGroupedByTransactionId[t.id!!]!!
+            val items = itemsGroupedByTransactionId[t.id!!]!!.map { ti ->
+                val category = categoryPojoToCategory(categories[ti.categoryId]!!)
+                val firstImage = images[ti.firstImageId]
+                val firstImageApi = if(firstImage != null) {
+                    imagePojoToImage(firstImage, baseUrl)
+                } else {
+                    null
+                }
+                val weight: TransactionItemWeight? = if(ti.weight != null) {
+                    val prefix: UnitPrefix? = if(ti.weightPrefix != null) {
+                        UnitPrefix.fromValue(ti.weightPrefix)
+                    } else {
+                        null
+                    }
+                    TransactionItemWeight(ti.weight, WeightUnit.fromValue(ti.weightUnit), prefix)
+                } else {
+                    null
+                }
+
+                val volume: TransactionItemVolume? = if(ti.volume != null) {
+                    val prefix: UnitPrefix? = if(ti.volumePrefix != null) {
+                        UnitPrefix.fromValue(ti.volumePrefix)
+                    } else {
+                        null
+                    }
+                    TransactionItemVolume(ti.volume, VolumeUnit.fromValue(ti.volumeUnit), prefix)
+                } else {
+                    null
+                }
+                TransactionItemSummary(ti.id, ti.amount, ti.description, category, ti.quantity, ti.isReduction, ti.brand, ti.variation, weight, volume, firstImageApi)
+            }
             val account = accountsGroupedByOrdinal[t.accountOrdinal!!]!!
+            val apiAccount = accountPojoToAccount(account)
             val exclusionStats = exclusionStatsGroupedByTransactionId[t.id]
-            StatisticsTransaction(t.profileId!!, t.id, account.currencyCode!!, t.amount!!, t.datedAt!!, t.time, t.debitOrCredit!!.toBoolean(),
-                account.id!!,
-                exclusionStats?.excludedItemCount?:0, exclusionStats?.excludedItemAmount?: BigDecimal.ZERO,
+            StatisticsTransaction(t.id, apiAccount, t.amount!!, t.debitOrCredit!!.toBoolean(), t.datedAt!!, t.time?.toString(), t.mode.toApiMode(), exclusionStats?.excludedItemCount?:0, exclusionStats?.excludedItemAmount?: BigDecimal.ZERO,
                 exclusionStats?.excludedChargesAmount?: BigDecimal.ZERO, items)
         }
     }

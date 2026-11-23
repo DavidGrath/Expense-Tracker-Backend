@@ -1482,7 +1482,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "./schemas.json#/components/schemas/TransactionDetails"
+                    "$ref": "./schemas.json#/components/schemas/StatisticsTransaction"
                   }
                 }
               }
