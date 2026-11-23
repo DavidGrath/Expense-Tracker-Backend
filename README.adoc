@@ -155,3 +155,28 @@ GRANT CREATE,SELECT,ALTER,INDEX,INSERT,UPDATE,REFERENCES ON expense_tracker_data
 
 === Database Level
 * Nontrivial CHECK constraints
+
+== Of Charges and Reductions (Draft)
+This relates to the statistics endpoints specifically
+
+A charge is a general term for "additional expense", most notably fees, taxes, and actual charges
+Making them all fall under one umbrella is for simplicity's sake.
+
+Charges are included in statistics by default, and the user should have the option to exclude them
+
+Reductions, on the other hand, are any form of item that reduces the income or expenditure of a transaction.
+They are therefore considered as a negative amount, even though their value in the database is positive
+
+Reductions are excluded from statistics by default, and the user should have the option to include them.
+However, that option will be ignored with the presence of line item filters, explained below. The user
+should be notified that option is ignored because of those
+
+=== Line Item Filters
+Line item filters include:
+
+* Category
+* Person (Pending)
+* Event (Pending)
+
+Whenever a line item filter is present, reductions are unconditionally excluded/ignored; reductions are considered as an aspect
+of the transaction as a whole

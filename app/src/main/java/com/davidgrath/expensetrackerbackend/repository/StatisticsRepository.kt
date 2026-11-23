@@ -15,6 +15,9 @@ import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.TRUE_BYTE
 import com.davidgrath.expensetrackerbackend.utils.applyFilters
 import com.davidgrath.expensetrackerbackend.utils.toByte
 import org.jooq.DSLContext
+import org.jooq.Record
+import org.jooq.SelectJoinStep
+import org.jooq.SelectOnConditionStep
 import org.jooq.impl.DSL
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -43,16 +46,14 @@ class StatisticsRepository {
             CATEGORY.ICON.`as`("categoryIcon")
         )
             .from(TRANSACTION_ITEM)
-            .innerJoin(CATEGORY).on(categoryToItemPath)
-            .innerJoin(TRANSACTION).on(itemToTransactionPath)
-            .leftJoin(SELLER).on(sellerToTransactionPath)
-            .innerJoin(ACCOUNT).on(accountToTransactionPath)
+        val joinOnCondition =
+            statisticsSelectJoinStep(selectStep)
             .where(ACCOUNT.PROFILE_ID.eq(profileId))
             .and(TRANSACTION.DEBIT_OR_CREDIT.eq(debitOrCredit.toByte()))
-        selectStep = applyFilters(selectStep, statisticsFilter)
+        val selectConditionStep = applyFilters(joinOnCondition, statisticsFilter)
 
         val seekStep =
-            selectStep.groupBy(TRANSACTION_ITEM.PRIMARY_CATEGORY_ORDINAL, TRANSACTION_ITEM.PROFILE_ID).orderBy(CATEGORY.SORT_KEY)
+            selectConditionStep.groupBy(TRANSACTION_ITEM.PRIMARY_CATEGORY_ORDINAL, TRANSACTION_ITEM.PROFILE_ID).orderBy(CATEGORY.SORT_KEY)
                 .limit(DEFAULT_FETCH_LIMIT)
 
         val result = seekStep.fetch().into(ItemSumByCategory::class.java)
@@ -121,6 +122,15 @@ class StatisticsRepository {
 
         selectStep = applyFilters(selectStep, statisticsFilter)
         return selectStep.fetchOne()?.value1()?: BigDecimal.ZERO
+    }
+
+    private fun <T: Record> statisticsSelectJoinStep(selectStep: SelectJoinStep<T>): SelectOnConditionStep<T> {
+        return selectStep
+            .innerJoin(TRANSACTION).on(itemToTransactionPath)
+            .innerJoin(ACCOUNT).on(accountToTransactionPath)
+            .innerJoin(CATEGORY).on(categoryToItemPath)
+            .leftJoin(SELLER).on(sellerToTransactionPath)
+            .leftJoin(SELLER_LOCATION).on(transactionToSellerLocationPath)
     }
 
     companion object {

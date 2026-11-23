@@ -18,6 +18,9 @@ val sellerToTransactionPath =
     SELLER.ORDINAL.eq(TRANSACTION.SELLER_ORDINAL)
         .and(SELLER.PROFILE_ID.eq(TRANSACTION.PROFILE_ID)) //Like this, for example
 
+/**
+ * CAUTION: DO NOT USE for statisticsRepository, it will cause weird duplication. TODO Phase out
+ */
 val sellerLocationToSellerPath =
     SELLER_LOCATION.SELLER_ORDINAL.eq(SELLER.ORDINAL)
     .and(SELLER_LOCATION.PROFILE_ID.eq(SELLER.PROFILE_ID))

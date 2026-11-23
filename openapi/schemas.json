@@ -3,6 +3,7 @@
   "components": {
     "schemas": {
       "Transaction": {
+        "description": "TODO This entity seems to be currently unused. Remove currency code, replace account with Account entity, add items. Make a similar copy called StatisticsTransaction, it should additionally contain excludedItemCount,excludedItemAmount,excludedChargesAmount (which is mutually exclusive - no overlap - from excludedItemAmount); and use it to replace TransactionDetails for /statistics/transactions",
         "type": "object",
         "properties": {
           "id": {

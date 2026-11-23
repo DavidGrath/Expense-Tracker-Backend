@@ -23,6 +23,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ContextConfiguration
@@ -79,7 +80,6 @@ class StatisticsRepositoryTest {
     }
 
 
-    //TODO Test for all filters
     @Test
     fun sumByCategoryTest() {
 
@@ -95,95 +95,219 @@ class StatisticsRepositoryTest {
 
         val fitness = categoryRepository.findByProfileIdAndStringId(profile!!.id!!, "fitness")!!
         val food = categoryRepository.findByProfileIdAndStringId(profile.id!!, "food")!!
+        val utilities = categoryRepository.findByProfileIdAndStringId(profile.id!!, "utilities")!!
+        val transportation = categoryRepository.findByProfileIdAndStringId(profile.id!!, "transportation")!!
+        val clothing = categoryRepository.findByProfileIdAndStringId(profile.id!!, "clothing")!!
+        val healthcare = categoryRepository.findByProfileIdAndStringId(profile.id!!, "healthcare")!!
+        val household = categoryRepository.findByProfileIdAndStringId(profile.id!!, "household")!!
 
-        val fromDate = LocalDate.parse("2025-01-01")
-        val id = dataBuilder.createTransaction()
-            .atDate(fromDate)
-            .withItem("Bread", "food", BigDecimal(1_500))
-            .withItem("Dumbbells", "fitness", BigDecimal(2_500))
-            .commit().first()
-        val toDate = LocalDate.parse("2025-01-02")
+        val firstDate = LocalDate.parse("2025-01-01") // Wednesday
+        val secondDate = LocalDate.parse("2025-01-02")
+        val thirdDate = LocalDate.parse("2025-01-03")
+        val forthDate = LocalDate.parse("2025-01-04")
+        val fifthDate = LocalDate.parse("2025-01-05")
+        val sixthDate = LocalDate.parse("2025-01-06")
+        val seventhDate = LocalDate.parse("2025-01-07")
+        val eighthDate = LocalDate.parse("2025-01-08")
+
+
+        val transactionBuilder = dataBuilder.createTransaction()
+            .atDate(firstDate)
+            .withItem("Bread", "food", BigDecimal(2))
+            .withItem("Dumbbells", "fitness", BigDecimal(4))
+            .withNewAccount("USD", "Test Account")
+        val newAccountId = transactionBuilder.getAccount().id!!
+        val id = transactionBuilder.commit().first()
 
         val id2 = dataBuilder.createTransaction()
-            .atDate(toDate)
-            .withItem("Water", "food", BigDecimal(1_000))
-            .withItem("Sweatpants", "fitness", BigDecimal(5_000))
+            .atDate(secondDate)
+            .withItem("Hammer", "utilities", BigDecimal(8))
+            .withItem("Sweatpants", "fitness", BigDecimal(16))
             .commit().first()
 
         val id3 = dataBuilder.createTransaction()
-            .atDate(toDate.plusDays(1))
-            .withItem("Fish", "food", BigDecimal(3_000))
-            .withItem("Jump Rope", "fitness", BigDecimal(5_000))
+            .atDate(thirdDate)
+            .withItem("Fish", "food", BigDecimal(32))
+            .withItem("Red shirt", "clothing", BigDecimal(64))
+            .withItem("Fuel", "transportation", BigDecimal(128))
+            .commit()
+
+        dataBuilder.createTransaction()
+            .atDate(forthDate)
+            .withItem("Medicine", "healthcare", BigDecimal(256))
+            .withNewSeller("Generic Hospital")
+            .withNewAccount("USD", "Test Account 2")
+            .commit()
+
+        val firstSellerId = sellerRepository.getAllByProfileId(profile.id!!).first()!!.id!!
+
+        dataBuilder.createTransaction()
+            .atDate(fifthDate)
+            .withItem("Vitamin C", "healthcare", BigDecimal(512))
+            .withSeller(firstSellerId)
+            .withNewSellerLocation("Brand New Branch")
+            .withNewAccount("USD", "Test Account 3")
+            .commit()
+
+        dataBuilder.createTransaction()
+            .atDate(sixthDate)
+            .withItem("Bandages", "healthcare", BigDecimal(1024))
+            .withSeller(firstSellerId)
+            .withNewSellerLocation("New New Branch")
+            .withNewAccount("USD", "Test Account 4")
+            .commit()
+
+        dataBuilder.createTransaction()
+            .atDate(seventhDate)
+            .withItem("Light bulb", "household", BigDecimal(2048))
+            .withNewSeller("Generic Hardware Store")
+            .withNewAccount("USD", "Test Account 5")
+            .withMode(TransactionMode.Card)
             .commit()
 
 
-        var statisticsFilter = StatisticsFilterDb(fromDate = fromDate)
-        val sumList = statisticsRepository.getSumByCategory(profile!!.id!!, true, statisticsFilter)
-        var foodSum = sumList.find { it.categoryId == food.id }!!.sum
-        var fitnessSum = sumList.find { it.categoryId == fitness.id }!!.sum
+        val secondSellerId = sellerRepository.getAllByProfileId(profile.id!!)[1].id!!
 
-        assertEqualsBD(BigDecimal(5_500), foodSum)
-        assertEqualsBD(BigDecimal(12_500), fitnessSum)
+        dataBuilder.createTransaction()
+            .atDate(eighthDate)
+            .withItem("Paint", "household", BigDecimal(4096))
+            .withItem("Light bulb", "household", BigDecimal(8192))
+            .withSeller(secondSellerId)
+            .withNewSellerLocation("Somewhere out there")
+            .withNewAccount("USD", "Test Account 6")
+            .withMode(TransactionMode.Card)
+            .commit()
 
-        statisticsFilter = StatisticsFilterDb(fromDate = fromDate, toDate = toDate)
-        val sumListTo = statisticsRepository.getSumByCategory(profile.id!!, true, statisticsFilter)
-        foodSum = sumListTo.find { it.categoryId == food.id }!!.sum
-        fitnessSum = sumListTo.find { it.categoryId == fitness.id }!!.sum
 
-        assertEqualsBD(BigDecimal(2_500), foodSum)
-        assertEqualsBD(BigDecimal(7_500), fitnessSum)
+        var statisticsFilter = StatisticsFilterDb()
 
-//        var statisticsFilter = StatisticsFilterDb()
-//
-//        val countsNoFilter = statisticsRepository.getTransactionAndItemCount(profile!!.id!!, statisticsFilter)
-//
-//
-//
-//        val categories = listOf(food, clothing, transport).map { it.id!! }
-//        statisticsFilter = StatisticsFilterDb(categoryIds = categories)
-//        val countsFilteredByCategory = statisticsRepository.getTransactionAndItemCount(profile.id!!, statisticsFilter)
-//
-//        statisticsFilter = StatisticsFilterDb(currencyCode = Currency.getInstance("USD"))
-//        val countsFilteredByCurrency = statisticsRepository.getTransactionAndItemCount(profile.id!!, statisticsFilter)
-//
-//        statisticsFilter = StatisticsFilterDb(currencyCode = Currency.getInstance("EUR"))
-//        val countsFilteredByCurrencyNotOwnedByOwner = statisticsRepository.getTransactionAndItemCount(profile.id!!, statisticsFilter)
-//
-//        statisticsFilter = StatisticsFilterDb(currencyCode = Currency.getInstance("USD"), accountIds = listOf(newAccountId))
-//        val countsFilteredByCurrencyWithOverlappingAccounts = statisticsRepository.getTransactionAndItemCount(profile.id!!, statisticsFilter)
-//
-//        statisticsFilter = StatisticsFilterDb(accountIds = listOf(accountId))
-//        val countsFilteredByAccount = statisticsRepository.getTransactionAndItemCount(profile.id!!, statisticsFilter)
-//
-//        statisticsFilter = StatisticsFilterDb(weekDays = listOf(DayOfWeek.WEDNESDAY))
-//        val countsFilteredByWeekday = statisticsRepository.getTransactionAndItemCount(profile.id!!, statisticsFilter)
-//        statisticsFilter = StatisticsFilterDb(transactionModes = listOf(TransactionMode.Card))
-//        val countsFilteredByMode = statisticsRepository.getTransactionAndItemCount(profile.id!!, statisticsFilter)
-//        val firstSellerFirstLocationId = sellerLocationRepository.getByProfileIdAndSellerId(profile.id!!, firstSellerId).first().id!!
-//        val firstSellerSecondLocationId = sellerLocationRepository.getByProfileIdAndSellerId(profile.id!!, firstSellerId)[1].id!!
-//
-//        val secondSellerLocationId =  sellerLocationRepository.getByProfileIdAndSellerId(profile.id!!, secondSellerId).first().id!!
-//        statisticsFilter = StatisticsFilterDb(sellerIds = listOf(firstSellerId))
-//        val countsFilteredBySeller = statisticsRepository.getTransactionAndItemCount(profile.id!!, statisticsFilter)
-//
-//        statisticsFilter = StatisticsFilterDb(sellerIds = listOf(firstSellerId), sellerLocationIds = listOf(secondSellerLocationId))
-//        val countsFilteredBySellerWithOverlappingLocations = statisticsRepository.getTransactionAndItemCount(profile.id!!, statisticsFilter)
-//
-//        statisticsFilter = StatisticsFilterDb(sellerLocationIds = listOf(firstSellerFirstLocationId, secondSellerLocationId))
-//        val countsFilteredByLocation = statisticsRepository.getTransactionAndItemCount(profile.id!!, statisticsFilter)
-//
-//        assertEquals(BigDecimal(0), countsNoFilter)
-//        assertEquals(BigDecimal(0), countsFilteredByCategory)
-//        assertEquals(BigDecimal(0), countsFilteredByWeekday)
-//        assertEquals(BigDecimal(0), countsFilteredByCurrency)
-//        assertEquals(BigDecimal(0), countsFilteredByAccount)
-//        assertEquals(BigDecimal(0), countsFilteredByMode)
-//        assertEquals(BigDecimal(0), countsFilteredBySeller)
-//        assertEquals(BigDecimal(0), countsFilteredByLocation)
-//
-//        assertEquals(BigDecimal(0), countsFilteredByCurrencyWithOverlappingAccounts)
-//        assertEquals(BigDecimal(0), countsFilteredBySellerWithOverlappingLocations)
-//        assertEquals(BigDecimal(0), countsFilteredByCurrencyNotOwnedByOwner)
+        val sumListNoFilter = statisticsRepository.getSumByCategory(profile!!.id!!, true, statisticsFilter)
+        assertEquals(7, sumListNoFilter.size)
+        var foodSum = sumListNoFilter.find { it.categoryId == food.id }!!.sum
+        var fitnessSum = sumListNoFilter.find { it.categoryId == fitness.id }!!.sum
+        var utilitiesSum = sumListNoFilter.find { it.categoryId == utilities.id }!!.sum
+        var transportationSum = sumListNoFilter.find { it.categoryId == transportation.id }!!.sum
+        var clothingSum = sumListNoFilter.find { it.categoryId == clothing.id }!!.sum
+        var healthcareSum = sumListNoFilter.find { it.categoryId == healthcare.id }!!.sum
+        var householdSum = sumListNoFilter.find { it.categoryId == household.id }!!.sum
+        assertEqualsBD(BigDecimal(34), foodSum)
+        assertEqualsBD(BigDecimal(20), fitnessSum)
+        assertEqualsBD(BigDecimal(8), utilitiesSum)
+        assertEqualsBD(BigDecimal(128), transportationSum)
+        assertEqualsBD(BigDecimal(64), clothingSum)
+        assertEqualsBD(BigDecimal(1792), healthcareSum)
+        assertEqualsBD(BigDecimal(14336), householdSum)
+
+
+        val categories = listOf(food, clothing, transportation).map { it.id!! }
+        statisticsFilter = StatisticsFilterDb(categoryIds = categories)
+        val sumFilteredByCategory = statisticsRepository.getSumByCategory(profile.id!!, true, statisticsFilter)
+        assertEquals(3, sumFilteredByCategory.size)
+        foodSum = sumFilteredByCategory.find { it.categoryId == food.id }!!.sum
+        transportationSum = sumFilteredByCategory.find { it.categoryId == transportation.id }!!.sum
+        clothingSum = sumFilteredByCategory.find { it.categoryId == clothing.id }!!.sum
+        assertEqualsBD(BigDecimal(34), foodSum)
+        assertEqualsBD(BigDecimal(64), clothingSum)
+        assertEqualsBD(BigDecimal(128), transportationSum)
+
+        statisticsFilter = StatisticsFilterDb(currencyCode = Currency.getInstance("USD"))
+        val sumFilteredByCurrency = statisticsRepository.getSumByCategory(profile.id!!, true, statisticsFilter)
+        assertEquals(7, sumFilteredByCurrency.size)
+        foodSum = sumFilteredByCurrency.find { it.categoryId == food.id }!!.sum
+        fitnessSum = sumFilteredByCurrency.find { it.categoryId == fitness.id }!!.sum
+        utilitiesSum = sumFilteredByCurrency.find { it.categoryId == utilities.id }!!.sum
+        transportationSum = sumFilteredByCurrency.find { it.categoryId == transportation.id }!!.sum
+        clothingSum = sumFilteredByCurrency.find { it.categoryId == clothing.id }!!.sum
+        healthcareSum = sumFilteredByCurrency.find { it.categoryId == healthcare.id }!!.sum
+        householdSum = sumFilteredByCurrency.find { it.categoryId == household.id }!!.sum
+        assertEqualsBD(BigDecimal(34), foodSum)
+        assertEqualsBD(BigDecimal(20), fitnessSum)
+        assertEqualsBD(BigDecimal(8), utilitiesSum)
+        assertEqualsBD(BigDecimal(128), transportationSum)
+        assertEqualsBD(BigDecimal(64), clothingSum)
+        assertEqualsBD(BigDecimal(1792), healthcareSum)
+        assertEqualsBD(BigDecimal(14336), householdSum)
+
+        statisticsFilter = StatisticsFilterDb(currencyCode = Currency.getInstance("EUR"))
+        val sumFilteredByCurrencyNotOwnedByOwner = statisticsRepository.getSumByCategory(profile.id!!, true, statisticsFilter)
+        assertEquals(0, sumFilteredByCurrencyNotOwnedByOwner.size)
+
+        statisticsFilter = StatisticsFilterDb(currencyCode = Currency.getInstance("USD"), accountIds = listOf(newAccountId))
+        val sumFilteredByCurrencyWithOverlappingAccounts = statisticsRepository.getSumByCategory(profile.id!!, true, statisticsFilter)
+        assertEquals(7, sumFilteredByCurrency.size)
+        foodSum = sumFilteredByCurrencyWithOverlappingAccounts.find { it.categoryId == food.id }!!.sum
+        fitnessSum = sumFilteredByCurrencyWithOverlappingAccounts.find { it.categoryId == fitness.id }!!.sum
+        utilitiesSum = sumFilteredByCurrencyWithOverlappingAccounts.find { it.categoryId == utilities.id }!!.sum
+        transportationSum = sumFilteredByCurrencyWithOverlappingAccounts.find { it.categoryId == transportation.id }!!.sum
+        clothingSum = sumFilteredByCurrencyWithOverlappingAccounts.find { it.categoryId == clothing.id }!!.sum
+        healthcareSum = sumFilteredByCurrencyWithOverlappingAccounts.find { it.categoryId == healthcare.id }!!.sum
+        householdSum = sumFilteredByCurrencyWithOverlappingAccounts.find { it.categoryId == household.id }!!.sum
+        assertEqualsBD(BigDecimal(34), foodSum)
+        assertEqualsBD(BigDecimal(20), fitnessSum)
+        assertEqualsBD(BigDecimal(8), utilitiesSum)
+        assertEqualsBD(BigDecimal(128), transportationSum)
+        assertEqualsBD(BigDecimal(64), clothingSum)
+        assertEqualsBD(BigDecimal(1792), healthcareSum)
+        assertEqualsBD(BigDecimal(14336), householdSum)
+
+        statisticsFilter = StatisticsFilterDb(accountIds = listOf(accountId))
+        val sumFilteredByAccount = statisticsRepository.getSumByCategory(profile.id!!, true, statisticsFilter)
+        assertEquals(5, sumFilteredByAccount.size)
+        foodSum = sumFilteredByAccount.find { it.categoryId == food.id }!!.sum
+        fitnessSum = sumFilteredByAccount.find { it.categoryId == fitness.id }!!.sum
+        utilitiesSum = sumFilteredByCurrencyWithOverlappingAccounts.find { it.categoryId == utilities.id }!!.sum
+        transportationSum = sumFilteredByCurrencyWithOverlappingAccounts.find { it.categoryId == transportation.id }!!.sum
+        clothingSum = sumFilteredByCurrencyWithOverlappingAccounts.find { it.categoryId == clothing.id }!!.sum
+
+        assertEqualsBD(BigDecimal(32), foodSum)
+        assertEqualsBD(BigDecimal(16), fitnessSum)
+        assertEqualsBD(BigDecimal(8), utilitiesSum)
+        assertEqualsBD(BigDecimal(128), transportationSum)
+        assertEqualsBD(BigDecimal(64), clothingSum)
+
+        statisticsFilter = StatisticsFilterDb(weekDays = listOf(DayOfWeek.WEDNESDAY))
+        val sumFilteredByWeekday = statisticsRepository.getSumByCategory(profile.id!!, true, statisticsFilter)
+        assertEquals(3, sumFilteredByWeekday.size)
+        foodSum = sumFilteredByWeekday.find { it.categoryId == food.id }!!.sum
+        fitnessSum = sumFilteredByWeekday.find { it.categoryId == fitness.id }!!.sum
+        householdSum = sumFilteredByWeekday.find { it.categoryId == household.id }!!.sum
+        assertEqualsBD(BigDecimal(2), foodSum)
+        assertEqualsBD(BigDecimal(4), fitnessSum)
+        assertEqualsBD(BigDecimal(12288), householdSum)
+
+
+        statisticsFilter = StatisticsFilterDb(transactionModes = listOf(TransactionMode.Card))
+        val sumFilteredByMode = statisticsRepository.getSumByCategory(profile.id!!, true, statisticsFilter)
+        assertEquals(1, sumFilteredByMode.size)
+        householdSum = sumFilteredByMode.find { it.categoryId == household.id }!!.sum
+        assertEqualsBD(BigDecimal(14336), householdSum)
+
+        val firstSellerFirstLocationId = sellerLocationRepository.getByProfileIdAndSellerId(profile.id!!, firstSellerId).first().id!!
+        val firstSellerSecondLocationId = sellerLocationRepository.getByProfileIdAndSellerId(profile.id!!, firstSellerId)[1].id!!
+
+        val secondSellerLocationId =  sellerLocationRepository.getByProfileIdAndSellerId(profile.id!!, secondSellerId).first().id!!
+        statisticsFilter = StatisticsFilterDb(sellerIds = listOf(firstSellerId))
+        val sumFilteredBySeller = statisticsRepository.getSumByCategory(profile.id!!, true, statisticsFilter)
+        assertEquals(1, sumFilteredBySeller.size)
+        healthcareSum = sumFilteredByCurrencyWithOverlappingAccounts.find { it.categoryId == healthcare.id }!!.sum
+        assertEqualsBD(BigDecimal(1792), healthcareSum)
+
+        statisticsFilter = StatisticsFilterDb(sellerIds = listOf(firstSellerId), sellerLocationIds = listOf(firstSellerSecondLocationId, secondSellerLocationId))
+        val sumFilteredBySellerWithOverlappingLocations = statisticsRepository.getSumByCategory(profile.id!!, true, statisticsFilter)
+        assertEquals(2, sumFilteredBySellerWithOverlappingLocations.size)
+        householdSum = sumFilteredBySellerWithOverlappingLocations.find { it.categoryId == household.id }!!.sum
+        healthcareSum = sumFilteredBySellerWithOverlappingLocations.find { it.categoryId == healthcare.id }!!.sum
+        assertEqualsBD(BigDecimal(1792), healthcareSum)
+        assertEqualsBD(BigDecimal(12288), householdSum)
+
+        statisticsFilter = StatisticsFilterDb(sellerLocationIds = listOf(firstSellerFirstLocationId, secondSellerLocationId))
+        val sumFilteredByLocation = statisticsRepository.getSumByCategory(profile.id!!, true, statisticsFilter)
+        assertEquals(2, sumFilteredBySellerWithOverlappingLocations.size)
+        householdSum = sumFilteredByLocation.find { it.categoryId == household.id }!!.sum
+        healthcareSum = sumFilteredByLocation.find { it.categoryId == healthcare.id }!!.sum
+        assertEqualsBD(BigDecimal(512), healthcareSum)
+        assertEqualsBD(BigDecimal(12288), householdSum)
+
     }
 
 
@@ -316,7 +440,7 @@ class StatisticsRepositoryTest {
         statisticsFilter = StatisticsFilterDb(sellerIds = listOf(firstSellerId))
         val countsFilteredBySeller = statisticsRepository.getTransactionAndItemCount(profile.id!!, statisticsFilter)
 
-        statisticsFilter = StatisticsFilterDb(sellerIds = listOf(firstSellerId), sellerLocationIds = listOf(secondSellerLocationId))
+        statisticsFilter = StatisticsFilterDb(sellerIds = listOf(firstSellerId), sellerLocationIds = listOf(firstSellerSecondLocationId, secondSellerLocationId))
         val countsFilteredBySellerWithOverlappingLocations = statisticsRepository.getTransactionAndItemCount(profile.id!!, statisticsFilter)
 
         statisticsFilter = StatisticsFilterDb(sellerLocationIds = listOf(firstSellerFirstLocationId, secondSellerLocationId))
@@ -559,5 +683,8 @@ class StatisticsRepositoryTest {
         assertEquals(TransactionAndItemCount(1, 1), count)
     }
 
+    companion object {
+        private val LOGGER = LoggerFactory.getLogger(StatisticsRepositoryTest::class.java)
+    }
 
 }
