@@ -1,6 +1,8 @@
 package com.davidgrath.expensetrackerbackend.service
 
+import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.entities.StatisticsFilterDb
+import com.davidgrath.expensetrackerbackend.entities.dtos.DateAmountSummary
 import com.davidgrath.expensetrackerbackend.entities.dtos.ItemSumByCategory
 import com.davidgrath.expensetrackerbackend.entities.dtos.TransactionAndItemCount
 import com.davidgrath.expensetrackerbackend.generatedapi.model.*
@@ -14,6 +16,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
+import java.time.LocalDate
 import java.util.*
 
 @Service
@@ -33,6 +36,10 @@ class StatisticsService {
     lateinit var transactionRepository: TransactionRepository
     @Autowired
     lateinit var imageRepository: ImageRepository
+    @Autowired
+    lateinit var timeHandler: TimeHandler
+    @Autowired
+    lateinit var transactionItemRepository: TransactionItemRepository
 
     enum class ValidateStatisticsFilterResult {
         Valid,
@@ -188,6 +195,62 @@ class StatisticsService {
     }
     fun getTransactionAndItemCount(profileId: Long, statisticsFilter: StatisticsFilterDb): TransactionAndItemCount {
         return statisticsRepository.getTransactionAndItemCount(profileId, statisticsFilter)
+    }
+
+
+    fun getTotalAmountByDate(
+        profileId: Long, debitOrCredit: Boolean, filter: StatisticsFilterDb
+    ): List<DateAmountSummary> {
+        //TODO Add a test here and at the controller layer to ensure fromDate?>toDate? is an invalid request
+        //TODO validate filter; move to statisticsService
+        val today = LocalDate.now(timeHandler.getClock())
+        if(filter.fromDate != null && filter.fromDate.compareTo(today) > 0) {
+            LOGGER.info("getTotalAmountByDate: fromDate in future. Returning empty list")
+            return emptyList()
+        }
+
+        var adjustedFromDate: LocalDate?
+        if(filter.fromDate != null) {
+            adjustedFromDate = filter.fromDate
+            LOGGER.info("getTotalAmountByDate: adjustedFromDate set to fromDate")
+        } else {
+            val minDate = transactionItemRepository.getEarliestItemTransactionDate(profileId, debitOrCredit , today, filter)
+            adjustedFromDate = minDate
+        }
+
+        val adjustedToDate = if(filter.toDate == null) {
+            val maxDate = transactionItemRepository.getLatestItemTransactionDate(profileId, debitOrCredit , today, filter)
+            LOGGER.debug("Max Date: {}", maxDate)
+            if(maxDate == null) {
+                today
+            } else {
+                if(maxDate.compareTo(today) > 0) {
+                    LOGGER.info("getTotalAmountByDate: maxDate found is greater than current date. Value clamped")
+                    today
+                } else {
+                    maxDate
+                }
+            }
+        } else if(filter.toDate.compareTo(today) > 0) {
+            LOGGER.info("getTotalAmountByDate: toDate greater than current date. Value clamped")
+            today
+        } else {
+            filter.toDate
+        }
+
+        LOGGER.debug("Pair: {}", adjustedFromDate to adjustedToDate)
+        if(adjustedFromDate == null || adjustedToDate == null) {
+            LOGGER.info("getTotalAmountByDate: Returning empty list because adjusted date is null")
+            return emptyList()
+        }
+
+        val summary =
+            transactionItemRepository.getTransactionItemSumByDateRecursive(profileId, debitOrCredit,
+                adjustedFromDate, adjustedToDate, filter)
+
+        LOGGER.info("getTotalAmountByDate: Result count: {}", summary.size)
+        return summary
+
     }
 
     companion object {

@@ -76,7 +76,7 @@ class StatisticsController: StatisticsApi {
         statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
 
         val filterDb = statisticsFilterToStatisticsFilterDb(statisticsFilter)
-        val total = transactionService.getTotalAmountByDate(profile.id!!, true, filterDb)
+        val total = statisticsService.getTotalAmountByDate(profile.id!!, true, filterDb)
         val mapped = total.map { TotalAmountByDate(it.aggregateDate, it.sum) }
         return ResponseEntity.ok(mapped)
     }
@@ -131,7 +131,7 @@ class StatisticsController: StatisticsApi {
         statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
 
         val filterDb = statisticsFilterToStatisticsFilterDb(statisticsFilter)
-        val total = transactionService.getTotalAmountByDate(profile.id!!, false, filterDb)
+        val total = statisticsService.getTotalAmountByDate(profile.id!!, false, filterDb)
         val mapped = total.map { TotalAmountByDate(it.aggregateDate, it.sum) }
         return ResponseEntity.ok(mapped)
     }
