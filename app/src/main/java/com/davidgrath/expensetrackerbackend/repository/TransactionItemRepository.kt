@@ -1,12 +1,15 @@
 package com.davidgrath.expensetrackerbackend.repository
 
 import com.davidgrath.expensetrackerbackend.entities.SearchFilterDb
+import com.davidgrath.expensetrackerbackend.entities.StatisticsFilterDb
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import com.davidgrath.expensetrackerbackend.entities.dtos.DateAmountSummary
 import com.davidgrath.expensetrackerbackend.entities.dtos.StringFieldWithTimestamp
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionItemPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.*
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.DEFAULT_FETCH_LIMIT
+import com.davidgrath.expensetrackerbackend.utils.applyFilters
+import com.davidgrath.expensetrackerbackend.utils.applyFiltersNoDateRange
 import com.davidgrath.expensetrackerbackend.utils.toByte
 import org.jooq.DSLContext
 import org.jooq.DatePart
@@ -110,17 +113,16 @@ open class TransactionItemRepository {
     fun getTransactionItemSumByDateRecursive(
         profileId: Long, debitOrCredit: Boolean,
         fromDate: LocalDate, toDate: LocalDate,
-        accountIds: List<Long>,
-        dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>
+        statisticsFilter: StatisticsFilterDb
     ): List<DateAmountSummary> {
         val dateSequence = DSL.name("date_sequence").fields("d")
             .`as`(
                 DSL
-                    .select(DSL.localDate(fromDate))
+                    .select(DSL.localDate(fromDate!!))
                     .unionAll(
                         DSL.select(DSL.localDateAdd(DSL.field("d", SQLDataType.LOCALDATE), 1, DatePart.DAY) )
                             .from(DSL.table(DSL.name("date_sequence")))
-                            .where(DSL.localDateAdd(DSL.field("d", SQLDataType.LOCALDATE), 1, DatePart.DAY).lessOrEqual(toDate))
+                            .where(DSL.localDateAdd(DSL.field("d", SQLDataType.LOCALDATE), 1, DatePart.DAY).lessOrEqual(toDate!!))
                     )
             )
 
@@ -131,26 +133,13 @@ open class TransactionItemRepository {
             .innerJoin(ACCOUNT).on(accountToTransactionPath)
             .innerJoin(CATEGORY).on(categoryToItemPath)
             .leftJoin(SELLER).on(sellerToTransactionPath)
+            .leftJoin(SELLER_LOCATION).on(transactionToSellerLocationPath)
             .where(ACCOUNT.PROFILE_ID.eq(profileId))
             .and(TRANSACTION.DEBIT_OR_CREDIT.eq(debitOrCredit.toByte()))
             .and(TRANSACTION.DATED_AT.greaterOrEqual(fromDate))
             .and(TRANSACTION.DATED_AT.lessOrEqual(toDate))
 
-        if(accountIds.isNotEmpty()) {
-            selectStep = selectStep.and(ACCOUNT.ID.`in`(accountIds))
-        }
-        if(dates.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.DATED_AT.`in`(dates))
-        }
-        if(categories.isNotEmpty()) {
-            selectStep = selectStep.and(CATEGORY.ID.`in`(categories))
-        }
-        if(modes.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.MODE.`in`(modes))
-        }
-        if(sellers.isNotEmpty()) {
-            selectStep = selectStep.and(SELLER.ID.`in`(sellers))
-        }
+        selectStep = applyFiltersNoDateRange(selectStep, statisticsFilter)
         val mainQuerySeekStep = selectStep.groupBy(aggregateDate).orderBy(aggregateDate)
         val mainQuery = DSL.name("main_query")
             .`as`(
@@ -172,12 +161,7 @@ open class TransactionItemRepository {
 
     fun getEarliestItemTransactionDate(
         profileId: Long, debitOrCredit: Boolean,
-        accountIds: List<Long>,
-        dates: List<LocalDate>,
-        categories: List<Long>,
-        modes: List<TransactionMode>,
-        sellers: List<Long>,
-        currentDate: LocalDate): LocalDate? {
+        currentDate: LocalDate, filter: StatisticsFilterDb): LocalDate? {
         var selectStep = mainContext.select(DSL.min(TRANSACTION.DATED_AT))
             .from(TRANSACTION_ITEM)
             .innerJoin(TRANSACTION).on(itemToTransactionPath)
@@ -187,34 +171,14 @@ open class TransactionItemRepository {
             .where(ACCOUNT.PROFILE_ID.eq(profileId))
             .and(TRANSACTION.DEBIT_OR_CREDIT.eq(debitOrCredit.toByte()))
             .and(TRANSACTION.DATED_AT.lessOrEqual(currentDate))
-
-        if(accountIds.isNotEmpty()) {
-            selectStep = selectStep.and(ACCOUNT.ID.`in`(accountIds))
-        }
-        if(dates.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.DATED_AT.`in`(dates))
-        }
-        if(categories.isNotEmpty()) {
-            selectStep = selectStep.and(CATEGORY.ID.`in`(categories))
-        }
-        if(modes.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.MODE.`in`(modes))
-        }
-        if(sellers.isNotEmpty()) {
-            selectStep = selectStep.and(SELLER.ID.`in`(sellers))
-        }
+        selectStep = applyFiltersNoDateRange(selectStep, filter)
         return selectStep.fetchOne()?.value1()
     }
 
 
     fun getLatestItemTransactionDate(
         profileId: Long, debitOrCredit: Boolean,
-        accountIds: List<Long>,
-        dates: List<LocalDate>,
-        categories: List<Long>,
-        modes: List<TransactionMode>,
-        sellers: List<Long>,
-        currentDate: LocalDate): LocalDate? {
+        currentDate: LocalDate, filter: StatisticsFilterDb): LocalDate? {
         var selectStep = mainContext.select(DSL.max(TRANSACTION.DATED_AT))
             .from(TRANSACTION_ITEM)
             .innerJoin(TRANSACTION).on(itemToTransactionPath)
@@ -224,22 +188,7 @@ open class TransactionItemRepository {
             .where(ACCOUNT.PROFILE_ID.eq(profileId))
             .and(TRANSACTION.DEBIT_OR_CREDIT.eq(debitOrCredit.toByte()))
             .and(TRANSACTION.DATED_AT.lessOrEqual(currentDate))
-
-        if(accountIds.isNotEmpty()) {
-            selectStep = selectStep.and(ACCOUNT.ID.`in`(accountIds))
-        }
-        if(dates.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.DATED_AT.`in`(dates))
-        }
-        if(categories.isNotEmpty()) {
-            selectStep = selectStep.and(CATEGORY.ID.`in`(categories))
-        }
-        if(modes.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.MODE.`in`(modes))
-        }
-        if(sellers.isNotEmpty()) {
-            selectStep = selectStep.and(SELLER.ID.`in`(sellers))
-        }
+        selectStep = applyFiltersNoDateRange(selectStep, filter)
         return selectStep.fetchOne()?.value1()
     }
 

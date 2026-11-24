@@ -390,6 +390,35 @@ fun <T: Record> applyFilters(sStep: SelectConditionStep<T>, statisticsFilter: St
     return selectStep
 }
 
+fun <T: Record> applyFiltersNoDateRange(sStep: SelectConditionStep<T>, statisticsFilter: StatisticsFilterDb): SelectConditionStep<T> {
+    var selectStep = sStep
+    if(statisticsFilter.accountIds.isNotEmpty() && statisticsFilter.currencyCode == null) {
+        selectStep = selectStep.and(ACCOUNT.ID.`in`(statisticsFilter.accountIds))
+    }
+    if(statisticsFilter.currencyCode != null) {
+        selectStep = selectStep.and(ACCOUNT.CURRENCY_CODE.`eq`(statisticsFilter.currencyCode.toString()))
+    }
+    if(statisticsFilter.weekDays.isNotEmpty()) {
+        val weekdaysInts = statisticsFilter.weekDays.map { it.value }
+        selectStep = selectStep.and(DSL.isoDayOfWeek(TRANSACTION.DATED_AT).`in`(weekdaysInts))
+    }
+    if(statisticsFilter.categoryIds.isNotEmpty()) {
+        selectStep = selectStep.and(CATEGORY.ID.`in`(statisticsFilter.categoryIds))
+    }
+    if(statisticsFilter.transactionModes.isNotEmpty()) {
+        selectStep = selectStep.and(TRANSACTION.MODE.`in`(statisticsFilter.transactionModes))
+    }
+    if(statisticsFilter.sellerIds.isNotEmpty() || statisticsFilter.sellerLocationIds.isNotEmpty()) {
+        var condition = SELLER.ID.`in`(statisticsFilter.sellerIds)
+        if(statisticsFilter.sellerLocationIds.isNotEmpty()) {
+            condition = condition.or(SELLER_LOCATION.ID.`in`(statisticsFilter.sellerLocationIds))
+        }
+        selectStep = selectStep.and(condition)
+    }
+    return selectStep
+}
+
+
 val invalidRegex = Regex("^[\\p{Z}\\p{M}\\p{Cf}]+$")
 val invalidRegexControl = Regex("\\p{Cc}") //TODO ZWJ, ZWNJ, SOFT HYPHEN, consider a sanitisation pipeline
 val invalidRegexControlExceptCrLfTab = Regex("[\\p{Cc}&&[^\\r\\n\\t]]")

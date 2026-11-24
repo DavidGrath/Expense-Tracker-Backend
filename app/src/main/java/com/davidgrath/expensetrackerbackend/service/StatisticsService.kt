@@ -1,9 +1,13 @@
 package com.davidgrath.expensetrackerbackend.service
 
+import com.davidgrath.expensetrackerbackend.entities.StatisticsFilterDb
+import com.davidgrath.expensetrackerbackend.entities.dtos.ItemSumByCategory
+import com.davidgrath.expensetrackerbackend.entities.dtos.TransactionAndItemCount
 import com.davidgrath.expensetrackerbackend.generatedapi.model.*
 import com.davidgrath.expensetrackerbackend.repository.*
 import com.davidgrath.expensetrackerbackend.service.exceptions.EntityNotFoundException
 import com.davidgrath.expensetrackerbackend.service.exceptions.InvalidCurrencyCodeException
+import com.davidgrath.expensetrackerbackend.service.exceptions.InvalidDateRangeException
 import com.davidgrath.expensetrackerbackend.service.exceptions.StatisticsHeterogeneousCurrencyCodeException
 import com.davidgrath.expensetrackerbackend.utils.*
 import org.slf4j.LoggerFactory
@@ -44,21 +48,30 @@ class StatisticsService {
         val userProfileSellers = sellerRepository.getAllByProfileId(profileId).map { it.id!! }
         val userProfileSellerLocations = sellerLocationRepository.getAllByProfileId(profileId).map { it.id!! }
 
-        if((statisticsFilter.accounts.toSet().subtract(userProfileAccounts.toSet())).isNotEmpty()) {
-            LOGGER.info("Filter accounts contains IDs that don't belong")
+        val foreignAccounts = statisticsFilter.accounts.toSet().subtract(userProfileAccounts.toSet())
+        if(foreignAccounts.isNotEmpty()) {
+            LOGGER.info("Filter accounts contains IDs that don't belong: {}", foreignAccounts)
             throw EntityNotFoundException()
         }
-        if((statisticsFilter.categories.toSet().subtract(userProfileCategories.toSet())).isNotEmpty()) {
-            LOGGER.info("Filter categories contains IDs that don't belong")
+        val foreignCategories = (statisticsFilter.categories.toSet().subtract(userProfileCategories.toSet()))
+        if(foreignCategories.isNotEmpty()) {
+            LOGGER.info("Filter categories contains IDs that don't belong: {}", foreignCategories)
             throw EntityNotFoundException()
         }
-        if((statisticsFilter.sellers.toSet().subtract(userProfileSellers.toSet())).isNotEmpty()) {
-            LOGGER.info("Filter sellers contains IDs that don't belong")
+        val foreignSellers = (statisticsFilter.sellers.toSet().subtract(userProfileSellers.toSet()))
+        if(foreignSellers.isNotEmpty()) {
+            LOGGER.info("Filter sellers contains IDs that don't belong: {}", foreignSellers)
             throw EntityNotFoundException()
         }
-        if((statisticsFilter.sellerLocations.toSet().subtract(userProfileSellerLocations.toSet())).isNotEmpty()) {
-            LOGGER.info("Filter seller locations contains IDs that don't belong")
+        val foreignSellerLocations = (statisticsFilter.sellerLocations.toSet().subtract(userProfileSellerLocations.toSet()))
+        if(foreignSellerLocations.isNotEmpty()) {
+            LOGGER.info("Filter seller locations contains IDs that don't belong: {}", foreignSellerLocations)
             throw EntityNotFoundException()
+        }
+        if(statisticsFilter.from != null && statisticsFilter.to != null) {
+            if(statisticsFilter.from!!.compareTo(statisticsFilter.to!!) < 0) {
+                throw InvalidDateRangeException()
+            }
         }
         val ret = if(statisticsFilter.currencyCode != null) {
             LOGGER.info("Currency code is not null")
@@ -151,6 +164,30 @@ class StatisticsService {
             StatisticsTransaction(t.id, apiAccount, t.amount!!, t.debitOrCredit!!.toBoolean(), t.datedAt!!, t.time?.toString(), t.mode.toApiMode(), exclusionStats?.excludedItemCount?:0, exclusionStats?.excludedItemAmount?: BigDecimal.ZERO,
                 exclusionStats?.excludedChargesAmount?: BigDecimal.ZERO, items)
         }
+    }
+
+    fun getTransactionDebitSum(profileId: Long, statisticsFilter: StatisticsFilter): BigDecimal {
+        val statisticsFilterDb = statisticsFilterToStatisticsFilterDb(statisticsFilter)
+        return statisticsRepository.getTransactionItemDebitSum(profileId, statisticsFilterDb)
+    }
+    fun getTransactionCreditSum(profileId: Long, statisticsFilter: StatisticsFilter): BigDecimal {
+        val statisticsFilterDb = statisticsFilterToStatisticsFilterDb(statisticsFilter)
+        return statisticsRepository.getTransactionItemCreditSum(profileId, statisticsFilterDb)
+    }
+    fun getTransactionDebitSumByCategory(profileId: Long, statisticsFilter: StatisticsFilter): List<ItemSumByCategory> {
+        val statisticsFilterDb = statisticsFilterToStatisticsFilterDb(statisticsFilter)
+        val list = statisticsRepository.getSumByCategory(profileId, true, statisticsFilterDb)
+        LOGGER.info("List size: {}", list.size)
+        return list
+    }
+    fun getTransactionCreditSumByCategory(profileId: Long, statisticsFilter: StatisticsFilter): List<ItemSumByCategory> {
+        val statisticsFilterDb = statisticsFilterToStatisticsFilterDb(statisticsFilter)
+        val list = statisticsRepository.getSumByCategory(profileId, false, statisticsFilterDb)
+        LOGGER.info("List size: {}", list.size)
+        return list
+    }
+    fun getTransactionAndItemCount(profileId: Long, statisticsFilter: StatisticsFilterDb): TransactionAndItemCount {
+        return statisticsRepository.getTransactionAndItemCount(profileId, statisticsFilter)
     }
 
     companion object {

@@ -17,6 +17,7 @@ import com.davidgrath.expensetrackerbackend.repository.TransactionRepository
 import com.davidgrath.expensetrackerbackend.repository.UserRepository
 import com.davidgrath.expensetrackerbackend.service.StatisticsService.ValidateStatisticsFilterResult
 import com.davidgrath.expensetrackerbackend.service.exceptions.EntityNotFoundException
+import com.davidgrath.expensetrackerbackend.service.exceptions.InvalidDateRangeException
 import com.davidgrath.expensetrackerbackend.service.exceptions.StatisticsHeterogeneousCurrencyCodeException
 import com.davidgrath.expensetrackerbackend.testutils.DataBuilder
 import com.davidgrath.expensetrackerbackend.testutils.TestConstants
@@ -443,4 +444,21 @@ class StatisticsServiceTest {
         assertEquals(2, transactionsFilteredByCategory[2].excludedItemCount) //TODO Add charges and test as well
 
     }
+
+    @Test
+    fun givenFromDateNotNullAndToDateNotNullAndFromDateGreaterThanToDateWhenValidateFilterThenFail() {
+        val clock = timeHandler.getClock()
+        val date = ZonedDateTime.now(clock)
+        val utcDate = date.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()
+
+        val profileId = getDefaultProfileId(userRepository, profileRepository)
+        val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
+
+        val statisticsFilter = StatisticsFilter().from(LocalDate.parse("2025-06-30")).to(LocalDate.parse("2026-06-29"))
+
+        assertThrows(InvalidDateRangeException::class.java) {
+            statisticsService.validateFilter(profileId, statisticsFilter)
+        }
+    }
+
 }

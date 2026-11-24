@@ -28,8 +28,6 @@ class TransactionService {
     @Autowired
     lateinit var transactionItemRepository: TransactionItemRepository
     @Autowired
-    lateinit var statisticsRepository: StatisticsRepository
-    @Autowired
     lateinit var categoryRepository: CategoryRepository
     @Autowired
     lateinit var genericRepository: GenericRepository
@@ -151,28 +149,27 @@ class TransactionService {
     }*/
 
     fun getTotalAmountByDate(
-        profileId: Long, debitOrCredit: Boolean, fromDate: LocalDate?, toDate: LocalDate? = null,
-        accountIds: List<Long>, dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>
+        profileId: Long, debitOrCredit: Boolean, filter: StatisticsFilterDb
     ): List<DateAmountSummary> {
         //TODO Add a test here and at the controller layer to ensure fromDate?>toDate? is an invalid request
-
+        //TODO validate filter; move to statisticsService
         val today = LocalDate.now(timeHandler.getClock())
-        if(fromDate != null && fromDate.compareTo(today) > 0) {
+        if(filter.fromDate != null && filter.fromDate.compareTo(today) > 0) {
             LOGGER.info("getTotalAmountByDate: fromDate in future. Returning empty list")
             return emptyList()
         }
 
         var adjustedFromDate: LocalDate?
-        if(fromDate != null) {
-            adjustedFromDate = fromDate
+        if(filter.fromDate != null) {
+            adjustedFromDate = filter.fromDate
             LOGGER.info("getTotalAmountByDate: adjustedFromDate set to fromDate")
         } else {
-            val minDate = transactionItemRepository.getEarliestItemTransactionDate(profileId, debitOrCredit , accountIds, dates, categories, modes,  sellers, today)
+            val minDate = transactionItemRepository.getEarliestItemTransactionDate(profileId, debitOrCredit , today, filter)
             adjustedFromDate = minDate
         }
 
-        val adjustedToDate = if(toDate == null) {
-            val maxDate = transactionItemRepository.getLatestItemTransactionDate(profileId, debitOrCredit , accountIds, dates, categories, modes,  sellers, today)
+        val adjustedToDate = if(filter.toDate == null) {
+            val maxDate = transactionItemRepository.getLatestItemTransactionDate(profileId, debitOrCredit , today, filter)
             LOGGER.debug("Max Date: {}", maxDate)
             if(maxDate == null) {
                 today
@@ -184,11 +181,11 @@ class TransactionService {
                     maxDate
                 }
             }
-        } else if(toDate.compareTo(today) > 0) {
+        } else if(filter.toDate.compareTo(today) > 0) {
             LOGGER.info("getTotalAmountByDate: toDate greater than current date. Value clamped")
             today
         } else {
-            toDate
+            filter.toDate
         }
 
         LOGGER.debug("Pair: {}", adjustedFromDate to adjustedToDate)
@@ -196,12 +193,10 @@ class TransactionService {
             LOGGER.info("getTotalAmountByDate: Returning empty list because adjusted date is null")
             return emptyList()
         }
+
         val summary =
             transactionItemRepository.getTransactionItemSumByDateRecursive(profileId, debitOrCredit,
-                adjustedFromDate,
-                adjustedToDate,
-                accountIds,  dates, categories,
-                modes, sellers)
+                adjustedFromDate, adjustedToDate, filter)
 
         LOGGER.info("getTotalAmountByDate: Result count: {}", summary.size)
         return summary
@@ -238,29 +233,6 @@ class TransactionService {
         return list
     }
 
-    fun getTransactionDebitSum(profileId: Long, statisticsFilter: StatisticsFilter): BigDecimal {
-        val statisticsFilterDb = statisticsFilterToStatisticsFilterDb(statisticsFilter)
-        return statisticsRepository.getTransactionItemDebitSum(profileId, statisticsFilterDb)
-    }
-
-    fun getTransactionCreditSum(profileId: Long, statisticsFilter: StatisticsFilter): BigDecimal {
-        val statisticsFilterDb = statisticsFilterToStatisticsFilterDb(statisticsFilter)
-        return statisticsRepository.getTransactionItemCreditSum(profileId, statisticsFilterDb)
-    }
-
-    fun getTransactionDebitSumByCategory(profileId: Long, statisticsFilter: StatisticsFilter): List<ItemSumByCategory> {
-        val statisticsFilterDb = statisticsFilterToStatisticsFilterDb(statisticsFilter)
-        val list = statisticsRepository.getSumByCategory(profileId, true, statisticsFilterDb)
-        LOGGER.info("List size: {}", list.size)
-        return list
-    }
-
-    fun getTransactionCreditSumByCategory(profileId: Long, statisticsFilter: StatisticsFilter): List<ItemSumByCategory> {
-        val statisticsFilterDb = statisticsFilterToStatisticsFilterDb(statisticsFilter)
-        val list = statisticsRepository.getSumByCategory(profileId, false, statisticsFilterDb)
-        LOGGER.info("List size: {}", list.size)
-        return list
-    }
 
     fun getTopNDebitPerCategory(profileId: Long, n: Int, fromDate: LocalDate?, toDate: LocalDate?,
                                 accountIds: List<Long>,
@@ -278,9 +250,7 @@ class TransactionService {
         return list
     }
 
-    fun getTransactionAndItemCount(profileId: Long, statisticsFilter: StatisticsFilterDb): TransactionAndItemCount {
-        return statisticsRepository.getTransactionAndItemCount(profileId, statisticsFilter)
-    }
+
 
     fun getEarliestDate(profileId: Long, accountIds: List<Long>): LocalDate? {
         return transactionRepository.getEarliestTransactionDate(profileId, accountIds)

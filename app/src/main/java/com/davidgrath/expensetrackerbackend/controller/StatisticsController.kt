@@ -57,7 +57,7 @@ class StatisticsController: StatisticsApi {
 
         statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
 
-        val total = transactionService.getTransactionDebitSumByCategory(profile.id!!, statisticsFilter!!)
+        val total = statisticsService.getTransactionDebitSumByCategory(profile.id!!, statisticsFilter!!)
         val mapped = total.map { TotalAmountByCategory(Category(it.categoryId, it.name, it.isCustom, it.stringId, it.categoryIcon), it.sum) }
         return ResponseEntity.ok(mapped)
     }
@@ -75,9 +75,8 @@ class StatisticsController: StatisticsApi {
 
         statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
 
-        val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
-        val total = transactionService.getTotalAmountByDate(profile.id!!, true, statisticsFilter.from,
-            statisticsFilter.to, statisticsFilter.accounts, emptyList(), statisticsFilter.categories, modes, statisticsFilter.sellers)
+        val filterDb = statisticsFilterToStatisticsFilterDb(statisticsFilter)
+        val total = transactionService.getTotalAmountByDate(profile.id!!, true, filterDb)
         val mapped = total.map { TotalAmountByDate(it.aggregateDate, it.sum) }
         return ResponseEntity.ok(mapped)
     }
@@ -96,7 +95,7 @@ class StatisticsController: StatisticsApi {
 
         statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
 
-        val total = transactionService.getTransactionDebitSum(profile.id!!, statisticsFilter!!)
+        val total = statisticsService.getTransactionDebitSum(profile.id!!, statisticsFilter!!)
         return ResponseEntity.ok(total)
     }
 
@@ -113,7 +112,7 @@ class StatisticsController: StatisticsApi {
 
         statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
 
-        val total = transactionService.getTransactionCreditSumByCategory(profile.id!!, statisticsFilter!!)
+        val total = statisticsService.getTransactionCreditSumByCategory(profile.id!!, statisticsFilter!!)
         val mapped = total.map { TotalAmountByCategory(Category(it.categoryId, it.name, it.isCustom, it.stringId, it.categoryIcon), it.sum) }
         return ResponseEntity.ok(mapped)
     }
@@ -131,9 +130,8 @@ class StatisticsController: StatisticsApi {
 
         statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
 
-        val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
-        val total = transactionService.getTotalAmountByDate(profile.id!!, false, statisticsFilter.from,
-            statisticsFilter.to, statisticsFilter.accounts, emptyList(), statisticsFilter.categories, modes, statisticsFilter.sellers)
+        val filterDb = statisticsFilterToStatisticsFilterDb(statisticsFilter)
+        val total = transactionService.getTotalAmountByDate(profile.id!!, false, filterDb)
         val mapped = total.map { TotalAmountByDate(it.aggregateDate, it.sum) }
         return ResponseEntity.ok(mapped)
     }
@@ -151,8 +149,7 @@ class StatisticsController: StatisticsApi {
 
         statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
 
-        val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
-        val total = transactionService.getTransactionCreditSum(profile.id!!, statisticsFilter)
+        val total = statisticsService.getTransactionCreditSum(profile.id!!, statisticsFilter)
         return ResponseEntity.ok(total)
     }
 
@@ -250,7 +247,7 @@ class StatisticsController: StatisticsApi {
 
         statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
 
-        val counts = transactionService.getTransactionAndItemCount(profile.id!!, statisticsFilterToStatisticsFilterDb(statisticsFilter!!))
+        val counts = statisticsService.getTransactionAndItemCount(profile.id!!, statisticsFilterToStatisticsFilterDb(statisticsFilter!!))
         return ResponseEntity.ok(StatsTransactionAndItemCount(counts.transactionCount, counts.itemCount))
     }
 

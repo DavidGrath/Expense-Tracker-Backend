@@ -24,4 +24,5 @@ enum class ErrorCode(val code: String) {
     INVALID_VOLUME_UNIT("invalid_volume_unit"),
     INVALID_UNIT_PREFIX("invalid_unit_prefix"),
     SERVER_ERROR("server_error"),
+    INVALID_DATE_RANGE("invalid_date_range") //TODO This is specifically for endpoints that accept from and to as query parameters instead of as a filter object. Add and test appropriately
 }

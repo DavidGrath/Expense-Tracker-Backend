@@ -79,4 +79,10 @@ class ExceptionResponseHandler {
         problemDetail.setProperty(CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE, ErrorCode.INVALID_STATISTICS_FILTER.code)
         return problemDetail
     }
+    @ExceptionHandler(InvalidDateRangeException::class)
+    fun handleInvalidDateRangeException(e: InvalidDateRangeException): ProblemDetail {
+        val problemDetail: ProblemDetail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST)
+        problemDetail.setProperty(CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE, ErrorCode.INVALID_DATE_RANGE.code)
+        return problemDetail
+    }
 }

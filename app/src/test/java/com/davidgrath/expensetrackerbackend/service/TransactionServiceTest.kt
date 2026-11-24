@@ -2,6 +2,7 @@ package com.davidgrath.expensetrackerbackend.service
 
 import com.davidgrath.expensetrackerbackend.configuration.TestRunConfiguration
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
+import com.davidgrath.expensetrackerbackend.entities.StatisticsFilterDb
 import com.davidgrath.expensetrackerbackend.generatedapi.model.SuggestionsFieldType
 import com.davidgrath.expensetrackerbackend.repository.*
 import com.davidgrath.expensetrackerbackend.testutils.*
@@ -83,16 +84,19 @@ class TransactionServiceTest {
 
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
         //Empty Set
-        var transactionSumByDates = transactionService.getTotalAmountByDate(profileId, true, LocalDate.parse("2025-07-01"), null, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+        var statisticsFilter = StatisticsFilterDb(fromDate = LocalDate.parse("2025-07-01"))
+        var transactionSumByDates = transactionService.getTotalAmountByDate(profileId, true, statisticsFilter)
         assertEquals(0, transactionSumByDates.size)
 
         //Today and empty
-        transactionSumByDates = transactionService.getTotalAmountByDate(profileId, true, LocalDate.parse("2025-06-30"), null, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+        statisticsFilter = StatisticsFilterDb(fromDate = LocalDate.parse("2025-06-30"))
+        transactionSumByDates = transactionService.getTotalAmountByDate(profileId, true, statisticsFilter)
         assertEquals(1, transactionSumByDates.size)
         assertEqualsBD(BigDecimal.ZERO, transactionSumByDates.first().sum)
 
         //Multiple days and empty
-        transactionSumByDates = transactionService.getTotalAmountByDate(profileId, true, LocalDate.parse("2025-06-01"), null, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+        statisticsFilter = StatisticsFilterDb(fromDate = LocalDate.parse("2025-06-01"))
+        transactionSumByDates = transactionService.getTotalAmountByDate(profileId, true, statisticsFilter)
         val daysInJune = 30
         var grandSum = transactionSumByDates.map { it.sum }.reduce { acc, bigDecimal -> acc.plus(bigDecimal) }
         assertEquals(daysInJune, transactionSumByDates.size)
@@ -121,7 +125,8 @@ class TransactionServiceTest {
             .commit()
 
 
-        transactionSumByDates = transactionService.getTotalAmountByDate(profileId, true, LocalDate.parse("2025-01-02"), null, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+        statisticsFilter = StatisticsFilterDb(fromDate = LocalDate.parse("2025-01-02"))
+        transactionSumByDates = transactionService.getTotalAmountByDate(profileId, true, statisticsFilter)
         val sum1 = transactionSumByDates.find { it.aggregateDate == firstTransactionDate }!!
         var missingSum1 = transactionSumByDates.find { it.aggregateDate == LocalDate.parse("2025-01-03") }!!
         val missingSum2 = transactionSumByDates.find { it.aggregateDate == LocalDate.parse("2025-01-08") }!!
@@ -131,7 +136,8 @@ class TransactionServiceTest {
         assertEqualsBD(BigDecimal.ZERO, missingSum2.sum)
 //        assertEqualsBD(BigDecimal.ZERO, missingSum3.sum)  No longer the expected behavior
 
-        transactionSumByDates = transactionService.getTotalAmountByDate(profileId, true, firstTransactionDate, thirdTransactionDate, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+        statisticsFilter = StatisticsFilterDb(fromDate = firstTransactionDate, toDate = thirdTransactionDate)
+        transactionSumByDates = transactionService.getTotalAmountByDate(profileId, true, statisticsFilter)
         val daysBetweenFirstAndThirdTransactionInclusive = 6
 
         grandSum = transactionSumByDates.map { it.sum }.reduce { acc, bigDecimal -> acc.plus(bigDecimal) }
@@ -335,7 +341,8 @@ class TransactionServiceTest {
         //Multiple days and empty
         transactionSumByDates = transactionService.getCumSumByDate(profileId, true, LocalDate.parse("2025-06-01"), null, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
         val daysInJune = 30
-        var regularSumByDates = transactionService.getTotalAmountByDate(profileId, true, LocalDate.parse("2025-06-01"), null, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+        var statisticsFilter = StatisticsFilterDb(fromDate = LocalDate.parse("2025-06-01"))
+        var regularSumByDates = transactionService.getTotalAmountByDate(profileId, true, statisticsFilter)
         var grandSumRegular = regularSumByDates.map { it.sum }.reduce { acc, bigDecimal -> acc.plus(bigDecimal) }
         var grandSumCumulative = transactionSumByDates.last().sum
         assertEquals(daysInJune, transactionSumByDates.size)
@@ -382,8 +389,8 @@ class TransactionServiceTest {
 
         transactionSumByDates = transactionService.getCumSumByDate(profileId, true, firstTransactionDate, thirdTransactionDate, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
         val daysBetweenFirstAndThirdTransactionInclusive = 6
-
-        regularSumByDates = transactionService.getTotalAmountByDate(profileId, true, firstTransactionDate, thirdTransactionDate, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+        statisticsFilter = StatisticsFilterDb(fromDate = firstTransactionDate, toDate = thirdTransactionDate)
+        regularSumByDates = transactionService.getTotalAmountByDate(profileId, true, statisticsFilter)
         grandSumRegular = regularSumByDates.map { it.sum }.reduce { acc, bigDecimal -> acc.plus(bigDecimal) }
         grandSumCumulative = transactionSumByDates.last().sum
         missingSum1 = transactionSumByDates.find { it.aggregateDate == LocalDate.parse("2025-01-03") }!!
@@ -414,7 +421,8 @@ class TransactionServiceTest {
             .commit()
 
         val dateAfterToday = LocalDate.parse("2025-07-01")
-        val transactionSumByDates = transactionService.getTotalAmountByDate(profileId, true, dateAfterToday, null, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+        val statisticsFilter = StatisticsFilterDb(fromDate = dateAfterToday)
+        val transactionSumByDates = transactionService.getTotalAmountByDate(profileId, true, statisticsFilter)
         assertEquals(0, transactionSumByDates.size)
     }
 
@@ -434,7 +442,8 @@ class TransactionServiceTest {
         var startDate = LocalDate.parse("2025-06-01")
         val today = LocalDate.parse("2025-06-30")
         val endDate = today
-        val transactionSumByDates = transactionService.getTotalAmountByDate(profileId, true, startDate, endDate, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+        val statisticsFilter = StatisticsFilterDb(fromDate = startDate, toDate = endDate)
+        val transactionSumByDates = transactionService.getTotalAmountByDate(profileId, true, statisticsFilter)
         val daysInJune = 30
         var grandSum = transactionSumByDates.map { it.sum }.reduce { acc, bigDecimal -> acc.plus(bigDecimal) }
         assertEquals(daysInJune, transactionSumByDates.size)
@@ -473,7 +482,8 @@ class TransactionServiceTest {
 
 
         val startDate = LocalDate.parse("2025-06-01")
-        val transactionSumByDates = transactionService.getTotalAmountByDate(profileId, true, startDate, null, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+        val statisticsFilter = StatisticsFilterDb(fromDate = startDate)
+        val transactionSumByDates = transactionService.getTotalAmountByDate(profileId, true, statisticsFilter)
         val grandSum = transactionSumByDates.map { it.sum }.reduce { acc, bigDecimal -> acc.plus(bigDecimal) }
         assertEquals(1, transactionSumByDates.size)
         val today = LocalDate.parse("2025-06-30")
@@ -496,7 +506,8 @@ class TransactionServiceTest {
 
         val today = LocalDate.parse("2025-06-30")
         val endDate = today
-        val transactionSumByDates = transactionService.getTotalAmountByDate(profileId, true, null, endDate, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+        val statisticsFilter = StatisticsFilterDb(toDate = endDate)
+        val transactionSumByDates = transactionService.getTotalAmountByDate(profileId, true, statisticsFilter)
         assertThat(transactionSumByDates, `is`(empty()))
 
     }
@@ -531,7 +542,8 @@ class TransactionServiceTest {
 
 
         val today = LocalDate.parse("2025-06-30")
-        val transactionSumByDates = transactionService.getTotalAmountByDate(profileId, true, null, today, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+        val statisticsFilter = StatisticsFilterDb(toDate = today)
+        val transactionSumByDates = transactionService.getTotalAmountByDate(profileId, true, statisticsFilter)
         val grandSum = transactionSumByDates.map { it.sum }.reduce { acc, bigDecimal -> acc.plus(bigDecimal) }
 
         val daysBetweenJan2AndJun30Inclusive = 180
@@ -581,7 +593,8 @@ class TransactionServiceTest {
             .commit()
 
 
-        val transactionSumByDates = transactionService.getTotalAmountByDate(profileId, true, null, null, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+        val statisticsFilter = StatisticsFilterDb(fromDate = null, toDate = null)
+        val transactionSumByDates = transactionService.getTotalAmountByDate(profileId, true, statisticsFilter)
         val grandSum = transactionSumByDates.map { it.sum }.reduce { acc, bigDecimal -> acc.plus(bigDecimal) }
 
         val daysBetweenJan2AndJan31Inclusive = 30
