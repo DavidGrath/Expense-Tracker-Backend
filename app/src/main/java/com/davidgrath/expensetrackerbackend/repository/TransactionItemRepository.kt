@@ -4,6 +4,7 @@ import com.davidgrath.expensetrackerbackend.entities.SearchFilterDb
 import com.davidgrath.expensetrackerbackend.entities.StatisticsFilterDb
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import com.davidgrath.expensetrackerbackend.entities.dtos.DateAmountSummary
+import com.davidgrath.expensetrackerbackend.entities.dtos.StatisticsTransactionItem
 import com.davidgrath.expensetrackerbackend.entities.dtos.StringFieldWithTimestamp
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionItemPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.*
@@ -51,6 +52,49 @@ open class TransactionItemRepository {
             .limit(DEFAULT_FETCH_LIMIT)
         val result = selectStep
                 .fetch().into(TransactionItemPojo::class.java)
+        LOGGER.info("Result size: {}", result.size)
+        return result
+    }
+
+    fun getAllByTransactionIds(profileId: Long, transactionIds: List<Long>): List<StatisticsTransactionItem> {
+        val selectStep = mainContext.select(
+            TRANSACTION_ITEM.PROFILE_ID,
+            TRANSACTION_ITEM.ID,
+            TRANSACTION.ID.`as`("transactionId"),
+            TRANSACTION_ITEM.AMOUNT,
+            TRANSACTION_ITEM.DESCRIPTION,
+            CATEGORY.ID.`as`("categoryId"),
+            TRANSACTION_ITEM.QUANTITY,
+            TRANSACTION_ITEM.BRAND,
+            TRANSACTION_ITEM.VARIATION,
+            TRANSACTION_ITEM.WEIGHT,
+            TRANSACTION_ITEM.WEIGHT_PREFIX,
+            TRANSACTION_ITEM.WEIGHT_UNIT,
+            TRANSACTION_ITEM.VOLUME,
+            TRANSACTION_ITEM.VOLUME_UNIT,
+            TRANSACTION_ITEM.VOLUME_PREFIX,
+            TRANSACTION_ITEM.IS_REDUCTION,
+            TRANSACTION_ITEM.IS_CHARGE,
+            DSL.field(DSL.name("lat","firstImageId"), SQLDataType.BIGINT)
+        )
+            .from(TRANSACTION_ITEM)
+            .innerJoin(TRANSACTION).on(itemToTransactionPath)
+            .innerJoin(ACCOUNT).on(accountToTransactionPath)
+            .innerJoin(CATEGORY).on(categoryToItemPath)
+            .leftJoin(
+                DSL.lateral(
+                    mainContext.select(IMAGE.ID.`as`("firstImageId")).from(IMAGE)
+                        .innerJoin(TRANSACTION_ITEM_IMAGES).on(imageToItemImagesPath)
+                        .where(itemToItemImagesPath)
+                        .orderBy(TRANSACTION_ITEM_IMAGES.SORT_KEY)
+                        .limit(1)
+                ).`as`("lat")
+            ).on(DSL.trueCondition())
+            .where(TRANSACTION.ID.`in`(transactionIds))
+            .and(TRANSACTION_ITEM.PROFILE_ID.eq(profileId))
+            .limit(DEFAULT_FETCH_LIMIT)
+        val result = selectStep
+                .fetch().into(StatisticsTransactionItem::class.java)
         LOGGER.info("Result size: {}", result.size)
         return result
     }

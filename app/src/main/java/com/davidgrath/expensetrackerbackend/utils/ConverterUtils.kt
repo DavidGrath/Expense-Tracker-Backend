@@ -76,45 +76,32 @@ fun accountWithStatsToAccountDetails(accountWithStats: AccountWithStats): Accoun
 fun accountPojoToAccount(accountPojo: AccountPojo): Account {
     return Account(accountPojo.id, accountPojo.profileId, accountPojo.currencyCode, accountPojo.name, accountPojo.isDefault?.toBoolean())
 }
-fun accountPojoToAccount(accountPojo: TransactionWithItemAndAccount): Account {
-    return Account(accountPojo.accountId, accountPojo.accountProfileId, accountPojo.accountCurrencyCode, accountPojo.accountName, accountPojo.accountIsDefault)
-}
 
 
-fun transactionWithItemToTransactionItem(transactionWithItem: TransactionWithItemAndAccount, baseUrl: Triple<String, String, Int>, images: List<ImageWithItemId>): TransactionItem {
-    val imagesApi = images.map {
-        val imageUrl = URI(baseUrl.first, null, baseUrl.second, baseUrl.third, "/files" + it.path, null, null)
-        Image(it.id, it.sizeBytes, imageUrl, it.mimeType)
-    }
-    return TransactionItem(
-        transactionWithItem.itemId, transactionWithItem.itemAmount, transactionWithItem.itemDescription, transactionWithItemToCategory(transactionWithItem),
-        transactionWithItem.itemQuantity, transactionWithItem.itemIsReduction.toBoolean(), transactionWithItem.itemBrand, transactionWithItem.itemVariation, null, null, imagesApi //TODO weight and volume
-    )
-}
 
 fun transactionItemPojoToTransactionItem(transactionItemPojo: TransactionItemPojo, baseUrl: Triple<String, String, Int>, categoryPojo: CategoryPojo, images: List<ImagePojo>): TransactionItem {
     val imagesApi = images.map {
         val imageUrl = URI(baseUrl.first, null, baseUrl.second, baseUrl.third, "/files" + it.path, null, null)
         Image(it.id, it.sizeBytes, imageUrl, it.mimeType)
     }
-    val weight: TransactionItemWeight? = if(transactionItemPojo.weight != null) {
+    val weight: TransactionItemSummaryWeight? = if(transactionItemPojo.weight != null) {
         val prefix: UnitPrefix? = if(transactionItemPojo.weightPrefix != null) {
             UnitPrefix.fromValue(transactionItemPojo.weightPrefix)
         } else {
             null
         }
-        TransactionItemWeight(transactionItemPojo.weight, WeightUnit.fromValue(transactionItemPojo.weightUnit), prefix)
+        TransactionItemSummaryWeight(transactionItemPojo.weight, WeightUnit.fromValue(transactionItemPojo.weightUnit), prefix)
     } else {
         null
     }
 
-    val volume: TransactionItemVolume? = if(transactionItemPojo.volume != null) {
+    val volume: TransactionItemSummaryVolume? = if(transactionItemPojo.volume != null) {
         val prefix: UnitPrefix? = if(transactionItemPojo.volumePrefix != null) {
             UnitPrefix.fromValue(transactionItemPojo.volumePrefix)
         } else {
             null
         }
-        TransactionItemVolume(transactionItemPojo.volume, VolumeUnit.fromValue(transactionItemPojo.volumeUnit), prefix)
+        TransactionItemSummaryVolume(transactionItemPojo.volume, VolumeUnit.fromValue(transactionItemPojo.volumeUnit), prefix)
     } else {
         null
     }
@@ -136,9 +123,6 @@ fun documentPojoToDocumentDetails(document: DocumentWithTransactionDateAndOrdina
 fun imageWithStatsToImageDetails(image: ImageWithStats, baseUrl: Triple<String, String, Int>): ImageDetails {
     val imageUrl = URI(baseUrl.first, null, baseUrl.second, baseUrl.third, "/files" + image.path, null, null)
     return ImageDetails(image.id, image.sizeBytes, imageUrl, image.mimeType, image.transactionCount, image.itemCount)
-}
-fun transactionWithItemToCategory(categoryPojo: TransactionWithItemAndAccount): Category {
-    return Category(categoryPojo.categoryId, categoryPojo.categoryName, categoryPojo.categoryIsCustom.toBoolean(), categoryPojo.categoryStringId, categoryPojo.categoryIcon)
 }
 fun categoryPojoToCategory(categoryPojo: CategoryPojo): Category {
     return Category(categoryPojo.id, categoryPojo.name, categoryPojo.isCustom.toBoolean(), categoryPojo.stringId, categoryPojo.icon)
@@ -166,23 +150,23 @@ fun transactionDraftToApiDraft(draft: TransactionDraft, baseUrl: Triple<String, 
             val imageUrl = URI(baseUrl.first, null, baseUrl.second, baseUrl.third, "/files" + it.path, null, null)
             TransactionDraftFile(it.dbId, it.sizeBytes, imageUrl, it.mimeType, null, it.sha256)
         }
-        val weight: TransactionItemWeight? = if(item.weight != null) {
+        val weight: TransactionItemSummaryWeight? = if(item.weight != null) {
             val prefix: UnitPrefix? = if(item.weightPrefix != null)  {
                 UnitPrefix.fromValue(item.weightPrefix)
             } else {
                 null
             }
-            TransactionItemWeight(item.weight, WeightUnit.fromValue(item.weightUnit), prefix)
+            TransactionItemSummaryWeight(item.weight, WeightUnit.fromValue(item.weightUnit), prefix)
         } else {
             null
         }
-        val volume: TransactionItemVolume? = if(item.volume != null) {
+        val volume: TransactionItemSummaryVolume? = if(item.volume != null) {
             val prefix: UnitPrefix? = if(item.volumePrefix != null)  {
                 UnitPrefix.fromValue(item.volumePrefix)
             } else {
                 null
             }
-            TransactionItemVolume(item.volume, VolumeUnit.fromValue(item.volumeUnit), prefix)
+            TransactionItemSummaryVolume(item.volume, VolumeUnit.fromValue(item.volumeUnit), prefix)
         } else {
             null
         }

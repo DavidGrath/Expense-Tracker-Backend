@@ -5,7 +5,17 @@ import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import com.davidgrath.expensetrackerbackend.entities.dtos.*
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionItemPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionPojo
+import com.davidgrath.expensetrackerbackend.generatedapi.model.StatisticsTransaction
 import com.davidgrath.expensetrackerbackend.generatedapi.model.SuggestionsFieldType
+import com.davidgrath.expensetrackerbackend.generatedapi.model.Transaction
+import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionItemSummary
+import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionItemSummaryVolume
+import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionItemSummaryWeight
+import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionItemVolume
+import com.davidgrath.expensetrackerbackend.generatedapi.model.TransactionItemWeight
+import com.davidgrath.expensetrackerbackend.generatedapi.model.UnitPrefix
+import com.davidgrath.expensetrackerbackend.generatedapi.model.VolumeUnit
+import com.davidgrath.expensetrackerbackend.generatedapi.model.WeightUnit
 import com.davidgrath.expensetrackerbackend.repository.*
 import com.davidgrath.expensetrackerbackend.service.exceptions.CountLimitExceededException
 import com.davidgrath.expensetrackerbackend.utils.*
@@ -31,6 +41,8 @@ class TransactionService {
     lateinit var genericRepository: GenericRepository
     @Autowired
     lateinit var timeHandler: TimeHandler
+    @Autowired
+    lateinit var imageRepository: ImageRepository
     
     fun addTransaction(profileId: Long, accountId: Long, debitOrCredit: Boolean, amount: BigDecimal, description: String, categoryId: Long, zoneId: ZoneId): Long {
         val date = ZonedDateTime.now(timeHandler.getClock())
@@ -156,19 +168,72 @@ class TransactionService {
     }*/
 
 
-    fun getTransactionsWithItems(
+    fun getTransactionBasics(
         profileId: Long,
         fromDate: LocalDate? = null, toDate: LocalDate? = null,
-        accountIds: List<Long>,
-        dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>
-    ): List<TransactionWithItemAndAccount> {
+        accountIds: List<Long>, baseUrl: Triple<String, String, Int>
+    ): List<Transaction> {
         val start = System.nanoTime()
-        val list = transactionRepository.getTransactionsWithItems(profileId, fromDate, toDate, accountIds, dates, categories, modes, sellers)
+        val transactions = transactionRepository.getTransactionBasics(profileId, fromDate, toDate, accountIds)
         val end = System.nanoTime()
         val duration = Duration.ofNanos(end - start)
         LOGGER.info("Time taken: {}", duration)
-        LOGGER.info("getTransactions: Fetched {} items", list.size)
-        return list
+        LOGGER.info("getTransactions: Fetched {} items", transactions.size)
+
+        val transactionIds = transactions.map { it.id!! }
+        val items = transactionItemRepository.getAllByTransactionIds(profileId, transactionIds)
+
+        val imageIds = items.filter { it.firstImageId != null }.map { it.firstImageId!! }.distinct()
+        val categoryIds = items.map { it.categoryId }.distinct()
+
+        val images = imageRepository.getAllByIds(profileId, imageIds).associateBy { it.id }
+        val categories = categoryRepository.getAllByIds(profileId, categoryIds).associateBy { it.id }
+        val itemsGroupedByTransactionId = items.groupBy { it.transactionId }
+        val accountIds = transactionRepository.getDistinctAccountIdsByIds(profileId, transactionIds)
+        val accounts = accountRepository.getAllByIds(profileId, accountIds)
+        val accountsGroupedByOrdinal = accounts.associateBy { it.ordinal }
+
+
+        val mapped = transactions.map { t ->
+            val items = itemsGroupedByTransactionId[t.id!!]!!.map { ti ->
+                val category = categoryPojoToCategory(categories[ti.categoryId]!!)
+                val firstImage = images[ti.firstImageId]
+                val firstImageApi = if(firstImage != null) {
+                    imagePojoToImage(firstImage, baseUrl)
+                } else {
+                    null
+                }
+                val weight: TransactionItemSummaryWeight? = if(ti.weight != null) {
+                    val prefix: UnitPrefix? = if(ti.weightPrefix != null) {
+                        UnitPrefix.fromValue(ti.weightPrefix)
+                    } else {
+                        null
+                    }
+                    TransactionItemSummaryWeight(ti.weight, WeightUnit.fromValue(ti.weightUnit), prefix)
+                } else {
+                    null
+                }
+
+                val volume: TransactionItemSummaryVolume? = if(ti.volume != null) {
+                    val prefix: UnitPrefix? = if(ti.volumePrefix != null) {
+                        UnitPrefix.fromValue(ti.volumePrefix)
+                    } else {
+                        null
+                    }
+                    TransactionItemSummaryVolume(ti.volume, VolumeUnit.fromValue(ti.volumeUnit), prefix)
+                } else {
+                    null
+                }
+                TransactionItemSummary(ti.id, ti.amount, ti.description, category, ti.quantity, ti.isReduction, ti.brand, ti.variation, weight, volume, firstImageApi)
+            }
+            val account = accountsGroupedByOrdinal[t.accountOrdinal!!]!!
+            val apiAccount = accountPojoToAccount(account)
+
+            Transaction(t.id, apiAccount, t.amount!!, t.debitOrCredit!!.toBoolean(), t.datedAt!!, t.time?.toString(), t.mode.toApiMode(), items)
+        }
+
+
+        return mapped
     }
 
     fun getItemsForTransaction(profileId: Long, transactionId: Long): List<TransactionItemPojo> {

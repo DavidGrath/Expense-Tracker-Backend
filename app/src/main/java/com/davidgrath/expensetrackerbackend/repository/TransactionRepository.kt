@@ -131,49 +131,13 @@ class TransactionRepository {
     }
 
 
-    //TODO add filter test. This is no longer a statistics method; it needs to be reworked to return a summary view
-    fun getTransactionsWithItems(
+    //TODO add filter test.
+    fun getTransactionBasics(
         profileId: Long,
         fromDate: LocalDate? = null, toDate: LocalDate? = null,
-        accountIds: List<Long>,
-        dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>
-    ): List<TransactionWithItemAndAccount> {
-        val transactionItemId = TRANSACTION_ITEM.ID.`as`("itemId")
-        var selectStep = mainContext.select(
-            TRANSACTION.ID.`as`("transactionId"),
-            TRANSACTION.AMOUNT.`as`("transactionAmount"),
-            TRANSACTION.DEBIT_OR_CREDIT.`as`("transactionDebitOrCredit"),
-            TRANSACTION.DATED_AT.`as`("transactionDatedAt"),
-            TRANSACTION.TIME.`as`("transactionTime"),
-            TRANSACTION.MODE.`as`("transactionMode"),
-            TRANSACTION.NOTE.`as`("transactionNote"),
-                (mainContext.select(DSL.count(DOCUMENT.ID)).from(DOCUMENT).where(DOCUMENT.TRANSACTION_ID.eq(TRANSACTION.ID))).asField<Int>("documentCount"),
-            ACCOUNT.ID.`as`("accountId"),
-            ACCOUNT.PROFILE_ID.`as`("accountProfileId"),
-            ACCOUNT.CURRENCY_CODE.`as`("accountCurrencyCode"),
-            ACCOUNT.NAME.`as`("accountName"),
-            ACCOUNT.IS_DEFAULT.`as`("accountIsDefault"),
-            transactionItemId,
-            (
-                    mainContext.select(DSL.count(IMAGE.ID))
-                        .from(IMAGE)
-                        .innerJoin(TRANSACTION_ITEM_IMAGES)
-                        .on(TRANSACTION_ITEM_IMAGES.IMAGE_ORDINAL.eq(IMAGE.ORDINAL).and(TRANSACTION_ITEM_IMAGES.PROFILE_ID.eq(IMAGE.PROFILE_ID)))
-                        .where(TRANSACTION_ITEM_IMAGES.TRANSACTION_ITEM_ORDINAL.eq(TRANSACTION_ITEM.ORDINAL).and(TRANSACTION_ITEM_IMAGES.TRANSACTION_ORDINAL.eq(TRANSACTION_ITEM.TRANSACTION_ORDINAL)))
-                        .asField<Int>("itemImageCount")
-                    ),
-            TRANSACTION_ITEM.DESCRIPTION.`as`("itemDescription"),
-            TRANSACTION_ITEM.AMOUNT.`as`("itemAmount"),
-            TRANSACTION_ITEM.QUANTITY.`as`("itemQuantity"),
-            TRANSACTION_ITEM.BRAND.`as`("itemBrand"),
-            TRANSACTION_ITEM.VARIATION.`as`("itemVariation"),
-            TRANSACTION_ITEM.IS_REDUCTION.`as`("itemIsReduction"), //TODO lateral join replacement
-            (mainContext.select(CATEGORY.ID).from(CATEGORY).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.PRIMARY_CATEGORY_ORDINAL.eq(CATEGORY.ORDINAL).and(TRANSACTION_ITEM.PROFILE_ID.eq(CATEGORY.PROFILE_ID))).where(TRANSACTION_ITEM.ID.eq(transactionItemId)).asField<Long>("categoryId")),
-            (mainContext.select(CATEGORY.NAME).from(CATEGORY).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.PRIMARY_CATEGORY_ORDINAL.eq(CATEGORY.ORDINAL).and(TRANSACTION_ITEM.PROFILE_ID.eq(CATEGORY.PROFILE_ID))).where(TRANSACTION_ITEM.ID.eq(transactionItemId)).asField<String>("categoryName")),
-            (mainContext.select(CATEGORY.IS_CUSTOM).from(CATEGORY).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.PRIMARY_CATEGORY_ORDINAL.eq(CATEGORY.ORDINAL).and(TRANSACTION_ITEM.PROFILE_ID.eq(CATEGORY.PROFILE_ID))).where(TRANSACTION_ITEM.ID.eq(transactionItemId)).asField<Byte>("categoryIsCustom")),
-            (mainContext.select(CATEGORY.STRING_ID).from(CATEGORY).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.PRIMARY_CATEGORY_ORDINAL.eq(CATEGORY.ORDINAL).and(TRANSACTION_ITEM.PROFILE_ID.eq(CATEGORY.PROFILE_ID))).where(TRANSACTION_ITEM.ID.eq(transactionItemId)).asField<String>("categoryStringId")),
-            (mainContext.select(CATEGORY.ICON).from(CATEGORY).innerJoin(TRANSACTION_ITEM).on(TRANSACTION_ITEM.PRIMARY_CATEGORY_ORDINAL.eq(CATEGORY.ORDINAL).and(TRANSACTION_ITEM.PROFILE_ID.eq(CATEGORY.PROFILE_ID))).where(TRANSACTION_ITEM.ID.eq(transactionItemId)).asField<String>("categoryIcon")),
-        )
+        accountIds: List<Long>
+    ): List<TransactionPojo> {
+        var selectStep = mainContext.select(TRANSACTION.asterisk())
             .from(TRANSACTION)
             .innerJoin(ACCOUNT).on(accountToTransactionPath)
             .innerJoin(TRANSACTION_ITEM).on(itemToTransactionPath)
@@ -189,21 +153,9 @@ class TransactionRepository {
         if(accountIds.isNotEmpty()) {
             selectStep = selectStep.and(ACCOUNT.ID.`in`(accountIds))
         }
-        if(dates.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.DATED_AT.`in`(dates))
-        }
-        if(categories.isNotEmpty()) {
-            selectStep = selectStep.and(CATEGORY.ID.`in`(categories))
-        }
-        if(modes.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.MODE.`in`(modes))
-        }
-        if(sellers.isNotEmpty()) {
-            selectStep = selectStep.and(SELLER.ID.`in`(sellers))
-        }
         val seekStep = selectStep.orderBy(TRANSACTION.DATED_AT, TRANSACTION.ID)
             .limit(DEFAULT_FETCH_LIMIT)
-        val result = seekStep.fetch().into(TransactionWithItemAndAccount::class.java)
+        val result = seekStep.fetch().into(TransactionPojo::class.java)
         LOGGER.info("Result size: {}", result.size)
         return result
     }

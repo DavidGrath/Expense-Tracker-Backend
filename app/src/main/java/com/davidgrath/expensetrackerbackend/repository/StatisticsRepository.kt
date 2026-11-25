@@ -158,7 +158,7 @@ class StatisticsRepository {
             TRANSACTION_ITEM.VOLUME_PREFIX,
             TRANSACTION_ITEM.IS_REDUCTION,
             TRANSACTION_ITEM.IS_CHARGE,
-            DSL.field("firstImageId", SQLDataType.BIGINT)
+            DSL.field(DSL.name("lat","firstImageId"), SQLDataType.BIGINT)
         )
             .from(TRANSACTION_ITEM)
             .innerJoin(TRANSACTION).on(itemToTransactionPath)

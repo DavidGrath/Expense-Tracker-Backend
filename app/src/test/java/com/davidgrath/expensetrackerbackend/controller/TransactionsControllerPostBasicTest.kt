@@ -254,4 +254,13 @@ class TransactionsControllerPostBasicTest {
     fun givenAccountIdExistsAndAccountIdBelongsToAnotherProfileWhenCreateTransactionThenBadRequest() {
         assertTrue(false)
     }
+
+
+    @Test
+    @Ignore("Not ready yet")
+    fun givenCategoryIdExistsAndCategoryIdBelongsToAnotherProfileWhenCreateTransactionThenNotFound() {
+        assertTrue(false)
+    }
+
+
 }

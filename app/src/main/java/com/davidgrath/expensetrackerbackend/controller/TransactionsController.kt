@@ -104,7 +104,7 @@ open class TransactionsController: TransactionsApi {
         return ResponseEntity.ok(transactionId)
     }
 
-    override fun transactionsGet(profileId: @NotNull String, accountIds: @NotNull @Valid List<Long?>, fromDate: @Valid LocalDate?, toDate: @Valid LocalDate?): ResponseEntity<List<TransactionDetails?>?>? {
+    override fun transactionsGet(profileId: @NotNull String, accountIds: @NotNull @Valid List<Long?>, fromDate: @Valid LocalDate?, toDate: @Valid LocalDate?): ResponseEntity<List<Transaction?>?>? {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal as Jwt
 
@@ -112,68 +112,14 @@ open class TransactionsController: TransactionsApi {
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
         doTheOtelThing(user.uuid!!, profile.uuid!!)
 
-        val transactions = transactionService.getTransactionsWithItems(profile.id!!, fromDate, toDate,
-            accountIds as List<Long>, emptyList(), emptyList(), emptyList(), emptyList())
-
-        val documentPojos = documentService.getDocumentsFiltered(profile.id!!, fromDate, toDate,
-            accountIds as List<Long>, emptyList(), emptyList(), emptyList(), emptyList())
-
-        val documentsMap = documentPojos.groupBy { it.transactionId }
-
-
-        val imagePojos = imageService.getImagesFiltered(profile.id!!, fromDate, toDate,
-            accountIds as List<Long>, emptyList(), emptyList(), emptyList(), emptyList())
-
-        val imagesMap = imagePojos.groupBy { it.itemId }
 
         val scheme = httpServletRequest.scheme
         val host = httpServletRequest.serverName
         val port = httpServletRequest.serverPort
         val triple = Triple(scheme, host, port)
-        val details = arrayListOf<TransactionDetails>()
 
-        val length = transactions.size
-        var items = arrayListOf<TransactionItem>()
-        //TODO Rework this to be more like StatisticsService.getStatisticsTransaction: prefer using groupBy, it looks cleaner
-        transactions.forEachIndexed { i, t ->
-
-            val account = accountPojoToAccount(t)
-
-
-            val imagePojos = imagesMap[t.itemId]?:emptyList()
-            /*val images = if(t.itemImageCount > 0) {
-                imageService.getImagesForItem(profile.id!!, t.itemId!!)
-            } else {
-                emptyList()
-            }*/
-            val images = imagePojos
-
-            items.add(transactionWithItemToTransactionItem(t, triple, images))
-
-            val mode = t.transactionMode.toApiMode()
-            /*val documentsPojo = if(t.documentCount > 0) {
-                documentService.getDocumentsByTransactionId(profile.id!!, t.transactionId!!)
-            } else {
-                emptyList()
-            }*/
-
-            val documentsPojo = documentsMap[t.transactionId]?: emptyList()
-            val documents = documentsPojo.map { documentPojoToDocument(it, triple) }
-            val time = t.transactionTime?.toString()
-            val next = i + 1
-            if(next >= length) {
-                val detail = TransactionDetails(t.transactionId, t.transactionAmount, account, items, documents, t.transactionDatedAt, time, t.transactionDebitOrCredit.toBoolean(), t.transactionNote, mode)
-                details.add(detail)
-                items = arrayListOf()
-            } else {
-                if(transactions[next].transactionId != t.transactionId) {
-                    val detail = TransactionDetails(t.transactionId, t.transactionAmount, account, items, documents, t.transactionDatedAt, time, t.transactionDebitOrCredit.toBoolean(), t.transactionNote, mode)
-                    details.add(detail)
-                    items = arrayListOf()
-                }
-            }
-        }
-        return ResponseEntity.ok(details)
+        val transactions = transactionService.getTransactionBasics(profile.id!!, fromDate, toDate, accountIds as List<Long>, triple)
+        return ResponseEntity.ok(transactions)
     }
 
 

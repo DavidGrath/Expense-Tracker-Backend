@@ -143,24 +143,24 @@ class StatisticsService {
                 } else {
                     null
                 }
-                val weight: TransactionItemWeight? = if(ti.weight != null) {
+                val weight: TransactionItemSummaryWeight? = if(ti.weight != null) {
                     val prefix: UnitPrefix? = if(ti.weightPrefix != null) {
                         UnitPrefix.fromValue(ti.weightPrefix)
                     } else {
                         null
                     }
-                    TransactionItemWeight(ti.weight, WeightUnit.fromValue(ti.weightUnit), prefix)
+                    TransactionItemSummaryWeight(ti.weight, WeightUnit.fromValue(ti.weightUnit), prefix)
                 } else {
                     null
                 }
 
-                val volume: TransactionItemVolume? = if(ti.volume != null) {
+                val volume: TransactionItemSummaryVolume? = if(ti.volume != null) {
                     val prefix: UnitPrefix? = if(ti.volumePrefix != null) {
                         UnitPrefix.fromValue(ti.volumePrefix)
                     } else {
                         null
                     }
-                    TransactionItemVolume(ti.volume, VolumeUnit.fromValue(ti.volumeUnit), prefix)
+                    TransactionItemSummaryVolume(ti.volume, VolumeUnit.fromValue(ti.volumeUnit), prefix)
                 } else {
                     null
                 }

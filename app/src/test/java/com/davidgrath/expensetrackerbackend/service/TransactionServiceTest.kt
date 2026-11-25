@@ -230,4 +230,9 @@ class TransactionServiceTest {
         assertEquals(higherFrequencyDescription, suggestions[2])
     }
 
+    /**
+     * TODO Add a test here similar to the one at [com.davidgrath.expensetrackerbackend.service.StatisticsServiceTest.getItemsTest]
+     */
+
+
 }
