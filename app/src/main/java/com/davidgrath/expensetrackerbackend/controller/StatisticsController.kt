@@ -298,9 +298,8 @@ class StatisticsController: StatisticsApi {
 
         statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
 
-        val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
-        val total = transactionService.getTopNDebitPerCategory(profile.id!!, n,statisticsFilter.from,
-            statisticsFilter.to, statisticsFilter.accounts, emptyList(), statisticsFilter.categories, modes, statisticsFilter.sellers)
+        val filterDb = statisticsFilterToStatisticsFilterDb(statisticsFilter)
+        val total = transactionService.getTopNDebitPerCategory(profile.id!!, n,filterDb)
         val mapped = total.groupBy {it.categoryId}.map { (id, t) ->
             val c = t[0]
             TotalAmountPerCategory(Category(id, c.name, c.isCustom, c.stringId, c.categoryIcon), c.sum, t.map {
@@ -324,9 +323,8 @@ class StatisticsController: StatisticsApi {
 
         statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
 
-        val modes = statisticsFilter!!.transactionModes.map { m -> m.toDbMode()?: TransactionMode.Other }
-        val total = transactionService.getTopNCreditPerCategory(profile.id!!, n,statisticsFilter.from,
-            statisticsFilter.to, statisticsFilter.accounts, emptyList(), statisticsFilter.categories, modes, statisticsFilter.sellers)
+        val filterDb = statisticsFilterToStatisticsFilterDb(statisticsFilter)
+        val total = transactionService.getTopNCreditPerCategory(profile.id!!, n,filterDb)
         val mapped = total.groupBy {it.categoryId}.map { (id, t) ->
             val c = t[0]
             TotalAmountPerCategory(Category(id, c.name, c.isCustom, c.stringId, c.categoryIcon), c.sum, t.map {

@@ -8,6 +8,7 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.*
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.DEFAULT_FETCH_LIMIT
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.FALSE_BYTE
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.TRUE_BYTE
+import com.davidgrath.expensetrackerbackend.utils.applyFilters
 import com.davidgrath.expensetrackerbackend.utils.applyFiltersNoDateRange
 import com.davidgrath.expensetrackerbackend.utils.toByte
 import org.jooq.DSLContext
@@ -369,12 +370,10 @@ class TransactionRepository {
     }
 
 
-    //TODO add filter test. Consider moving all statistics methods to new class
+    //TODO Consider moving all statistics methods to new class
     fun getTopNExpensesByCategory(
         profileId: Long, debitOrCredit: Boolean, n: Int,
-        fromDate: LocalDate? = null, toDate: LocalDate? = null,
-        accountIds: List<Long>,
-        dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>
+        statisticsFilter: StatisticsFilterDb
     ): List<TopItemSumByCategory> {
 
         val window = DSL.partitionBy(TRANSACTION_ITEM.PRIMARY_CATEGORY_ORDINAL, TRANSACTION_ITEM.PROFILE_ID).orderBy(TRANSACTION_ITEM.AMOUNT.desc())
@@ -395,30 +394,11 @@ class TransactionRepository {
             .innerJoin(TRANSACTION).on(itemToTransactionPath)
             .innerJoin(ACCOUNT).on(accountToTransactionPath)
             .leftJoin(SELLER).on(sellerToTransactionPath)
+            .leftJoin(SELLER_LOCATION).on(transactionToSellerLocationPath)
             .where(ACCOUNT.PROFILE_ID.eq(profileId)) //TODO Try replacing this specific clause with noCondition, it should yield the same because of the rework
-            .and(TRANSACTION.DEBIT_OR_CREDIT.eq(debitOrCredit.toByte()))
-        if(fromDate != null) {
-            selectStep = selectStep.and(TRANSACTION.DATED_AT.greaterOrEqual(fromDate))
-        }
-        if(toDate != null) {
-            selectStep = selectStep.and(TRANSACTION.DATED_AT.lessOrEqual(toDate))
-        }
-        if(accountIds.isNotEmpty()) {
-            selectStep = selectStep.and(ACCOUNT.ID.`in`(accountIds))
-        }
-        if(dates.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.DATED_AT.`in`(dates))
-        }
-        if(categories.isNotEmpty()) {
-            selectStep = selectStep.and(CATEGORY.ID.`in`(categories))
+            .and(TRANSACTION.DEBIT_OR_CREDIT.eq(debitOrCredit.toByte())) //TODO Factor reductions
 
-        }
-        if(modes.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.MODE.`in`(modes))
-        }
-        if(sellers.isNotEmpty()) {
-            selectStep = selectStep.and(SELLER.ID.`in`(sellers))
-        }
+        selectStep = applyFilters(selectStep, statisticsFilter)
 
         val seekStep = selectStep
             .orderBy(sum.desc())

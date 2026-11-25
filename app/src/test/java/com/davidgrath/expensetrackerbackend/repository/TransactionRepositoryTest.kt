@@ -218,7 +218,8 @@ class TransactionRepositoryTest {
             .atDate(fifthTransactionDate)
             .commit()
 
-        val sums = transactionRepository.getTopNExpensesByCategory(profile!!.id!!, true, 3, firstTransactionDate, null, emptyList(), emptyList(), emptyList() , emptyList(),  emptyList())
+        val statisticsFilter = StatisticsFilterDb(fromDate = firstTransactionDate)
+        val sums = transactionRepository.getTopNExpensesByCategory(profile!!.id!!, true, 3, statisticsFilter)
         val firstSum = sums[0]
         val thirdSum = sums[2]
 

@@ -180,18 +180,14 @@ class TransactionService {
     }
 
 
-    fun getTopNDebitPerCategory(profileId: Long, n: Int, fromDate: LocalDate?, toDate: LocalDate?,
-                                accountIds: List<Long>,
-                                dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>): List<TopItemSumByCategory> {
-        val list = transactionRepository.getTopNExpensesByCategory(profileId, true, n, fromDate, toDate, accountIds, dates, categories, modes, sellers)
+    fun getTopNDebitPerCategory(profileId: Long, n: Int, filterDb: StatisticsFilterDb): List<TopItemSumByCategory> {
+        val list = transactionRepository.getTopNExpensesByCategory(profileId, true, n, filterDb)
         LOGGER.info("List size: {}", list.size)
         return list
     }
 
-    fun getTopNCreditPerCategory(profileId: Long, n: Int, fromDate: LocalDate?, toDate: LocalDate?,
-                                accountIds: List<Long>,
-                                dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>): List<TopItemSumByCategory> {
-        val list = transactionRepository.getTopNExpensesByCategory(profileId, false, n, fromDate, toDate, accountIds, dates, categories, modes, sellers)
+    fun getTopNCreditPerCategory(profileId: Long, n: Int, filterDb: StatisticsFilterDb): List<TopItemSumByCategory> {
+        val list = transactionRepository.getTopNExpensesByCategory(profileId, false, n, filterDb)
         LOGGER.info("List size: {}", list.size)
         return list
     }
