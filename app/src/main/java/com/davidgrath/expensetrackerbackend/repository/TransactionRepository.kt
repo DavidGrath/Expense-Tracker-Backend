@@ -368,69 +368,6 @@ class TransactionRepository {
         return result
     }
 
-    fun getTransactionCumSumByDateRecursive(
-        profileId: Long, debitOrCredit: Boolean,
-        fromDate: LocalDate, toDate: LocalDate,
-        statisticsFilter: StatisticsFilterDb
-    ): List<DateAmountSummary> {
-
-        val aggregateDate = TRANSACTION.DATED_AT.`as`("aggregateDate")
-        val recursive = mainContext
-            .withRecursive(
-                DSL.name("date_sequence").fields("d")
-                .`as`(
-                    DSL
-                        .select(DSL.localDate(fromDate!!))
-                        .unionAll(
-                            DSL.select(DSL.localDateAdd(DSL.field("d", SQLDataType.LOCALDATE), 1, DatePart.DAY) )
-                                .from(DSL.table(DSL.name("date_sequence")))
-                                .where(DSL.localDateAdd(DSL.field("d", SQLDataType.LOCALDATE), 1, DatePart.DAY).lessOrEqual(toDate!!))
-                        )
-                )
-            )
-            .with(
-                DSL.name("main_query")
-                    .`as`(
-                        applyFiltersNoDateRange(
-                        mainContext.select(aggregateDate, DSL.sum(TRANSACTION_ITEM.AMOUNT).`as`("sum"))
-                            .from(TRANSACTION_ITEM)
-                            .innerJoin(TRANSACTION).on(itemToTransactionPath)
-                            .innerJoin(ACCOUNT).on(accountToTransactionPath)
-                            .innerJoin(CATEGORY).on(categoryToItemPath)
-                            .leftJoin(SELLER).on(sellerToTransactionPath)
-                            .leftJoin(SELLER_LOCATION).on(transactionToSellerLocationPath)
-                            .where(ACCOUNT.PROFILE_ID.eq(profileId))
-                            .and(TRANSACTION.DEBIT_OR_CREDIT.eq(debitOrCredit.toByte()))
-                            .and(TRANSACTION.DATED_AT.greaterOrEqual(fromDate))
-                            .and(TRANSACTION.DATED_AT.lessOrEqual(toDate))
-                        , statisticsFilter
-                        )
-                            .groupBy(aggregateDate)
-                            .orderBy(aggregateDate)
-                    )
-            )
-            .with(DSL.name("joined_sums")
-                .`as`(
-                    mainContext.select(
-                        DSL.field(DSL.name("date_sequence","d"))!!.`as`("aggregateDate"),
-                        DSL.ifnull(DSL.field(DSL.name("main_query", "sum")), BigDecimal.ZERO).`as`("aggregateAmount")
-                    )
-                        .from(DSL.table("date_sequence"))
-                        .leftJoin(DSL.table("main_query"))
-                        .on(DSL.field(DSL.name("main_query", "aggregateDate"), SQLDataType.LOCALDATE)!!.eq(DSL.field(DSL.name("date_sequence", "d"), SQLDataType.LOCALDATE))
-                ))
-            )
-            .select(
-                DSL.field(DSL.name("joined_sums", "aggregateDate"), SQLDataType.LOCALDATE),
-                DSL.sum(DSL.field("aggregateAmount", SQLDataType.DECIMAL)).over(DSL.orderBy(DSL.field("aggregateDate")).rangeBetweenUnboundedPreceding().andCurrentRow()).`as`("sum")
-            )
-            .from(DSL.table("joined_sums"))
-            .orderBy(DSL.field("aggregateDate"))
-
-        val result = recursive.fetch().into(DateAmountSummary::class.java)
-        LOGGER.info("Result size: {}", result.size)
-        return result
-    }
 
     //TODO add filter test. Consider moving all statistics methods to new class
     fun getTopNExpensesByCategory(

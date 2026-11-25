@@ -571,18 +571,18 @@ class StatisticsServiceTest {
         val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
         //Empty Set
         var statisticsFilter = StatisticsFilterDb(fromDate = LocalDate.parse("2025-07-01"))
-        var transactionSumByDates = transactionService.getCumSumByDate(profileId, true, statisticsFilter)
+        var transactionSumByDates = statisticsService.getCumSumByDate(profileId, true, statisticsFilter)
         assertEquals(0, transactionSumByDates.size)
 
         //Today and empty
         statisticsFilter = StatisticsFilterDb(fromDate = LocalDate.parse("2025-06-30"))
-        transactionSumByDates = transactionService.getCumSumByDate(profileId, true, statisticsFilter)
+        transactionSumByDates = statisticsService.getCumSumByDate(profileId, true, statisticsFilter)
         assertEquals(1, transactionSumByDates.size)
         assertEqualsBD(BigDecimal.ZERO, transactionSumByDates.first().sum)
 
         //Multiple days and empty
         statisticsFilter = StatisticsFilterDb(fromDate = LocalDate.parse("2025-06-01"))
-        transactionSumByDates = transactionService.getCumSumByDate(profileId, true, statisticsFilter)
+        transactionSumByDates = statisticsService.getCumSumByDate(profileId, true, statisticsFilter)
         val daysInJune = 30
         statisticsFilter = StatisticsFilterDb(fromDate = LocalDate.parse("2025-06-01"))
         var regularSumByDates = statisticsService.getTotalAmountByDate(profileId, true, statisticsFilter)
@@ -603,7 +603,7 @@ class StatisticsServiceTest {
 
         //Just 1 transaction
         statisticsFilter = StatisticsFilterDb(fromDate = LocalDate.parse("2025-01-02"))
-        transactionSumByDates = transactionService.getCumSumByDate(profileId, true, statisticsFilter)
+        transactionSumByDates = statisticsService.getCumSumByDate(profileId, true, statisticsFilter)
 //        val daysBetweenJan2AndJun30Inclusive = 180 //This behaviour is no longer valid based on the decision table GTT. CumSum is effectively a copy of this function. TODO Write the appropriate tests
 //        assertEquals(daysBetweenJan2AndJun30Inclusive, transactionSumByDates.size)
         assertEquals(1, transactionSumByDates.size)
@@ -623,7 +623,7 @@ class StatisticsServiceTest {
 
 
         statisticsFilter = StatisticsFilterDb(fromDate = LocalDate.parse("2025-01-02"))
-        transactionSumByDates = transactionService.getCumSumByDate(profileId, true, statisticsFilter)
+        transactionSumByDates = statisticsService.getCumSumByDate(profileId, true, statisticsFilter)
         val sum1 = transactionSumByDates.find { it.aggregateDate == firstTransactionDate }!!
         var missingSum1 = transactionSumByDates.find { it.aggregateDate == LocalDate.parse("2025-01-03") }!!
         val missingSum2 = transactionSumByDates.find { it.aggregateDate == LocalDate.parse("2025-01-08") }!!
@@ -634,7 +634,7 @@ class StatisticsServiceTest {
 //        assertEqualsBD(BigDecimal(1610), missingSum3.sum)
 
         statisticsFilter = StatisticsFilterDb(fromDate = firstTransactionDate, toDate = thirdTransactionDate)
-        transactionSumByDates = transactionService.getCumSumByDate(profileId, true, statisticsFilter)
+        transactionSumByDates = statisticsService.getCumSumByDate(profileId, true, statisticsFilter)
         val daysBetweenFirstAndThirdTransactionInclusive = 6
         statisticsFilter = StatisticsFilterDb(fromDate = firstTransactionDate, toDate = thirdTransactionDate)
         regularSumByDates = statisticsService.getTotalAmountByDate(profileId, true, statisticsFilter)

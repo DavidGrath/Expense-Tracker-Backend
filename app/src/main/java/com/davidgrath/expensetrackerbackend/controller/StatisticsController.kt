@@ -258,7 +258,7 @@ class StatisticsController: StatisticsApi {
 
 
         val filterDb = statisticsFilterToStatisticsFilterDb(statisticsFilter)
-        val total = transactionService.getCumSumByDate(profile.id!!, true, filterDb)
+        val total = statisticsService.getCumSumByDate(profile.id!!, true, filterDb)
         val mapped = total.map { TotalAmountByDate(it.aggregateDate, it.sum) }
         return ResponseEntity.ok(mapped)
     }
@@ -277,7 +277,7 @@ class StatisticsController: StatisticsApi {
         statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
 
         val filterDb = statisticsFilterToStatisticsFilterDb(statisticsFilter)
-        val total = transactionService.getCumSumByDate(profile.id!!, false, filterDb)
+        val total = statisticsService.getCumSumByDate(profile.id!!, false, filterDb)
         val mapped = total.map { TotalAmountByDate(it.aggregateDate, it.sum) }
         return ResponseEntity.ok(mapped)
     }

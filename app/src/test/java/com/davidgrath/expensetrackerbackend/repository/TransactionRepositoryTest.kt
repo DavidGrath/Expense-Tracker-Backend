@@ -178,53 +178,6 @@ class TransactionRepositoryTest {
         assertNull(earliestDateEmptyAccount)
     }
 
-    @Test
-    fun cumSumByDateTest() {
-
-        val folder = Files.createTempDirectory("temp").toFile()
-        folder.deleteOnExit()
-
-        val firstTransactionDate = LocalDate.parse("2025-01-01")
-        val secondTransactionDate = LocalDate.parse("2025-01-02")
-        val thirdTransactionDate = LocalDate.parse("2025-01-04")
-        val fourthTransactionDate = LocalDate.parse("2025-01-04")
-        val fifthTransactionDate = LocalDate.parse("2025-01-05")
-
-        val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
-        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)
-
-        val dataBuilder = DataBuilder(folder, timeHandler, null, Constants.DEFAULT_PROFILE_ID, testUtilComponent)
-        dataBuilder.createTransaction()
-            .withItem("Description", "miscellaneous", BigDecimal(110.00))
-            .atDate(firstTransactionDate)
-            .commit()
-        dataBuilder.createTransaction()
-            .withItem("Description", "miscellaneous", BigDecimal(300.00))
-            .atDate(secondTransactionDate)
-            .commit()
-        dataBuilder.createTransaction()
-            .withItem("Description", "miscellaneous", BigDecimal(450.00))
-            .atDate(thirdTransactionDate)
-            .commit()
-        dataBuilder.createTransaction()
-            .withItem("Description", "miscellaneous", BigDecimal(750.00))
-            .atDate(fourthTransactionDate)
-            .commit()
-        dataBuilder.createTransaction()
-            .withItem("Description", "miscellaneous", BigDecimal(1_000.00))
-            .atDate(fifthTransactionDate)
-            .commit()
-
-        val sums = transactionRepository.getTransactionCumSumByDateRecursive(profile!!.id!!, true, firstTransactionDate, fifthTransactionDate, StatisticsFilterDb())
-        val firstSum = sums.find { it.aggregateDate.compareTo(firstTransactionDate) == 0 }!!
-        val secondSum = sums.find { it.aggregateDate.compareTo(secondTransactionDate) == 0 }!!
-        val thirdSum = sums.find { it.aggregateDate.compareTo(thirdTransactionDate) == 0 }!!
-        assertEquals(5, sums.size)
-        assertEqualsBD(BigDecimal(110.00), firstSum.sum)
-        assertEqualsBD(BigDecimal(410.00), secondSum.sum)
-        assertEqualsBD(BigDecimal(1610.00), thirdSum.sum)
-    }
 
     @Test
     fun topNExpensesPerCategoryTest() {

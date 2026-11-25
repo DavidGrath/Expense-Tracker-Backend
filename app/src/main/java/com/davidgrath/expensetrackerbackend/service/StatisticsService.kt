@@ -253,6 +253,58 @@ class StatisticsService {
 
     }
 
+    fun getCumSumByDate(
+        profileId: Long, debitOrCredit: Boolean, filter: StatisticsFilterDb
+    ): List<DateAmountSummary> {
+        val today = LocalDate.now(timeHandler.getClock())
+        if(filter.fromDate != null && filter.fromDate.compareTo(today) > 0) {
+            LOGGER.info("getCumSumByDate: fromDate in future. Returning empty list")
+            return emptyList()
+        }
+
+        var adjustedFromDate: LocalDate?
+        if(filter.fromDate != null) {
+            adjustedFromDate = filter.fromDate
+            LOGGER.info("getCumSumByDate: adjustedFromDate set to fromDate")
+        } else {
+            val minDate = transactionItemRepository.getEarliestItemTransactionDate(profileId, debitOrCredit , today, filter)
+            adjustedFromDate = minDate
+        }
+
+        val adjustedToDate = if(filter.toDate == null) {
+            val maxDate = transactionItemRepository.getLatestItemTransactionDate(profileId, debitOrCredit , today, filter)
+            LOGGER.debug("Max Date: {}", maxDate)
+            if(maxDate == null) {
+                today
+            } else {
+                if(maxDate.compareTo(today) > 0) {
+                    LOGGER.info("getCumSumByDate: maxDate found is greater than current date. Value clamped")
+                    today
+                } else {
+                    maxDate
+                }
+            }
+        } else if(filter.toDate.compareTo(today) > 0) {
+            LOGGER.info("getCumSumByDate: toDate greater than current date. Value clamped")
+            today
+        } else {
+            filter.toDate
+        }
+
+        LOGGER.debug("Pair: {}", adjustedFromDate to adjustedToDate)
+        if(adjustedFromDate == null || adjustedToDate == null) {
+            LOGGER.info("getCumSumByDate: Returning empty list because adjusted date is null")
+            return emptyList()
+        }
+
+        val summary =
+            statisticsRepository.getTransactionCumSumByDateRecursive(profileId, debitOrCredit,
+                adjustedFromDate, adjustedToDate, filter)
+
+        LOGGER.info("getCumSumByDate: Result count: {}", summary.size)
+        return summary
+    }
+
     companion object {
         private val LOGGER = LoggerFactory.getLogger(StatisticsService::class.java)
     }
