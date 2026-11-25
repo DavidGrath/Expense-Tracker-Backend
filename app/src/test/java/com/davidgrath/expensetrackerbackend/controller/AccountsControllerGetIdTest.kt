@@ -76,8 +76,7 @@ class AccountsControllerGetIdTest {
     val verb = HttpMethod.GET
 
     @Test
-//    fun accountGetByIdOkTest() { //TODO Rename to this
-    fun getAccountHappyPathTest() {
+    fun accountGetByIdOkTest() {
         val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
         val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
 

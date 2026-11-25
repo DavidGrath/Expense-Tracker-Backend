@@ -12,6 +12,7 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.TRA
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.DEFAULT_FETCH_LIMIT
 import org.jooq.DSLContext
 import org.jooq.impl.DSL
+import org.jooq.impl.SQLDataType
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Repository
@@ -87,25 +88,42 @@ open class ImageRepository {
     }
 
     fun findAll(profileId: Long): List<ImageWithStats> {
+
         val selectStep = mainContext.select(
             IMAGE.ID, IMAGE.PROFILE_ID, IMAGE.SIZE_BYTES,
-            IMAGE.SHA_256, IMAGE.MIME_TYPE, IMAGE.PATH, //TODO candidate for lateral
+            IMAGE.SHA_256, IMAGE.MIME_TYPE, IMAGE.PATH,
+//            DSL.table("lat").asterisk()
             mainContext.select(
                 DSL.countDistinct(TRANSACTION.ID)
-            ).from(IMAGE)
+            ).from(IMAGE.`as`("im2"))
                 .innerJoin(TRANSACTION_ITEM_IMAGES).on(imageToItemImagesPath)
                 .innerJoin(TRANSACTION_ITEM).on(itemToItemImagesPath)
                 .innerJoin(TRANSACTION).on(itemToTransactionPath) //TODO Candidate for reworking into a single join clause
-                .where(IMAGE.PROFILE_ID.eq(profileId)).asField<Long>("transactionCount"),
+                .where(imageToItemImagesPath)
+                .and(IMAGE.`as`("im2").ID.eq(IMAGE.ID))
+                .asField<Long>("transactionCount"),
             mainContext.select(
                 DSL.count(TRANSACTION_ITEM.ID)
-            ).from(IMAGE)
+            ).from(IMAGE.`as`("im2"))
                 .innerJoin(TRANSACTION_ITEM_IMAGES).on(imageToItemImagesPath)
-                .innerJoin(TRANSACTION_ITEM).on(itemToItemImagesPath)
-                .innerJoin(TRANSACTION).on(itemToTransactionPath) //TODO Candidate for reworking into a single join clause
-                .where(IMAGE.PROFILE_ID.eq(profileId)).asField<Long>("itemCount")
+                .innerJoin(TRANSACTION_ITEM).on(itemToItemImagesPath) //TODO Candidate for reworking into a single join clause
+                .where(imageToItemImagesPath)
+                .and(IMAGE.`as`("im2").ID.eq(IMAGE.ID))
+                .asField<Long>("itemCount")
         )
             .from(IMAGE)
+//            .innerJoin(
+//                DSL.lateral(
+//                    DSL.select(
+//                        DSL.countDistinct(TRANSACTION.ID).`as`("transactionCount"),
+//                        DSL.count(TRANSACTION_ITEM.ID).`as`("itemCount"),
+//                    )
+//                        .from(TRANSACTION_ITEM_IMAGES)
+//                        .innerJoin(TRANSACTION_ITEM).on(itemToItemImagesPath)
+//                        .innerJoin(TRANSACTION).on(itemToTransactionPath)
+//                        .where(imageToItemImagesPath)
+//                ).`as`("lat")
+//            ).on(DSL.trueCondition())
             .where(IMAGE.PROFILE_ID.eq(profileId))
             .limit(DEFAULT_FETCH_LIMIT)
         val result = selectStep.fetch().into(ImageWithStats::class.java)

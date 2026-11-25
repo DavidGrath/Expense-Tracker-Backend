@@ -170,7 +170,7 @@ class AccountsController: AccountsApi {
         val profile = profileService.getByUserIdAndUuid(user!!.id!!, profileId!!)!!
         doTheOtelThing(user.uuid!!, profile.uuid!!)
 
-//        validateAccountOwnership(user.id!!, profile.id!!, id) //TODO IDor tests
+        validateAccountOwnership(user.id!!, profile.id!!, id) //TODO IDor tests
         val currency = try {
             Currency.getInstance(accountCurrencyUpdateRequest!!.currencyCode)
         } catch (e: IllegalArgumentException) {

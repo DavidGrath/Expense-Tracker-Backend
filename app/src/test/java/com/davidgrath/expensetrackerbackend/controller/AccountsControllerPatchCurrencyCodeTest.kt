@@ -161,14 +161,36 @@ class AccountsControllerPatchCurrencyCodeTest {
 
     @Test
     @Ignore
-    fun givenAccountNotExistOrNotForUserWhenPatchCurrencyCodeThenNotFound() {
+    fun givenAccountNotForProfileWhenPatchCurrencyCodeThenNotFound() {
         assertTrue(false)
     }
 
     @Test
-    @Ignore
-    fun givenAccountNotForProfileWhenPatchCurrencyCodeThenNotFound() {
-        assertTrue(false)
+    fun givenAccountNotExistOrNotForUserWhenPatchCurrencyCodeThenNotFound() {
+        val jws = createBearerToken("username", jwtSigningKey!!, JWT_ALG, timeHandler)
+
+        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)!!
+
+
+        val nonExistentId = -1
+        val newCode = "GBP"
+        val updateRequest = AccountCurrencyUpdateRequest(newCode)
+        var json: String = objectWriter.writeValueAsString(updateRequest)
+        var response = mockMvc
+            .perform(
+                MockMvcRequestBuilders.patch("/accounts/{id}/currencyCode", nonExistentId)
+                    .header("Authorization", "Bearer ${jws}")
+                    .header("Profile-Id", bytesToUUID(profile.uuid!!))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(json)
+            )
+            .andExpectAll(
+                MockMvcResultMatchers.status().isNotFound,
+                MockMvcResultMatchers.jsonPath(
+                    "$.${Constants.CUSTOM_PROBLEM_DETAILS_ATTRIBUTE_ERROR_CODE}", Matchers.equalTo(ErrorCode.ENTITY_NOT_FOUND.code)
+                )
+            ).andReturn()
     }
 
 }

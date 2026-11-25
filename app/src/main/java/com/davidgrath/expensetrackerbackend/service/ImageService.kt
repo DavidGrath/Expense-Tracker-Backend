@@ -42,7 +42,10 @@ class ImageService {
         return images
     }
 
-    //TODO Generic ownership check framework
+    /**
+     * TODO Generic ownership check framework: Rough draft: it's similar to what's already present in [StatisticsService.validateFilter],
+     *  but it takes an enum with the entity type, and then forwards the request to the appropriate repositories before doing set subtraction
+     */
     fun isImageForProfile(profileId: Long, imageId: Long): Boolean {
         val image = imageRepository.findByProfileIdAndId(profileId, imageId)
         val value = image != null
