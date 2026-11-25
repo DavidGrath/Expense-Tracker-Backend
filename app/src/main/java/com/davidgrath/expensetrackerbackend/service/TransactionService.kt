@@ -180,19 +180,6 @@ class TransactionService {
     }
 
 
-    fun getTopNDebitPerCategory(profileId: Long, n: Int, filterDb: StatisticsFilterDb): List<TopItemSumByCategory> {
-        val list = transactionRepository.getTopNExpensesByCategory(profileId, true, n, filterDb)
-        LOGGER.info("List size: {}", list.size)
-        return list
-    }
-
-    fun getTopNCreditPerCategory(profileId: Long, n: Int, filterDb: StatisticsFilterDb): List<TopItemSumByCategory> {
-        val list = transactionRepository.getTopNExpensesByCategory(profileId, false, n, filterDb)
-        LOGGER.info("List size: {}", list.size)
-        return list
-    }
-
-
 
     fun getEarliestDate(profileId: Long, accountIds: List<Long>): LocalDate? {
         return transactionRepository.getEarliestTransactionDate(profileId, accountIds)

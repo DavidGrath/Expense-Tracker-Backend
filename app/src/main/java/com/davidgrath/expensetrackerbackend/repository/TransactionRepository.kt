@@ -369,44 +369,6 @@ class TransactionRepository {
         return result
     }
 
-
-    //TODO Consider moving all statistics methods to new class
-    fun getTopNExpensesByCategory(
-        profileId: Long, debitOrCredit: Boolean, n: Int,
-        statisticsFilter: StatisticsFilterDb
-    ): List<TopItemSumByCategory> {
-
-        val window = DSL.partitionBy(TRANSACTION_ITEM.PRIMARY_CATEGORY_ORDINAL, TRANSACTION_ITEM.PROFILE_ID).orderBy(TRANSACTION_ITEM.AMOUNT.desc())
-            .rowsBetweenUnboundedPreceding().andUnboundedFollowing()
-        val sum = DSL.sum(TRANSACTION_ITEM.AMOUNT).over(window).`as`("sum")
-
-        val rank = DSL.denseRank().over(window).`as`("denseRank")
-        var selectStep = mainContext.select(
-            TRANSACTION_ITEM.ID.`as`("itemId"),TRANSACTION_ITEM.DESCRIPTION.`as`("itemDescription"),
-            TRANSACTION_ITEM.AMOUNT.`as`("itemAmount"), rank,
-            CATEGORY.ID.`as`("categoryId"),
-            CATEGORY.STRING_ID, CATEGORY.IS_CUSTOM, CATEGORY.NAME,
-            sum,
-            CATEGORY.ICON.`as`("categoryIcon")
-        )
-            .from(TRANSACTION_ITEM)
-            .innerJoin(CATEGORY).on(categoryToItemPath)
-            .innerJoin(TRANSACTION).on(itemToTransactionPath)
-            .innerJoin(ACCOUNT).on(accountToTransactionPath)
-            .leftJoin(SELLER).on(sellerToTransactionPath)
-            .leftJoin(SELLER_LOCATION).on(transactionToSellerLocationPath)
-            .where(ACCOUNT.PROFILE_ID.eq(profileId)) //TODO Try replacing this specific clause with noCondition, it should yield the same because of the rework
-            .and(TRANSACTION.DEBIT_OR_CREDIT.eq(debitOrCredit.toByte())) //TODO Factor reductions
-
-        selectStep = applyFilters(selectStep, statisticsFilter)
-
-        val seekStep = selectStep
-            .orderBy(sum.desc())
-        val alias = seekStep.asTable()
-        val finalSelect = mainContext.selectFrom(alias).where(rank.lessOrEqual(n))
-        return finalSelect.fetch().into(TopItemSumByCategory::class.java)
-    }
-
     fun getAllByIds(profileId: Long, ids: List<Long>): List<TransactionPojo> {
         val selectStep = mainContext.select(TRANSACTION.asterisk())
             .from(TRANSACTION)

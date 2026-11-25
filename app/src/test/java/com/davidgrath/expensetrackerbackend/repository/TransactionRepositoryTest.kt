@@ -179,60 +179,6 @@ class TransactionRepositoryTest {
     }
 
 
-    @Test
-    fun topNExpensesPerCategoryTest() {
-        val folder = Files.createTempDirectory("temp").toFile()
-        folder.deleteOnExit()
-
-        val firstTransactionDate = LocalDate.parse("2025-01-01")
-        val secondTransactionDate = LocalDate.parse("2025-01-02")
-        val thirdTransactionDate = LocalDate.parse("2025-01-04")
-        val fourthTransactionDate = LocalDate.parse("2025-01-04")
-        val fifthTransactionDate = LocalDate.parse("2025-01-05")
-
-        val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
-        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
-        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)
-
-        val dataBuilder = DataBuilder(folder, timeHandler, null, Constants.DEFAULT_PROFILE_ID, testUtilComponent)
-        dataBuilder.createTransaction()
-            .withItem("Description", "miscellaneous", BigDecimal(110.00))
-            .atDate(firstTransactionDate)
-            .commit()
-        dataBuilder.createTransaction()
-            .withItem("Description", "miscellaneous", BigDecimal(300.00))
-            .withItem("Description 2", "miscellaneous", BigDecimal(20.00))
-            .withItem("Description 3", "miscellaneous", BigDecimal(10.00))
-            .atDate(secondTransactionDate)
-            .commit()
-        dataBuilder.createTransaction()
-            .withItem("Description", "food", BigDecimal(450.00))
-            .atDate(thirdTransactionDate)
-            .commit()
-        dataBuilder.createTransaction()
-            .withItem("Description", "miscellaneous", BigDecimal(750.00))
-            .atDate(fourthTransactionDate)
-            .commit()
-        dataBuilder.createTransaction()
-            .withItem("Description", "food", BigDecimal(1_000.00))
-            .atDate(fifthTransactionDate)
-            .commit()
-
-        val statisticsFilter = StatisticsFilterDb(fromDate = firstTransactionDate)
-        val sums = transactionRepository.getTopNExpensesByCategory(profile!!.id!!, true, 3, statisticsFilter)
-        val firstSum = sums[0]
-        val thirdSum = sums[2]
-
-        assertEquals(5, sums.size)
-        assertEquals("food", firstSum.stringId)
-        assertEqualsBD(BigDecimal(1_450), firstSum.sum)
-        assertEqualsBD(BigDecimal(1_000), firstSum.itemAmount)
-
-        assertEquals("miscellaneous", thirdSum.stringId)
-        assertEqualsBD(BigDecimal(1_190), thirdSum.sum)
-        assertEqualsBD(BigDecimal(750), thirdSum.itemAmount)
-
-    }
 
     companion object {
         private val LOGGER = LoggerFactory.getLogger(TransactionRepositoryTest::class.java)

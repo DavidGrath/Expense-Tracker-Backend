@@ -28,10 +28,7 @@ class StatisticsController: StatisticsApi {
     @Autowired
     lateinit var profileService: ProfileService
     @Autowired
-    lateinit var transactionService: TransactionService
-    @Autowired
     lateinit var statisticsService: StatisticsService
-
     @Autowired
     lateinit var httpServletRequest: HttpServletRequest
 
@@ -299,7 +296,7 @@ class StatisticsController: StatisticsApi {
         statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
 
         val filterDb = statisticsFilterToStatisticsFilterDb(statisticsFilter)
-        val total = transactionService.getTopNDebitPerCategory(profile.id!!, n,filterDb)
+        val total = statisticsService.getTopNDebitPerCategory(profile.id!!, n,filterDb)
         val mapped = total.groupBy {it.categoryId}.map { (id, t) ->
             val c = t[0]
             TotalAmountPerCategory(Category(id, c.name, c.isCustom, c.stringId, c.categoryIcon), c.sum, t.map {
@@ -324,7 +321,7 @@ class StatisticsController: StatisticsApi {
         statisticsService.validateFilter(profile.id!!, statisticsFilter!!)
 
         val filterDb = statisticsFilterToStatisticsFilterDb(statisticsFilter)
-        val total = transactionService.getTopNCreditPerCategory(profile.id!!, n,filterDb)
+        val total = statisticsService.getTopNCreditPerCategory(profile.id!!, n,filterDb)
         val mapped = total.groupBy {it.categoryId}.map { (id, t) ->
             val c = t[0]
             TotalAmountPerCategory(Category(id, c.name, c.isCustom, c.stringId, c.categoryIcon), c.sum, t.map {

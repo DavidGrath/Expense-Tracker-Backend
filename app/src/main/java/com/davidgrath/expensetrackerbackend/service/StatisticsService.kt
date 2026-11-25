@@ -4,6 +4,7 @@ import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
 import com.davidgrath.expensetrackerbackend.entities.StatisticsFilterDb
 import com.davidgrath.expensetrackerbackend.entities.dtos.DateAmountSummary
 import com.davidgrath.expensetrackerbackend.entities.dtos.ItemSumByCategory
+import com.davidgrath.expensetrackerbackend.entities.dtos.TopItemSumByCategory
 import com.davidgrath.expensetrackerbackend.entities.dtos.TransactionAndItemCount
 import com.davidgrath.expensetrackerbackend.generatedapi.model.*
 import com.davidgrath.expensetrackerbackend.repository.*
@@ -303,6 +304,19 @@ class StatisticsService {
 
         LOGGER.info("getCumSumByDate: Result count: {}", summary.size)
         return summary
+    }
+
+
+    fun getTopNDebitPerCategory(profileId: Long, n: Int, filterDb: StatisticsFilterDb): List<TopItemSumByCategory> {
+        val list = statisticsRepository.getTopNExpensesByCategory(profileId, true, n, filterDb)
+        LOGGER.info("List size: {}", list.size)
+        return list
+    }
+
+    fun getTopNCreditPerCategory(profileId: Long, n: Int, filterDb: StatisticsFilterDb): List<TopItemSumByCategory> {
+        val list = statisticsRepository.getTopNExpensesByCategory(profileId, false, n, filterDb)
+        LOGGER.info("List size: {}", list.size)
+        return list
     }
 
     companion object {
