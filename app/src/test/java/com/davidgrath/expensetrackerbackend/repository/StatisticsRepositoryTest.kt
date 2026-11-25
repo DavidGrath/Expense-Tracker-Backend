@@ -18,6 +18,10 @@ import com.davidgrath.expensetrackerbackend.testutils.tempInit
 import com.davidgrath.expensetrackerbackend.utils.Constants
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.FALSE_BYTE
 import com.davidgrath.expensetrackerbackend.utils.uuidToBytes
+import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers
+import org.hamcrest.Matchers.empty
+import org.hamcrest.Matchers.`is`
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -171,7 +175,7 @@ class StatisticsRepositoryTest {
         dataBuilder.createTransaction()
             .atDate(eighthDate)
             .withItem("Paint", "household", BigDecimal(4096))
-            .withItem("Light bulb", "household", BigDecimal(8192))
+            .withItem("Light bulb", "household", BigDecimal(8192)) //This is based on Sidon sets, whose core characteristic is that no 2 elements produce the same sum. I know i'm summing more than just pairs, but the idea is to reduce the likeliness of a clash
             .withSeller(secondSellerId)
             .withNewSellerLocation("Somewhere out there")
             .withNewAccount("USD", "Test Account 6")
@@ -681,6 +685,168 @@ class StatisticsRepositoryTest {
         val statisticsFilter = StatisticsFilterDb(sellerIds = listOf(user1Seller, user2Seller))
         val count = statisticsRepository.getTransactionAndItemCount(user1ProfileId, statisticsFilter)
         assertEquals(TransactionAndItemCount(1, 1), count)
+    }
+
+    /**
+     * As of now, there are roughly 7 filter criteria with 2 additional special conditions for a total of 9 and 12 statistics endpoints. I'm not writing all 108. Instead, I'll
+     * confirm that the common method they use works well with just one test
+     */
+    @Test
+    fun applyFiltersTest() {
+        val folder = Files.createTempDirectory("temp").toFile()
+        folder.deleteOnExit()
+
+        val accountId = getDefaultAccountId(userRepository, profileRepository, accountRepository)
+        val user = userRepository.findByUuid(TestConstants.DEFAULT_USER_ID)!!
+        val profile = profileRepository.findByUuid(user.id!!, Constants.DEFAULT_PROFILE_ID)
+
+        val dataBuilder = DataBuilder(folder, timeHandler, null, Constants.DEFAULT_PROFILE_ID, testUtilComponent)
+
+
+        val fitness = categoryRepository.findByProfileIdAndStringId(profile!!.id!!, "fitness")!!
+        val food = categoryRepository.findByProfileIdAndStringId(profile.id!!, "food")!!
+        val utilities = categoryRepository.findByProfileIdAndStringId(profile.id!!, "utilities")!!
+        val transportation = categoryRepository.findByProfileIdAndStringId(profile.id!!, "transportation")!!
+        val clothing = categoryRepository.findByProfileIdAndStringId(profile.id!!, "clothing")!!
+        val healthcare = categoryRepository.findByProfileIdAndStringId(profile.id!!, "healthcare")!!
+        val household = categoryRepository.findByProfileIdAndStringId(profile.id!!, "household")!!
+
+        val firstDate = LocalDate.parse("2025-01-01") // Wednesday
+        val secondDate = LocalDate.parse("2025-01-02")
+        val thirdDate = LocalDate.parse("2025-01-03")
+        val forthDate = LocalDate.parse("2025-01-04")
+        val fifthDate = LocalDate.parse("2025-01-05")
+        val sixthDate = LocalDate.parse("2025-01-06")
+        val seventhDate = LocalDate.parse("2025-01-07")
+        val eighthDate = LocalDate.parse("2025-01-08")
+
+
+        val transactionBuilder = dataBuilder.createTransaction()
+            .atDate(firstDate)
+            .withItem("Bread", "food", BigDecimal(2))
+            .withItem("Dumbbells", "fitness", BigDecimal(4))
+            .withNewAccount("USD", "Test Account")
+        val newAccountId = transactionBuilder.getAccount().id!!
+        val id = transactionBuilder.commit().first()
+
+        val id2 = dataBuilder.createTransaction()
+            .atDate(secondDate)
+            .withItem("Hammer", "utilities", BigDecimal(8))
+            .withItem("Sweatpants", "fitness", BigDecimal(16))
+            .commit().first()
+
+        val id3 = dataBuilder.createTransaction()
+            .atDate(thirdDate)
+            .withItem("Fish", "food", BigDecimal(32))
+            .withItem("Red shirt", "clothing", BigDecimal(64))
+            .withItem("Fuel", "transportation", BigDecimal(128))
+            .commit()
+
+        dataBuilder.createTransaction()
+            .atDate(forthDate)
+            .withItem("Medicine", "healthcare", BigDecimal(256))
+            .withNewSeller("Generic Hospital")
+            .withNewAccount("USD", "Test Account 2")
+            .commit()
+
+        val firstSellerId = sellerRepository.getAllByProfileId(profile.id!!).first()!!.id!!
+
+        dataBuilder.createTransaction()
+            .atDate(fifthDate)
+            .withItem("Vitamin C", "healthcare", BigDecimal(512))
+            .withSeller(firstSellerId)
+            .withNewSellerLocation("Brand New Branch")
+            .withNewAccount("USD", "Test Account 3")
+            .commit()
+
+        dataBuilder.createTransaction()
+            .atDate(sixthDate)
+            .withItem("Bandages", "healthcare", BigDecimal(1024))
+            .withSeller(firstSellerId)
+            .withNewSellerLocation("New New Branch")
+            .withNewAccount("USD", "Test Account 4")
+            .commit()
+
+        dataBuilder.createTransaction()
+            .atDate(seventhDate)
+            .withItem("Light bulb", "household", BigDecimal(2048))
+            .withNewSeller("Generic Hardware Store")
+            .withNewAccount("USD", "Test Account 5")
+            .withMode(TransactionMode.Card)
+            .commit()
+
+
+        val secondSellerId = sellerRepository.getAllByProfileId(profile.id!!)[1].id!!
+
+        dataBuilder.createTransaction()
+            .atDate(eighthDate)
+            .withItem("Paint", "household", BigDecimal(4096))
+            .withItem("Light bulb 13W", "household", BigDecimal(8192))
+            .withSeller(secondSellerId)
+            .withNewSellerLocation("Somewhere out there")
+            .withNewAccount("USD", "Test Account 6")
+            .withMode(TransactionMode.Card)
+            .commit()
+
+        var statisticsFilter = StatisticsFilterDb()
+
+        val itemsNoFilter = statisticsRepository.getItems(profile!!.id!!, statisticsFilter).map { it.description }
+
+
+        statisticsFilter = StatisticsFilterDb(fromDate = thirdDate)
+        val itemsFilteredByFromDate = statisticsRepository.getItems(profile.id!!, statisticsFilter).map { it.description }
+        statisticsFilter = StatisticsFilterDb(toDate = sixthDate)
+        val itemsFilteredByToDate = statisticsRepository.getItems(profile.id!!, statisticsFilter).map { it.description }
+
+        val categories = listOf(food, clothing, transportation).map { it.id!! }
+        statisticsFilter = StatisticsFilterDb(categoryIds = categories)
+        val itemsFilteredByCategory = statisticsRepository.getItems(profile.id!!, statisticsFilter).map { it.description }
+
+        statisticsFilter = StatisticsFilterDb(currencyCode = Currency.getInstance("USD"))
+        val itemsFilteredByCurrency = statisticsRepository.getItems(profile.id!!, statisticsFilter).map { it.description }
+
+        statisticsFilter = StatisticsFilterDb(currencyCode = Currency.getInstance("EUR"))
+        val itemsFilteredByCurrencyNotOwnedByProfile = statisticsRepository.getItems(profile.id!!, statisticsFilter).map { it.description }
+
+        statisticsFilter = StatisticsFilterDb(currencyCode = Currency.getInstance("USD"), accountIds = listOf(newAccountId))
+        val itemsFilteredByCurrencyWithOverlappingAccounts = statisticsRepository.getItems(profile.id!!, statisticsFilter).map { it.description }
+
+        statisticsFilter = StatisticsFilterDb(accountIds = listOf(accountId))
+        val itemsFilteredByAccount = statisticsRepository.getItems(profile.id!!, statisticsFilter).map { it.description }
+
+        statisticsFilter = StatisticsFilterDb(weekDays = listOf(DayOfWeek.WEDNESDAY))
+        val itemsFilteredByWeekday = statisticsRepository.getItems(profile.id!!, statisticsFilter).map { it.description }
+        statisticsFilter = StatisticsFilterDb(transactionModes = listOf(TransactionMode.Card))
+        val itemsFilteredByMode = statisticsRepository.getItems(profile.id!!, statisticsFilter).map { it.description }
+        val firstSellerFirstLocationId = sellerLocationRepository.getByProfileIdAndSellerId(profile.id!!, firstSellerId).first().id!!
+        val firstSellerSecondLocationId = sellerLocationRepository.getByProfileIdAndSellerId(profile.id!!, firstSellerId)[1].id!!
+
+        val secondSellerLocationId =  sellerLocationRepository.getByProfileIdAndSellerId(profile.id!!, secondSellerId).first().id!!
+        statisticsFilter = StatisticsFilterDb(sellerIds = listOf(firstSellerId))
+        val itemsFilteredBySeller = statisticsRepository.getItems(profile.id!!, statisticsFilter).map { it.description }
+
+        statisticsFilter = StatisticsFilterDb(sellerIds = listOf(firstSellerId), sellerLocationIds = listOf(firstSellerSecondLocationId, secondSellerLocationId))
+        val itemsFilteredBySellerWithOverlappingLocations = statisticsRepository.getItems(profile.id!!, statisticsFilter).map { it.description }
+
+        statisticsFilter = StatisticsFilterDb(sellerLocationIds = listOf(firstSellerFirstLocationId, secondSellerLocationId))
+        val itemsFilteredByLocation = statisticsRepository.getItems(profile.id!!, statisticsFilter).map { it.description }
+
+
+        assertThat(itemsNoFilter, Matchers.containsInAnyOrder("Bread","Dumbbells","Hammer","Sweatpants","Fish","Red shirt","Fuel","Medicine","Vitamin C","Bandages","Light bulb","Paint","Light bulb 13W"))
+        assertThat(itemsFilteredByFromDate, Matchers.containsInAnyOrder("Fish","Red shirt","Fuel","Medicine","Vitamin C","Bandages","Light bulb","Paint","Light bulb 13W"))
+        assertThat(itemsFilteredByToDate, Matchers.containsInAnyOrder("Bread","Dumbbells","Hammer","Sweatpants","Fish","Red shirt","Fuel","Medicine","Vitamin C","Bandages"))
+        assertThat(itemsFilteredByCategory, Matchers.containsInAnyOrder("Bread","Fish","Red shirt","Fuel"))
+        assertThat(itemsFilteredByWeekday, Matchers.containsInAnyOrder("Bread","Dumbbells","Paint","Light bulb 13W"))
+        assertThat(itemsFilteredByCurrency, Matchers.containsInAnyOrder("Bread","Dumbbells","Hammer","Sweatpants","Fish","Red shirt","Fuel","Medicine","Vitamin C","Bandages","Light bulb","Paint","Light bulb 13W"))
+        assertThat(itemsFilteredByAccount, Matchers.containsInAnyOrder("Hammer","Sweatpants","Fish","Red shirt","Fuel"))
+        assertThat(itemsFilteredByMode, Matchers.containsInAnyOrder("Light bulb","Paint","Light bulb 13W"))
+        assertThat(itemsFilteredBySeller, Matchers.containsInAnyOrder("Medicine","Vitamin C","Bandages"))
+        assertThat(itemsFilteredByLocation, Matchers.containsInAnyOrder("Vitamin C","Paint","Light bulb 13W"))
+
+
+        assertThat(itemsFilteredByCurrencyWithOverlappingAccounts, Matchers.containsInAnyOrder("Bread","Dumbbells","Hammer","Sweatpants","Fish","Red shirt","Fuel","Medicine","Vitamin C","Bandages","Light bulb","Paint","Light bulb 13W"))
+        assertThat(itemsFilteredBySellerWithOverlappingLocations, Matchers.containsInAnyOrder("Medicine","Vitamin C","Bandages","Paint","Light bulb 13W"))
+        assertThat(itemsFilteredByCurrencyNotOwnedByProfile, `is`(empty()))
     }
 
     companion object {

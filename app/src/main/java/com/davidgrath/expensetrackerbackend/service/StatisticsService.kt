@@ -202,7 +202,7 @@ class StatisticsService {
         profileId: Long, debitOrCredit: Boolean, filter: StatisticsFilterDb
     ): List<DateAmountSummary> {
         //TODO Add a test here and at the controller layer to ensure fromDate?>toDate? is an invalid request
-        //TODO validate filter; move to statisticsService
+        //TODO validate filter
         val today = LocalDate.now(timeHandler.getClock())
         if(filter.fromDate != null && filter.fromDate.compareTo(today) > 0) {
             LOGGER.info("getTotalAmountByDate: fromDate in future. Returning empty list")
