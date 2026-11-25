@@ -1,6 +1,6 @@
 package com.davidgrath.expensetrackerbackend.repository
 
-import com.davidgrath.expensetrackerbackend.entities.StatisticsFilterDb
+
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import com.davidgrath.expensetrackerbackend.entities.dtos.*
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionPojo
@@ -8,8 +8,6 @@ import com.davidgrath.expensetrackerbackend.generated.jooq.tables.references.*
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.DEFAULT_FETCH_LIMIT
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.FALSE_BYTE
 import com.davidgrath.expensetrackerbackend.utils.Constants.Companion.TRUE_BYTE
-import com.davidgrath.expensetrackerbackend.utils.applyFilters
-import com.davidgrath.expensetrackerbackend.utils.applyFiltersNoDateRange
 import com.davidgrath.expensetrackerbackend.utils.toByte
 import org.jooq.DSLContext
 import org.jooq.DatePart
@@ -45,49 +43,6 @@ class TransactionRepository {
     //endregion
 
     //region Read
-
-    //TODO This method is basically useless
-    fun getTransactionSumByDate(
-        profileId: Long, debitOrCredit: Boolean,
-        fromDate: LocalDate? = null, toDate: LocalDate? = null,
-        accountIds: List<Long>,
-        dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>
-    ): List<DateAmountSummary> {
-        val aggregateDate = TRANSACTION.DATED_AT.`as`("aggregateDate")
-        var selectStep = mainContext.select(aggregateDate, DSL.sum(TRANSACTION.AMOUNT).`as`("sum")).from(TRANSACTION)
-            .innerJoin(ACCOUNT).on(accountToTransactionPath)
-            .innerJoin(TRANSACTION_ITEM).on(itemToTransactionPath)
-            .innerJoin(CATEGORY).on(categoryToItemPath)
-            .leftJoin(SELLER).on(sellerToTransactionPath)
-            .where(ACCOUNT.PROFILE_ID.eq(profileId))
-            .and(TRANSACTION.DEBIT_OR_CREDIT.eq(debitOrCredit.toByte()))
-        if(fromDate != null) {
-            selectStep = selectStep.and(TRANSACTION.DATED_AT.greaterOrEqual(fromDate))
-        }
-        if(toDate != null) {
-            selectStep = selectStep.and(TRANSACTION.DATED_AT.lessOrEqual(toDate))
-        }
-        if(accountIds.isNotEmpty()) {
-            selectStep = selectStep.and(ACCOUNT.ID.`in`(accountIds))
-        }
-        if(dates.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.DATED_AT.`in`(dates))
-        }
-        if(categories.isNotEmpty()) {
-            selectStep = selectStep.and(CATEGORY.ID.`in`(categories))
-        }
-        if(modes.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.MODE.`in`(modes))
-        }
-        if(sellers.isNotEmpty()) {
-            selectStep = selectStep.and(SELLER.ID.`in`(sellers))
-        }
-        val seekStep = selectStep.groupBy(aggregateDate).orderBy(aggregateDate)
-            .limit(DEFAULT_FETCH_LIMIT)
-        val result = seekStep.fetch().into(DateAmountSummary::class.java)
-        LOGGER.info("Result size: {}", result.size)
-        return result
-    }
 
     fun getMaxSortKeyInDayForAccount(profileId: Long, accountId: Long, date: LocalDate): Short? {
         return getMaxSortKeyInDayForAccountTrx(mainContext, profileId, accountId, date)
@@ -175,50 +130,8 @@ class TransactionRepository {
         return selectStep.fetchOne()?.into(TransactionPojo::class.java)
     }
 
-    //TODO Do I actually need this? Seems I only need it for testing. Consider moving
-    fun getTransactions(
-        profileId: Long,
-        fromDate: LocalDate? = null, toDate: LocalDate? = null,
-        accountIds: List<Long>,
-        dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>
-    ): List<TransactionPojo> {
 
-        var selectStep = mainContext.select(TRANSACTION.asterisk())
-            .from(TRANSACTION)
-            .innerJoin(ACCOUNT).on(accountToTransactionPath)
-            .innerJoin(TRANSACTION_ITEM).on(itemToTransactionPath)
-            .innerJoin(CATEGORY).on(categoryToItemPath)
-            .leftJoin(SELLER).on(sellerToTransactionPath)
-            .where(ACCOUNT.PROFILE_ID.eq(profileId)) //TODO candidate for replacement
-        if(fromDate != null) {
-            selectStep = selectStep.and(TRANSACTION.DATED_AT.greaterOrEqual(fromDate))
-        }
-        if(toDate != null) {
-            selectStep = selectStep.and(TRANSACTION.DATED_AT.lessOrEqual(toDate))
-        }
-        if(accountIds.isNotEmpty()) { //TODO AccountIds should contain at least 1 account. Verify from the frontend
-            selectStep = selectStep.and(ACCOUNT.ID.`in`(accountIds))
-        }
-        if(dates.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.DATED_AT.`in`(dates))
-        }
-        if(categories.isNotEmpty()) {
-            selectStep = selectStep.and(CATEGORY.ID.`in`(categories))
-        }
-        if(modes.isNotEmpty()) {
-            selectStep = selectStep.and(TRANSACTION.MODE.`in`(modes))
-        }
-        if(sellers.isNotEmpty()) {
-            selectStep = selectStep.and(SELLER.ID.`in`(sellers))
-        }
-        val seekStep = selectStep.orderBy(TRANSACTION.DATED_AT)
-            .limit(DEFAULT_FETCH_LIMIT)
-        val result = seekStep.fetch().into(TransactionPojo::class.java)
-        LOGGER.info("Result size: {}", result.size)
-        return result
-    }
-
-    //TODO add filter test. Consider moving all statistics methods to new class
+    //TODO add filter test. This is no longer a statistics method; it needs to be reworked to return a summary view
     fun getTransactionsWithItems(
         profileId: Long,
         fromDate: LocalDate? = null, toDate: LocalDate? = null,
@@ -314,8 +227,7 @@ class TransactionRepository {
         return selectStep.fetchOne()?.value1()
     }
 
-    //TODO add filter test. Consider moving all statistics methods to new class
-    fun getTransactionCumSumByDate(
+    /*fun getTransactionCumSumByDate(
         profileId: Long, debitOrCredit: Boolean,
         fromDate: LocalDate? = null, toDate: LocalDate? = null,
         accountIds: List<Long>,
@@ -355,6 +267,7 @@ class TransactionRepository {
         if(sellers.isNotEmpty()) {
             selectStep = selectStep.and(SELLER.ID.`in`(sellers))
         }
+        //Oh, Interesting, I must have developed this before I knew what CTEs were. Ain't that neat?
         val alias = selectStep.asTable("x")
             val selectFrom = mainContext.select(
                 alias.field("aggregateDate"),
@@ -367,7 +280,7 @@ class TransactionRepository {
         val result = seekStep.fetch().into(DateAmountSummary::class.java)
         LOGGER.info("Result size: {}", result.size)
         return result
-    }
+    }*/
 
     fun getAllByIds(profileId: Long, ids: List<Long>): List<TransactionPojo> {
         val selectStep = mainContext.select(TRANSACTION.asterisk())

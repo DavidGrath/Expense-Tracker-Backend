@@ -59,7 +59,7 @@ class TransactionDraftServiceTest {
     @Autowired
     lateinit var sellerLocationRepository: SellerLocationRepository
     @Autowired
-    lateinit var imageRepository: ImageRepository
+    lateinit var testRepository: TestRepository
     @Autowired
     lateinit var itemImagesRepository: ItemImagesRepository
     @Autowired
@@ -113,7 +113,7 @@ class TransactionDraftServiceTest {
         //Fill in all fields
         transactionDraftService.finishDraft(profileId, user.uuid!!, profile.uuid!!, ZoneId.of("UTC"))
         val account = accountRepository.getAllByProfileId(profileId).first()
-        val transactions = transactionRepository.getTransactions(profileId, null, null, listOf(account.id!!), emptyList(), emptyList(), emptyList(), emptyList())
+        val transactions = testRepository.getTransactions(profileId, null, null, listOf(account.id!!), emptyList(), emptyList(), emptyList(), emptyList())
         val transaction = transactions.first()
         val item = transactionItemRepository.getAllByTransactionId(profileId, transaction.id!!)[1]
 

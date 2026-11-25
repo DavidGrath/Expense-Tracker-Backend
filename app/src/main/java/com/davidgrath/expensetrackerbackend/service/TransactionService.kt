@@ -1,12 +1,10 @@
 package com.davidgrath.expensetrackerbackend.service
 
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
-import com.davidgrath.expensetrackerbackend.entities.StatisticsFilterDb
 import com.davidgrath.expensetrackerbackend.entities.TransactionMode
 import com.davidgrath.expensetrackerbackend.entities.dtos.*
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionItemPojo
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.TransactionPojo
-import com.davidgrath.expensetrackerbackend.generatedapi.model.StatisticsFilter
 import com.davidgrath.expensetrackerbackend.generatedapi.model.SuggestionsFieldType
 import com.davidgrath.expensetrackerbackend.repository.*
 import com.davidgrath.expensetrackerbackend.service.exceptions.CountLimitExceededException
@@ -254,7 +252,7 @@ class TransactionService {
         return sorted.map { it.second }.take(5)
     }
 
-    fun getCumSumByDateOld(
+    /*fun getCumSumByDateOld(
         profileId: Long, debitOrCredit: Boolean, fromDate: LocalDate?, toDate: LocalDate? = null,
         accountIds: List<Long>, dates: List<LocalDate>, categories: List<Long>, modes: List<TransactionMode>, sellers: List<Long>
     ): List<DateAmountSummary> {
@@ -311,7 +309,7 @@ class TransactionService {
         val filledSummary = newList.toList()
 
         return filledSummary
-    }
+    }*/
 
 
 
