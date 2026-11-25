@@ -2,6 +2,7 @@ package com.davidgrath.expensetrackerbackend.repository
 
 import com.davidgrath.expensetrackerbackend.configuration.TestRunConfiguration
 import com.davidgrath.expensetrackerbackend.configuration.TimeHandler
+import com.davidgrath.expensetrackerbackend.entities.StatisticsFilterDb
 import com.davidgrath.expensetrackerbackend.generated.jooq.tables.pojos.AccountPojo
 import com.davidgrath.expensetrackerbackend.testutils.*
 import com.davidgrath.expensetrackerbackend.utils.Constants
@@ -215,11 +216,11 @@ class TransactionRepositoryTest {
             .atDate(fifthTransactionDate)
             .commit()
 
-        val sums = transactionRepository.getTransactionCumSumByDate(profile!!.id!!, true, firstTransactionDate, null, emptyList(), emptyList(), emptyList() , emptyList(),  emptyList())
+        val sums = transactionRepository.getTransactionCumSumByDateRecursive(profile!!.id!!, true, firstTransactionDate, fifthTransactionDate, StatisticsFilterDb())
         val firstSum = sums.find { it.aggregateDate.compareTo(firstTransactionDate) == 0 }!!
         val secondSum = sums.find { it.aggregateDate.compareTo(secondTransactionDate) == 0 }!!
         val thirdSum = sums.find { it.aggregateDate.compareTo(thirdTransactionDate) == 0 }!!
-        assertEquals(4, sums.size)
+        assertEquals(5, sums.size)
         assertEqualsBD(BigDecimal(110.00), firstSum.sum)
         assertEqualsBD(BigDecimal(410.00), secondSum.sum)
         assertEqualsBD(BigDecimal(1610.00), thirdSum.sum)
