@@ -30,14 +30,6 @@ class StatisticsController: StatisticsApi {
     @Autowired
     lateinit var transactionService: TransactionService
     @Autowired
-    lateinit var accountService: AccountService
-    @Autowired
-    lateinit var categoryService: CategoryService
-    @Autowired
-    lateinit var imageService: ImageService
-    @Autowired
-    lateinit var documentService: DocumentService
-    @Autowired
     lateinit var statisticsService: StatisticsService
 
     @Autowired
