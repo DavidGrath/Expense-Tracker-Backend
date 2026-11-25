@@ -92,38 +92,21 @@ open class ImageRepository {
         val selectStep = mainContext.select(
             IMAGE.ID, IMAGE.PROFILE_ID, IMAGE.SIZE_BYTES,
             IMAGE.SHA_256, IMAGE.MIME_TYPE, IMAGE.PATH,
-//            DSL.table("lat").asterisk()
-            mainContext.select(
-                DSL.countDistinct(TRANSACTION.ID)
-            ).from(IMAGE.`as`("im2"))
-                .innerJoin(TRANSACTION_ITEM_IMAGES).on(imageToItemImagesPath)
-                .innerJoin(TRANSACTION_ITEM).on(itemToItemImagesPath)
-                .innerJoin(TRANSACTION).on(itemToTransactionPath) //TODO Candidate for reworking into a single join clause
-                .where(imageToItemImagesPath)
-                .and(IMAGE.`as`("im2").ID.eq(IMAGE.ID))
-                .asField<Long>("transactionCount"),
-            mainContext.select(
-                DSL.count(TRANSACTION_ITEM.ID)
-            ).from(IMAGE.`as`("im2"))
-                .innerJoin(TRANSACTION_ITEM_IMAGES).on(imageToItemImagesPath)
-                .innerJoin(TRANSACTION_ITEM).on(itemToItemImagesPath) //TODO Candidate for reworking into a single join clause
-                .where(imageToItemImagesPath)
-                .and(IMAGE.`as`("im2").ID.eq(IMAGE.ID))
-                .asField<Long>("itemCount")
+            DSL.table("lat").asterisk()
         )
             .from(IMAGE)
-//            .innerJoin(
-//                DSL.lateral(
-//                    DSL.select(
-//                        DSL.countDistinct(TRANSACTION.ID).`as`("transactionCount"),
-//                        DSL.count(TRANSACTION_ITEM.ID).`as`("itemCount"),
-//                    )
-//                        .from(TRANSACTION_ITEM_IMAGES)
-//                        .innerJoin(TRANSACTION_ITEM).on(itemToItemImagesPath)
-//                        .innerJoin(TRANSACTION).on(itemToTransactionPath)
-//                        .where(imageToItemImagesPath)
-//                ).`as`("lat")
-//            ).on(DSL.trueCondition())
+            .innerJoin(
+                DSL.lateral(
+                    DSL.select(
+                        DSL.countDistinct(TRANSACTION.ID).`as`("transactionCount"),
+                        DSL.count(TRANSACTION_ITEM.ID).`as`("itemCount"),
+                    )
+                        .from(TRANSACTION_ITEM_IMAGES)
+                        .innerJoin(TRANSACTION_ITEM).on(itemToItemImagesPath)
+                        .innerJoin(TRANSACTION).on(itemToTransactionPath)
+                        .where(imageToItemImagesPath)
+                ).`as`("lat")
+            ).on(DSL.trueCondition())
             .where(IMAGE.PROFILE_ID.eq(profileId))
             .limit(DEFAULT_FETCH_LIMIT)
         val result = selectStep.fetch().into(ImageWithStats::class.java)
