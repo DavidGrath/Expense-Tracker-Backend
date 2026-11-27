@@ -168,6 +168,7 @@ class TransactionService {
     }*/
 
 
+    //TODO REPEATABLE READ contemplation
     fun getTransactionBasics(
         profileId: Long,
         fromDate: LocalDate? = null, toDate: LocalDate? = null,

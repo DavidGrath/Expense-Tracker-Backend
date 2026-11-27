@@ -140,9 +140,9 @@ class TransactionRepository {
         var selectStep = mainContext.select(TRANSACTION.asterisk())
             .from(TRANSACTION)
             .innerJoin(ACCOUNT).on(accountToTransactionPath)
-            .innerJoin(TRANSACTION_ITEM).on(itemToTransactionPath)
-            .innerJoin(CATEGORY).on(categoryToItemPath)
-            .leftJoin(SELLER).on(sellerToTransactionPath)
+            .innerJoin(TRANSACTION_ITEM).on(itemToTransactionPath)  //TODO I
+            .innerJoin(CATEGORY).on(categoryToItemPath) // TODO don't
+            .leftJoin(SELLER).on(sellerToTransactionPath) //TODO need these
             .where(ACCOUNT.PROFILE_ID.eq(profileId))
         if(fromDate != null) {
             selectStep = selectStep.and(TRANSACTION.DATED_AT.greaterOrEqual(fromDate))
@@ -295,6 +295,7 @@ class TransactionRepository {
                 )
 
             .where(TRANSACTION.PROFILE_ID.eq(profileId))
+        //TODO This returns way too many rows. Not sure how I missed that. Need to narrow it down to a list of transaction IDs
 
         val result = selectStep.fetch().into(StatisticsTransactionFilterData::class.java)
         LOGGER.info("Result size: {}", result.size)

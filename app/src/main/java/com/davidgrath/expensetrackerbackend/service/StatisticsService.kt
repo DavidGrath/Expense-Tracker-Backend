@@ -116,6 +116,8 @@ class StatisticsService {
         return ret
     }
 
+
+    //TODO I'm contemplating putting these all in an explicit REPEATABLE READ transaction, but the level of effort depends on what jooq can help me with here. I'll need to look into that
     fun getStatisticsTransactions(profileId: Long, statisticsFilter: StatisticsFilter, baseUrl: Triple<String, String, Int>): List<StatisticsTransaction> {
         validateFilter(profileId, statisticsFilter)
         val converted = statisticsFilterToStatisticsFilterDb(statisticsFilter)

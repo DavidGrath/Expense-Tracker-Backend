@@ -119,6 +119,61 @@ statistics should reference only once currency code at a time
 * statistics_preset_seller_locations uq(preset,seller_location_id)
 * statistics_preset_modes uq(preset,mode)
 
+==== Endpoints
+* `POST /statistics/presets?name` - Create empty; Create with request body; fail on capacity reached. Name auto generated if not provided
+* `GET /statistics/presets`
+* `GET /statistics/presets/{id}` - 404/typical IDOR
+* `DELETE /statistics/presets/{id}` - 404 if not found
+* `PUT /statistics/presets/{id}?name` - Replace with request body; multiple points for validation errors. Name not changed if not provided, 404/typical Idor
+* `PATCH /statistics/presets/{id}/name?name` - typical 404/Idor, typical string validatoon things
+* `POST /statistics/presets/{id}/currencyCode` - will reset any accounts that don't align with the new code; 204 if the same, typical 404
+* `POST /statistics/presets//{id}/accounts/{accountId}` - 204 if already present, fails if does not align with currency code, typical 404/Idor
+* `POST /statistics/presets/{id}/modes` - adds everything based on the currency code or the currency code of the default account, typical 404/Idor
+* `POST /statistics/presets/{id}/modes/invert` - inverts everything based on the currency code or the currency code of the default account, typical 404/Idor
+* `DELETE /statistics/presets/{id}/accounts/{accountId}` - 204 if already absent, typical 404/idor
+* `DELETE /statistics/presets//{id}/accounts` - clears everything. 204 if already empty, typical 404/Idor
+* `POST /statistics/presets/{id}/categories/{categoryId}` - 204 if already present, typical 404/Idor
+* `POST /statistics/presets/{id}/categories` - adds everything, typical 404/Idor
+* `POST /statistics/presets/{id}/categories/invert` - inverts everything, typical 404/Idor
+* `DELETE /statistics/presets/{id}/categories/{categoryId}` - 204 if already absent, typical 404/Idor
+* `DELETE /statistics/presets/{id}/categories` - clears everything. 204 if already empty, typical 404/Idor
+* `POST /statistics/presets/{id}/sellers/{sellerId}` - 204 if already present, typical 404/Idor
+* `POST /statistics/presets/{id}/sellers` - adds everything, typical 404/Idor
+* `DELETE /statistics/presets/{id}/sellers/{sellerId}` - 204 if already absent, typical 404/Idor
+* `DELETE /statistics/presets/{id}/sellers` - clears everything. 204 if already empty, typical 404/Idor
+* `POST /statistics/presets/{id}/sellersLocations/{locationId}` - 204 if already present, typical 404/Idor
+* `POST /statistics/presets/{id}/sellerLocations` - adds everything, typical 404/Idor
+* `DELETE /statistics/presets/{id}/sellerLocations/{locationId}` - 204 if already absent, typical 404/Idor
+* `DELETE /statistics/presets/{id}/sellerLocations` - clears everything. 204 if already empty, typical 404/Idor
+* `POST /statistics/presets/{id}/modes/{mode}` - 204 if already present, typical 404/Idor, it's an enum and should be specified as such in the spec
+* `POST /statistics/presets/{id}/modes` - adds everything, typical 404/Idor
+* `POST /statistics/presets/{id}/modes/invert` - inverts everything, typical 404/Idor
+* `DELETE /statistics/presets/{id}/modes/{mode}` - 204 if already absent, typical 404/Idor, it's an enum and should be specified as such in the spec
+* `DELETE /statistics/presets/{id}/modes` - clears everything. 204 if already empty, typical 404/Idor
+* `POST /statistics/presets/{id}/weekdays/{weekdayNumber}` - 204 if already present, typical 404/Idor, it has an int range and should be specified as such in the spec
+* `POST /statistics/presets/{id}/weekdays` - adds everything, typical 404/Idor
+* `POST /statistics/presets/{id}/weekdays/invert` - inverts everything, typical 404/Idor
+* `DELETE /statistics/presets/{id}/weekdays/{weekdayNumber}` - 204 if already absent, typical 404/Idor, it has an int range and should be specified as such in the spec
+* `DELETE /statistics/presets/{id}/weekdays` - clears everything. 204 if already empty, typical 404/Idor
+(Sellers and locations don't support invert)
+Oh, and also, I need to talk about nullability and exclusion constraints:
+* Sellers is the only nullable field for now. The current solution in mind is to add an option "No sellers"
+which adds a clause `OR 'seller_ordinal' IS NULL` to `applyFilters` and `applyFiltersNoDateRange`
+** I could also add a similar option for each individual seller for the ones with no location, but at that point,
+I think it brings very little gain
+* Exclusion constraints were another idea I had in mind concerning nullability. I even have a note in the Javadocs of my
+filter classes concerning them. Null selectors, as discussed above, feel like a much simpler approach from a UX
+perspective... at least, from my idea of UX. I also don't have to add an extra boolean field `include_or_exclude`/
+`allow_or_deny` to all my preset tables
+* Ah, also consider adding `hasDocuments` and `hasImages`
+* Concerning sort criteria, let's sketch it out
+** Custom (sort_key)
+** date (not time) (then account ID, then transaction ID)
+** amount (factoring in reductions, possibly) (then account ID, then transaction ID)
+** File size (for the images and document screens), (then account ID, then transaction ID, then document sort key), then Image ID
+** Transaction count (for images), then item count, then image ID
+** Item count (for images, too), then transaction count, then image ID
+
 === Search Preset
 * search_preset(name: string, weekdays: byte (see above))
 ** ordinal
